@@ -11,23 +11,24 @@ export default function Home() {
   const [error, setError] = useState('')
 
   const handleAuth = async () => {
-    setLoading(true)
-    setError('')
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
-        if (error) throw error
-        window.location.href = '/dashboard'
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
-        window.location.href = '/onboarding'
-      }
-    } catch (err: any) {
-      setError(err.message)
+  if (!supabase) return
+  setLoading(true)
+  setError('')
+  try {
+    if (isLogin) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      window.location.href = '/dashboard'
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+      window.location.href = '/onboarding'
     }
-    setLoading(false)
+  } catch (err: any) {
+    setError(err.message)
   }
+  setLoading(false)
+}
 
   if (showAuth) return (
     <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
