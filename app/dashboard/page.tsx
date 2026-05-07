@@ -23,12 +23,36 @@ export default function Dashboard() {
 
   const generateReport = async (p: any) => {
   setGenerating(true)
+  setReport('')
   try {
     const res = await fetch('/api/generate-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
-    const data = await res.json()
-    setReport(data.report)
-  } catch (e) { console.error(e) }
-  setGenerating(false)
+    
+    const reader = res.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    setGenerating(false)
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() ?? ''
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const parsed = JSON.parse(line.slice(6))
+          if (parsed.text) setReport(prev => prev + parsed.text)
+          if (parsed.error) console.error(parsed.error)
+        } catch { }
+      }
+    }
+  } catch (e) { 
+    console.error(e)
+    setGenerating(false)
+  }
 }
 
   const signOut = async () => { 
