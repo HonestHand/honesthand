@@ -20,18 +20,19 @@ export default function Onboarding() {
   const entityTypes = ['Sole Proprietor','LLC','S-Corp','C-Corp','Partnership','Other']
 
   const handleSubmit = async () => {
-    setLoading(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No user found')
-      const { error } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
-      if (error) throw error
-      window.location.href = '/dashboard'
-    } catch (err: any) {
-      alert(err.message)
-    }
-    setLoading(false)
+  if (!supabase) return
+  setLoading(true)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('No user found')
+    const { error } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
+    if (error) throw error
+    window.location.href = '/dashboard'
+  } catch (err: any) {
+    alert(err.message)
   }
+  setLoading(false)
+}
 
   const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px', background: 'white' }
   const selectStyle = { ...inputStyle, cursor: 'pointer' }
