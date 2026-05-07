@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [isPro, setIsPro] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -19,6 +20,7 @@ export default function Dashboard() {
     setUser(user)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
+    setIsPro(data?.is_pro === true)
     setLoading(false)
     if (data) generateReport(data)
   }
@@ -85,24 +87,24 @@ export default function Dashboard() {
           <div style={{fontSize:'14px',color:'#6B7280',marginTop:'4px'}}>{profile?.industry} · {profile?.city}, TX · {profile?.revenue_range}</div>
         </div>
 
-        {/* Report card */}
         <div style={{background:'white',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB',marginBottom:'24px'}}>
           <div style={{fontSize:'16px',fontWeight:'600',color:'#2C2C2A',marginBottom:'16px'}}>Your Opportunity Report</div>
-          {generating ? (
+          
+          {generating && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
               <div style={{fontSize:'32px',marginBottom:'12px'}}>🔍</div>
               <div style={{fontSize:'15px',fontWeight:'500',color:'#2C2C2A',marginBottom:'4px'}}>Analyzing your business...</div>
               <div style={{fontSize:'13px',color:'#6B7280'}}>Matching against 50+ Texas programs.</div>
             </div>
-          ) : report ? (
+          )}
+
+          {!generating && report && (
             <div>
-              {/* Free preview — first 800 chars */}
               <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8',whiteSpace:'pre-wrap'}}>
-                {profile?.is_pro ? report : report.slice(0, 300) + '...'}
+                {isPro ? report : report.slice(0, 300) + '...'}
               </div>
 
-              {/* Paywall overlay for free users */}
-              {report.length > 0 && (
+              {!isPro && (
                 <div style={{marginTop:'24px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',textAlign:'center',color:'white'}}>
                   <div style={{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}}>Your full report is ready</div>
                   <div style={{fontSize:'14px',opacity:'0.9',marginBottom:'20px'}}>Unlock federal grants, state programs, tax credits, and your 30-day action plan.</div>
@@ -118,7 +120,9 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-          ) : (
+          )}
+
+          {!generating && !report && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
               <div style={{fontSize:'14px',color:'#6B7280',marginBottom:'12px'}}>Unable to generate report.</div>
               <button onClick={() => profile && generateReport(profile)} style={{padding:'8px 16px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',cursor:'pointer'}}>Retry</button>
