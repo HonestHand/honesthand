@@ -102,7 +102,7 @@ export default function Dashboard() {
               </div>
 
               {/* Paywall overlay for free users */}
-              {!profile?.is_pro && (
+              {report.length > 0 && (
                 <div style={{marginTop:'24px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',textAlign:'center',color:'white'}}>
                   <div style={{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}}>Your full report is ready</div>
                   <div style={{fontSize:'14px',opacity:'0.9',marginBottom:'20px'}}>Unlock federal grants, state programs, tax credits, and your 30-day action plan.</div>
