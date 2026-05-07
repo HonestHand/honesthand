@@ -15,11 +15,11 @@ export async function POST(request: NextRequest) {
   businessName: profile.business_name,
   industry: profile.industry,
   city: profile.city,
-  employeeCount: 'Not provided',
+  employeeCount: profile.employee_count || 'Not provided',
   annualRevenue: profile.revenue_range,
   isVeteranOwned: profile.is_veteran === true,
-  isMinorityOwned: false,
-  isWomanOwned: false,
+  isMinorityOwned: profile.is_minority === true,
+  isWomanOwned: profile.is_woman === true,
   specificNeeds: `Entity type: ${profile.entity_type || 'Not provided'}, County: ${profile.county || 'Not provided'}`,
 }
 
