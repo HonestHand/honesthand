@@ -12,30 +12,45 @@ export default function Onboarding() {
     county: '',
     revenue_range: '',
     entity_type: '',
-    is_veteran: false
+    employee_count: '',
+    is_veteran: false,
+    is_minority: false,
+    is_woman: false,
   })
 
   const industries = ['Restaurant / Food & Beverage','Ranch / Farm / Agriculture','Construction / Trades','Retail','Real Estate','Professional Services','Veteran-Owned Business','Other']
   const revenueRanges = ['Under $100k','$100k - $250k','$250k - $500k','$500k - $1M','Over $1M']
   const entityTypes = ['Sole Proprietor','LLC','S-Corp','C-Corp','Partnership','Other']
+  const employeeCounts = ['Just me (1)','2-5','6-10','11-25','26-50','51-100','100+']
 
   const handleSubmit = async () => {
-  if (!supabase) return
-  setLoading(true)
-  try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('No user found')
-    const { error } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
-    if (error) throw error
-    window.location.href = '/dashboard'
-  } catch (err: any) {
-    alert(err.message)
+    if (!supabase) return
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No user found')
+      const { error } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
+      if (error) throw error
+      window.location.href = '/dashboard'
+    } catch (err: any) {
+      alert(err.message)
+    }
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px', background: 'white' }
   const selectStyle = { ...inputStyle, cursor: 'pointer' }
+  const checkboxRow = (label: string, sub: string, key: 'is_veteran' | 'is_minority' | 'is_woman') => (
+    <div style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setForm({ ...form, [key]: !form[key] })}>
+      <div>
+        <div style={{ fontSize: '14px', fontWeight: '500', color: '#2C2C2A' }}>{label}</div>
+        <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>{sub}</div>
+      </div>
+      <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: '2px solid', borderColor: form[key] ? '#1D9E75' : '#E5E7EB', background: form[key] ? '#1D9E75' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px' }}>
+        {form[key] ? '✓' : ''}
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: 'system-ui, sans-serif', padding: '24px' }}>
@@ -61,6 +76,10 @@ export default function Onboarding() {
                 <option value="">Select entity type</option>
                 {entityTypes.map(e => (<option key={e} value={e}>{e}</option>))}
               </select>
+              <select style={selectStyle} value={form.employee_count} onChange={e => setForm({ ...form, employee_count: e.target.value })}>
+                <option value="">Number of employees</option>
+                {employeeCounts.map(c => (<option key={c} value={c}>{c}</option>))}
+              </select>
             </div>
           )}
           {step === 2 && (
@@ -76,16 +95,10 @@ export default function Onboarding() {
           )}
           {step === 3 && (
             <div>
-              <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>One last thing</div>
-              <div style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setForm({ ...form, is_veteran: !form.is_veteran })}>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '500', color: '#2C2C2A' }}>Veteran-owned business?</div>
-                  <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>Unlocks exclusive veteran programs</div>
-                </div>
-                <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: '2px solid', borderColor: form.is_veteran ? '#1D9E75' : '#E5E7EB', background: form.is_veteran ? '#1D9E75' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px' }}>
-                  {form.is_veteran ? '✓' : ''}
-                </div>
-              </div>
+              <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>Ownership & final details</div>
+              {checkboxRow('Veteran-owned business?', 'Unlocks exclusive veteran programs', 'is_veteran')}
+              {checkboxRow('Minority-owned business?', 'Unlocks minority business grants', 'is_minority')}
+              {checkboxRow('Woman-owned business?', 'Unlocks women entrepreneur programs', 'is_woman')}
               <div style={{ padding: '16px', background: '#E1F5EE', borderRadius: '12px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '13px', fontWeight: '500', color: '#085041', marginBottom: '4px' }}>Your report is almost ready</div>
                 <div style={{ fontSize: '12px', color: '#1D9E75', lineHeight: '1.6' }}>We'll match your business against 50+ Texas programs and show you exactly what you qualify for.</div>
