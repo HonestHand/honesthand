@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { buildReportPrompt } from '@/lib/claude'
+import { buildReportPrompt } from '../../lib/claude'
 
 export const maxDuration = 60
 
