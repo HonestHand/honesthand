@@ -6,21 +6,22 @@ export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const profile = await request.json()
-console.log('Profile received:', JSON.stringify(profile))
+    console.log('Profile received:', JSON.stringify(profile))
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   })
 
-  const businessData = {
-    businessName: profile.business_name,
-    industry: profile.industry,
-    city: profile.city,
-    employeeCount: profile.employee_count || 'Not provided',
-    annualRevenue: profile.revenue_range,
-    isVeteranOwned: profile.is_veteran,
-    isMinorityOwned: profile.is_minority,
-    isWomanOwned: profile.is_woman,
-  }
+ const businessData = {
+  businessName: profile.business_name,
+  industry: profile.industry,
+  city: profile.city,
+  employeeCount: 'Not provided',
+  annualRevenue: profile.revenue_range,
+  isVeteranOwned: profile.is_veteran === true,
+  isMinorityOwned: false,
+  isWomanOwned: false,
+  specificNeeds: `Entity type: ${profile.entity_type || 'Not provided'}, County: ${profile.county || 'Not provided'}`,
+}
 
   const prompt = buildReportPrompt(businessData)
 
