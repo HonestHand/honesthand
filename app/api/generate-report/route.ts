@@ -6,7 +6,7 @@ export const maxDuration = 60
 
 export async function POST(request: NextRequest) {
   const profile = await request.json()
-
+console.log('Profile received:', JSON.stringify(profile))
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
   })

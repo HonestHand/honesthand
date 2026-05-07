@@ -100,7 +100,7 @@ export default function Dashboard() {
 
           {!generating && report && (
             <div>
-              <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8',whiteSpace:'pre-wrap'}}>
+              <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8',whiteSpace:'pre-wrap',overflow:'visible'}}>
                 {isPro ? report : report.slice(0, 300) + '...'}
               </div>
 
