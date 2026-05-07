@@ -9,7 +9,7 @@ export default function Dashboard() {
   const [generating, setGenerating] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
-  const [isPro, setIsPro] = useState(false)
+  const [isPro, setIsPro] = useState<boolean>(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -20,7 +20,7 @@ export default function Dashboard() {
     setUser(user)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
-    setIsPro(data?.is_pro === true)
+    setIsPro(data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
     if (data) generateReport(data)
   }
