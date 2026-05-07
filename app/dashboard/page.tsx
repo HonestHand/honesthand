@@ -98,7 +98,7 @@ export default function Dashboard() {
             <div>
               {/* Free preview — first 800 chars */}
               <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8',whiteSpace:'pre-wrap'}}>
-                {profile?.is_pro ? report : report.slice(0, 800) + '...'}
+                {profile?.is_pro ? report : report.slice(0, 300) + '...'}
               </div>
 
               {/* Paywall overlay for free users */}
