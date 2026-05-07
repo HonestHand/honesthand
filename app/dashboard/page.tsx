@@ -12,25 +12,29 @@ export default function Dashboard() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = '/'; return }
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-    setProfile(data)
-    setLoading(false)
-    if (data) generateReport(data)
-  }
+  if (!supabase) return
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) { window.location.href = '/'; return }
+  const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+  setProfile(data)
+  setLoading(false)
+  if (data) generateReport(data)
+}
 
   const generateReport = async (p: any) => {
-    setGenerating(true)
-    try {
-      const res = await fetch('/api/generate-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
-      const data = await res.json()
-      setReport(data.report)
-    } catch (e) { console.error(e) }
-    setGenerating(false)
-  }
+  setGenerating(true)
+  try {
+    const res = await fetch('/api/generate-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
+    const data = await res.json()
+    setReport(data.report)
+  } catch (e) { console.error(e) }
+  setGenerating(false)
+}
 
-  const signOut = async () => { await supabase.auth.signOut(); window.location.href = '/' }
+  const signOut = async () => { 
+  if (supabase) await supabase.auth.signOut()
+  window.location.href = '/' 
+}
 
   if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',fontFamily:'system-ui'}}>Loading...</div>
 
