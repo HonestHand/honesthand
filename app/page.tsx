@@ -38,8 +38,8 @@ export default function Home() {
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
         <div style={{background:'#F9FAFB',borderRadius:'16px',padding:'24px'}}>
-          <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1px solid #E5E7EB',marginBottom:'12px',fontSize:'14px',outline:'none',boxSizing:'border-box'}}/>
-          <input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1px solid #E5E7EB',marginBottom:'16px',fontSize:'14px',outline:'none',boxSizing:'border-box'}}/>
+          <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1.5px solid #D1D5DB',marginBottom:'12px',fontSize:'14px',outline:'none',boxSizing:'border-box',background:'#ffffff',color:'#111827'}}/>
+<input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1.5px solid #D1D5DB',marginBottom:'16px',fontSize:'14px',outline:'none',boxSizing:'border-box',background:'#ffffff',color:'#111827'}}/>
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
           <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'12px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',cursor:'pointer',marginBottom:'12px'}}>
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}
