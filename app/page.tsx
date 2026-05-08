@@ -61,7 +61,7 @@ export default function Home() {
           <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'8px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
-        <div style={{background:'#F9FAFB',borderRadius:'16px',padding:'24px'}}>
+        <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
           <input className="hh-input" type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} />
           <input className="hh-input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{marginBottom:'16px'}} />
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
