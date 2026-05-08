@@ -50,8 +50,8 @@ export default function Home() {
           appearance: none;
         }
         .hh-input::placeholder {
-          color: #6B7280 !important;
-          -webkit-text-fill-color: #6B7280 !important;
+          color: #374151 !important;
+          -webkit-text-fill-color: #374151 !important;
           opacity: 1 !important;
         }
         .hh-input:-webkit-autofill,
@@ -63,6 +63,7 @@ export default function Home() {
         }
         .hh-input:focus {
           border-color: #1D9E75;
+          box-shadow: 0 0 0 3px rgba(29,158,117,0.15);
         }
       `}</style>
       <div style={{width:'100%',maxWidth:'400px'}}>
