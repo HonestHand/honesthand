@@ -37,4 +37,15 @@ body {
 ::-moz-placeholder {
   color: #9b9b96 !important;
   opacity: 1 !important;
+}input::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: #6B7280 !important;
+  opacity: 1 !important;
+}
+
+input,
+select,
+textarea {
+  color: #2C2C2A !important;
 }

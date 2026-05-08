@@ -38,7 +38,7 @@ export default function Onboarding() {
     setLoading(false)
   }
 
-  const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px', background: 'white' }
+  const inputStyle = { width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', outline: 'none', boxSizing: 'border-box' as const, marginBottom: '12px', background: 'white', color: '#2C2C2A' }
   const selectStyle = { ...inputStyle, cursor: 'pointer' }
   const checkboxRow = (label: string, sub: string, key: 'is_veteran' | 'is_minority' | 'is_woman') => (
     <div style={{ padding: '16px', background: '#F9FAFB', borderRadius: '12px', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setForm({ ...form, [key]: !form[key] })}>
