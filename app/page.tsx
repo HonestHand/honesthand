@@ -10,35 +10,21 @@ function FloatInput({ label, type, value, onChange, autoComplete }: {
   autoComplete?: string
 }) {
   const [focused, setFocused] = useState(false)
-  const active = focused || value.length > 0
   return (
-    <div style={{position:'relative',marginBottom:'16px'}}>
-      <label style={{
-        position:'absolute',
-        left:'14px',
-        top: active ? '6px' : '50%',
-        transform: active ? 'none' : 'translateY(-50%)',
-        fontSize: active ? '11px' : '15px',
-        color: focused ? '#1D9E75' : active ? '#6B7280' : '#374151',
-        fontWeight: active ? '600' : '500',
-        transition:'all 0.15s ease',
-        pointerEvents:'none',
-        zIndex:1,
-        background:'white',
-        padding:'0 2px',
-      }}>{label}</label>
+    <div style={{marginBottom:'16px'}}>
       <input
         type={type}
         value={value}
+        placeholder={label}
         onChange={e => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         autoComplete={autoComplete}
         style={{
           width:'100%',
-          padding: active ? '22px 14px 8px' : '15px 14px',
+          padding:'15px 14px',
           borderRadius:'8px',
-          border: `1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
+          border:`1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
           fontSize:'15px',
           outline:'none',
           boxSizing:'border-box' as const,

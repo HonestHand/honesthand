@@ -40,4 +40,8 @@ select,
 textarea {
   color: #2C2C2A !important;
   -webkit-text-fill-color: #2C2C2A !important;
+}input::placeholder {
+  color: #6B7280 !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #6B7280 !important;
 }
