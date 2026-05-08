@@ -33,24 +33,33 @@ export default function Home() {
   if (showAuth) return (
     <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
       <style>{`
-        .hh-input { 
+        .hh-input {
           width: 100%;
           padding: 12px 16px;
           border-radius: 8px;
           border: 1.5px solid #D1D5DB;
           margin-bottom: 12px;
-          font-size: 14px;
+          font-size: 16px;
           outline: none;
           box-sizing: border-box;
+          display: block;
           background: #ffffff !important;
           color: #111827 !important;
           -webkit-text-fill-color: #111827 !important;
-          display: block;
+          -webkit-appearance: none;
+          appearance: none;
         }
         .hh-input::placeholder {
           color: #6B7280 !important;
           -webkit-text-fill-color: #6B7280 !important;
           opacity: 1 !important;
+        }
+        .hh-input:-webkit-autofill,
+        .hh-input:-webkit-autofill:hover,
+        .hh-input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
+          -webkit-text-fill-color: #111827 !important;
+          background-color: #ffffff !important;
         }
         .hh-input:focus {
           border-color: #1D9E75;
@@ -62,8 +71,8 @@ export default function Home() {
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
         <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
-          <input className="hh-input" type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} />
-          <input className="hh-input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{marginBottom:'16px'}} />
+          <input className="hh-input" type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" />
+          <input className="hh-input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" style={{marginBottom:'16px'}} />
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
           <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'12px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',cursor:'pointer',marginBottom:'12px'}}>
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}
