@@ -128,29 +128,46 @@ export default function Dashboard() {
               </div>
 
               {!isPro && (
-                <>
-                  <div style={{margin:'24px 0 0',padding:'20px',background:'#FFFBEB',border:'2px dashed #F59E0B',borderRadius:'12px',textAlign:'center'}}>
-                    <div style={{fontSize:'16px',fontWeight:'700',color:'#92400E',marginBottom:'4px'}}>⚠️ You're only seeing a fraction of your report</div>
-                    <div style={{fontSize:'13px',color:'#B45309'}}>Your full report includes more federal programs, Texas state grants, local city incentives, tax credits you're likely missing, and a personalized 30-day action plan. This preview is just the beginning.</div>
-                  </div>
+  <>
+    <div style={{margin:'24px 0 0',padding:'20px',background:'#FFFBEB',border:'2px dashed #F59E0B',borderRadius:'12px',textAlign:'center'}}>
+      <div style={{fontSize:'16px',fontWeight:'700',color:'#92400E',marginBottom:'4px'}}>⚠️ You're only seeing a fraction of your report</div>
+      <div style={{fontSize:'13px',color:'#B45309'}}>Your full report includes more federal programs, Texas state grants, local city incentives, tax credits you're likely missing, and a personalized 30-day action plan. This preview is just the beginning.</div>
+    </div>
 
-                  <div style={{marginTop:'16px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',textAlign:'center',color:'white'}}>
-                    <div style={{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}}>Your full report is ready</div>
-                    <div style={{fontSize:'14px',opacity:'0.9',marginBottom:'20px'}}>Unlock federal grants, state programs, tax credits, and your 30-day action plan.</div>
-                    <div style={{display:'flex',justifyContent:'center',gap:'16px',marginBottom:'20px',flexWrap:'wrap'}}>
-                      <div style={{fontSize:'13px',opacity:'0.9'}}>✓ Federal & state grants</div>
-                      <div style={{fontSize:'13px',opacity:'0.9'}}>✓ Tax credits you're missing</div>
-                      <div style={{fontSize:'13px',opacity:'0.9'}}>✓ 30-day action plan</div>
-                    </div>
-                    <button onClick={handleUpgrade} style={{background:'white',color:'#1D9E75',border:'none',borderRadius:'10px',padding:'14px 32px',fontSize:'16px',fontWeight:'700',cursor:'pointer'}}>
-                      Unlock Full Report — $49/mo
-                    </button>
-                    <div style={{fontSize:'12px',opacity:'0.7',marginTop:'10px'}}>Cancel anytime. No contracts.</div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+    <div style={{marginTop:'16px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',color:'white'}}>
+      <div style={{textAlign:'center',marginBottom:'20px'}}>
+        <div style={{fontSize:'22px',fontWeight:'700',marginBottom:'6px'}}>Your full report is ready</div>
+        <div style={{fontSize:'14px',opacity:'0.9'}}>HonestHand Pro — the financial partner that earns its keep.</div>
+      </div>
+
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'24px'}}>
+        {[
+          {icon:'📋', title:'Full Opportunity Report', desc:'Every federal, state, and local program you qualify for — not just the top 3'},
+          {icon:'⏰', title:'Deadline Reminders', desc:'Never miss a grant window. We alert you before applications close'},
+          {icon:'🔄', title:'Monthly Updates', desc:'Programs change. Your report refreshes every month with new opportunities'},
+          {icon:'🎖️', title:'Veteran & Minority Programs', desc:'Exclusive set-aside contracts and grants most owners never find'},
+          {icon:'💰', title:'Tax Credit Finder', desc:'WOTC, R&D credits, Section 179, energy credits — we find what your accountant missed'},
+          {icon:'📍', title:'Local Intelligence', desc:'City and county programs specific to your area that national tools never surface'},
+          {icon:'📞', title:'30-Day Action Plan', desc:'Step-by-step with real phone numbers, URLs, and contacts — not just program names'},
+          {icon:'📈', title:'Priority Ranking', desc:'Opportunities sorted by easiest win first so you know exactly where to start'},
+        ].map(({icon, title, desc}) => (
+          <div key={title} style={{background:'rgba(255,255,255,0.12)',borderRadius:'10px',padding:'14px'}}>
+            <div style={{fontSize:'20px',marginBottom:'6px'}}>{icon}</div>
+            <div style={{fontSize:'13px',fontWeight:'700',marginBottom:'4px'}}>{title}</div>
+            <div style={{fontSize:'12px',opacity:'0.85',lineHeight:'1.5'}}>{desc}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{textAlign:'center'}}>
+        <button onClick={handleUpgrade} style={{background:'white',color:'#1D9E75',border:'none',borderRadius:'10px',padding:'16px 40px',fontSize:'17px',fontWeight:'700',cursor:'pointer',width:'100%',maxWidth:'360px'}}>
+          Unlock Full Report — $49/mo
+        </button>
+        <div style={{fontSize:'12px',opacity:'0.7',marginTop:'10px'}}>Cancel anytime. No contracts. Pays for itself with one credit.</div>
+      </div>
+    </div>
+  </>
+)}
 
           {!generating && !report && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
