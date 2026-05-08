@@ -11,35 +11,59 @@ export default function Home() {
   const [error, setError] = useState('')
 
   const handleAuth = async () => {
-  if (!supabase) return
-  setLoading(true)
-  setError('')
-  try {
-    if (isLogin) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw error
-      window.location.href = '/dashboard'
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password })
-      if (error) throw error
-      window.location.href = '/onboarding'
+    if (!supabase) return
+    setLoading(true)
+    setError('')
+    try {
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+        window.location.href = '/dashboard'
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password })
+        if (error) throw error
+        window.location.href = '/onboarding'
+      }
+    } catch (err: any) {
+      setError(err.message)
     }
-  } catch (err: any) {
-    setError(err.message)
+    setLoading(false)
   }
-  setLoading(false)
-}
 
   if (showAuth) return (
     <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
+      <style>{`
+        .hh-input { 
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 8px;
+          border: 1.5px solid #D1D5DB;
+          margin-bottom: 12px;
+          font-size: 14px;
+          outline: none;
+          box-sizing: border-box;
+          background: #ffffff !important;
+          color: #111827 !important;
+          -webkit-text-fill-color: #111827 !important;
+          display: block;
+        }
+        .hh-input::placeholder {
+          color: #6B7280 !important;
+          -webkit-text-fill-color: #6B7280 !important;
+          opacity: 1 !important;
+        }
+        .hh-input:focus {
+          border-color: #1D9E75;
+        }
+      `}</style>
       <div style={{width:'100%',maxWidth:'400px'}}>
         <div style={{textAlign:'center',marginBottom:'32px'}}>
           <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'8px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
         <div style={{background:'#F9FAFB',borderRadius:'16px',padding:'24px'}}>
-          <input type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1.5px solid #D1D5DB',marginBottom:'12px',fontSize:'14px',outline:'none',boxSizing:'border-box',background:'#ffffff',color:'#111827'}}/>
-<input type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{width:'100%',padding:'12px 16px',borderRadius:'8px',border:'1.5px solid #D1D5DB',marginBottom:'16px',fontSize:'14px',outline:'none',boxSizing:'border-box',background:'#ffffff',color:'#111827'}}/>
+          <input className="hh-input" type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} />
+          <input className="hh-input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} style={{marginBottom:'16px'}} />
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
           <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'12px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',cursor:'pointer',marginBottom:'12px'}}>
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}
@@ -64,7 +88,7 @@ export default function Home() {
         <div style={{fontSize:'36px',fontWeight:'700',color:'#2C2C2A',lineHeight:'1.2',marginBottom:'12px',letterSpacing:'-0.5px'}}>Your business is leaving money on the table.</div>
         <div style={{fontSize:'28px',fontWeight:'700',color:'#1D9E75',marginBottom:'20px'}}>We'll find it.</div>
         <div style={{fontSize:'16px',color:'#6B7280',lineHeight:'1.7',marginBottom:'32px'}}>HonestHand scans thousands of Texas grants, tax credits, and government incentives — then shows you exactly which ones your business qualifies for and how to claim them.</div>
-        <button onClick={()=>{ alert('clicked!'); setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
+        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
         <div style={{fontSize:'12px',color:'#1D9E75'}}>Free report · No credit card · Results in 24 hours</div>
       </div>
       <div style={{borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'32px 24px'}}>
@@ -106,7 +130,7 @@ export default function Home() {
       <div style={{padding:'48px 24px',textAlign:'center'}}>
         <div style={{fontSize:'24px',fontWeight:'700',color:'#2C2C2A',marginBottom:'8px'}}>Find out what your business is missing.</div>
         <div style={{fontSize:'14px',color:'#6B7280',marginBottom:'24px',lineHeight:'1.6'}}>Built for every Texas business owner — restaurants, ranches, contractors, farms, retail, veteran-owned businesses, and everyone in between.</div>
-        <button onClick={()=>{ alert('clicked!'); setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
+        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
       </div>
       <div style={{borderTop:'1px solid #F3F4F6',padding:'24px',textAlign:'center'}}>
         <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',marginBottom:'4px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
