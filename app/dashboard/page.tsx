@@ -20,10 +20,10 @@ function getPreview(text: string): string {
   let headerCount = 0
   for (const line of lines) {
     if (line.startsWith('## ')) headerCount++
-    if (headerCount >= 2) break
+    if (headerCount >= 3) break
     preview += line + '\n'
   }
-  return preview || text.slice(0, 600)
+  return preview || text.slice(0, 1200)
 }
 
 export default function Dashboard() {
