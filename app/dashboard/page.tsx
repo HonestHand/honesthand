@@ -46,14 +46,18 @@ export default function Dashboard() {
           try {
             const parsed = JSON.parse(line.slice(6))
             if (parsed.text) setReport(prev => prev + parsed.text)
-            if (parsed.error) console.error(parsed.error)
+            if (parsed.error) {
+  console.error(parsed.error)
+  setReport('ERROR: ' + parsed.error)
+}
           } catch { }
         }
       }
-    } catch (e) {
-      console.error(e)
-      setGenerating(false)
-    }
+    } catch (e: any) {
+  console.error(e)
+  setReport('ERROR: ' + (e?.message || 'Unknown error occurred'))
+  setGenerating(false)
+}
   }
 
   const handleUpgrade = async () => {
