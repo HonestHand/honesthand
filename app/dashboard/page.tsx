@@ -3,6 +3,29 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/^## (.+)$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:20px 0 8px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:600;margin:14px 0 6px">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^- (.+)$/gm, '<li style="margin-bottom:4px">$1</li>')
+    .replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul style="margin:8px 0 12px 20px;padding:0">${m}</ul>`)
+    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #E5E7EB;margin:16px 0">')
+    .replace(/\n\n/g, '<br/><br/>')
+}
+
+function getPreview(text: string): string {
+  const lines = text.split('\n')
+  let preview = ''
+  let headerCount = 0
+  for (const line of lines) {
+    if (line.startsWith('## ')) headerCount++
+    if (headerCount >= 2) break
+    preview += line + '\n'
+  }
+  return preview || text.slice(0, 600)
+}
+
 export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null)
   const [report, setReport] = useState('')
@@ -34,7 +57,6 @@ export default function Dashboard() {
       const decoder = new TextDecoder()
       let buffer = ''
       setGenerating(false)
-
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -46,18 +68,14 @@ export default function Dashboard() {
           try {
             const parsed = JSON.parse(line.slice(6))
             if (parsed.text) setReport(prev => prev + parsed.text)
-            if (parsed.error) {
-  console.error(parsed.error)
-  setReport('ERROR: ' + parsed.error)
-}
+            if (parsed.error) setReport('ERROR: ' + parsed.error)
           } catch { }
         }
       }
     } catch (e: any) {
-  console.error(e)
-  setReport('ERROR: ' + (e?.message || 'Unknown error occurred'))
-  setGenerating(false)
-}
+      setReport('ERROR: ' + (e?.message || 'Unknown error occurred'))
+      setGenerating(false)
+    }
   }
 
   const handleUpgrade = async () => {
@@ -93,7 +111,7 @@ export default function Dashboard() {
 
         <div style={{background:'white',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB',marginBottom:'24px'}}>
           <div style={{fontSize:'16px',fontWeight:'600',color:'#2C2C2A',marginBottom:'16px'}}>Your Opportunity Report</div>
-          
+
           {generating && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
               <div style={{fontSize:'32px',marginBottom:'12px'}}>🔍</div>
@@ -104,11 +122,11 @@ export default function Dashboard() {
 
           {!generating && report && (
             <div>
-              <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8',whiteSpace:'pre-wrap',overflow:'visible'}}>
-                {isPro ? report : report.slice(0, 300) + '...'}
+              <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8'}}>
+                <div dangerouslySetInnerHTML={{__html: renderMarkdown(isPro ? report : getPreview(report))}} />
               </div>
 
-              {true && (
+              {!isPro && (
                 <div style={{marginTop:'24px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',textAlign:'center',color:'white'}}>
                   <div style={{fontSize:'20px',fontWeight:'700',marginBottom:'8px'}}>Your full report is ready</div>
                   <div style={{fontSize:'14px',opacity:'0.9',marginBottom:'20px'}}>Unlock federal grants, state programs, tax credits, and your 30-day action plan.</div>
