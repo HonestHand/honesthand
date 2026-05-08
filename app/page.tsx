@@ -2,6 +2,58 @@
 import { useState } from 'react'
 import { supabase } from './supabase'
 
+function FloatInput({ label, type, value, onChange, autoComplete }: {
+  label: string
+  type: string
+  value: string
+  onChange: (v: string) => void
+  autoComplete?: string
+}) {
+  const [focused, setFocused] = useState(false)
+  const active = focused || value.length > 0
+  return (
+    <div style={{position:'relative',marginBottom:'16px'}}>
+      <label style={{
+        position:'absolute',
+        left:'14px',
+        top: active ? '6px' : '50%',
+        transform: active ? 'none' : 'translateY(-50%)',
+        fontSize: active ? '11px' : '15px',
+        color: focused ? '#1D9E75' : '#6B7280',
+        fontWeight: active ? '600' : '400',
+        transition:'all 0.15s ease',
+        pointerEvents:'none',
+        zIndex:1,
+        background:'white',
+        padding:'0 2px',
+      }}>{label}</label>
+      <input
+        type={type}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        autoComplete={autoComplete}
+        style={{
+          width:'100%',
+          padding: active ? '22px 14px 8px' : '15px 14px',
+          borderRadius:'8px',
+          border: `1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
+          fontSize:'15px',
+          outline:'none',
+          boxSizing:'border-box' as const,
+          background:'white',
+          color:'#111827',
+          WebkitAppearance:'none',
+          appearance:'none' as const,
+          transition:'border-color 0.15s ease',
+          display:'block',
+        }}
+      />
+    </div>
+  )
+}
+
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [isLogin, setIsLogin] = useState(false)
@@ -32,50 +84,16 @@ export default function Home() {
 
   if (showAuth) return (
     <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
-      <style>{`
-        .hh-input {
-          width: 100%;
-          padding: 12px 16px;
-          border-radius: 8px;
-          border: 1.5px solid #D1D5DB;
-          margin-bottom: 12px;
-          font-size: 16px;
-          outline: none;
-          box-sizing: border-box;
-          display: block;
-          background: #ffffff !important;
-          color: #111827 !important;
-          -webkit-text-fill-color: #111827 !important;
-          -webkit-appearance: none;
-          appearance: none;
-        }
-        .hh-input::placeholder {
-          color: #374151 !important;
-          -webkit-text-fill-color: #374151 !important;
-          opacity: 1 !important;
-        }
-        .hh-input:-webkit-autofill,
-        .hh-input:-webkit-autofill:hover,
-        .hh-input:-webkit-autofill:focus {
-          -webkit-box-shadow: 0 0 0px 1000px #ffffff inset !important;
-          -webkit-text-fill-color: #111827 !important;
-          background-color: #ffffff !important;
-        }
-        .hh-input:focus {
-          border-color: #1D9E75;
-          box-shadow: 0 0 0 3px rgba(29,158,117,0.15);
-        }
-      `}</style>
       <div style={{width:'100%',maxWidth:'400px'}}>
         <div style={{textAlign:'center',marginBottom:'32px'}}>
           <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'8px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
         <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
-          <input className="hh-input" type="email" placeholder="Email address" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" />
-          <input className="hh-input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password" style={{marginBottom:'16px'}} />
+          <FloatInput label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
+          <FloatInput label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
-          <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'12px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'14px',fontWeight:'600',cursor:'pointer',marginBottom:'12px'}}>
+          <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'14px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',marginTop:'4px'}}>
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}
           </button>
           <div style={{textAlign:'center',fontSize:'13px',color:'#6B7280'}}>
