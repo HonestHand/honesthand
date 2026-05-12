@@ -17,8 +17,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata: { userId },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?cancelled=true`,
+      success_url: 'https://yourhonesthand.com/dashboard?upgraded=true',
+      cancel_url: 'https://yourhonesthand.com/dashboard?cancelled=true',
     })
 
     return NextResponse.json({ url: session.url })
