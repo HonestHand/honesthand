@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildReportPrompt } from '../../lib/claude'
 
-export const maxDuration = 60
+export const maxDuration = 120
 
 export async function POST(request: NextRequest) {
   const profile = await request.json()
@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
         const anthropicStream = await client.messages.stream({
           model: 'claude-sonnet-4-5',
           max_tokens: 2048,
+          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
           system: `You are HonestHand — a straight-talking financial partner for Texas small business owners.
 The current date is ${currentDate}. Always use accurate, current deadlines. Never reference past years or outdated program cycles.
 Your job is to find real grants, tax credits, and government incentives they actually qualify for.
