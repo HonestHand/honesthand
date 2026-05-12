@@ -30,6 +30,7 @@ function FloatInput({ label, type, value, onChange, autoComplete }: {
           boxSizing:'border-box' as const,
           background:'white',
           color:'#111827',
+          WebkitTextFillColor:'#111827',
           WebkitAppearance:'none',
           appearance:'none' as const,
           transition:'border-color 0.15s ease',
