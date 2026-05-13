@@ -10,19 +10,26 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // TODO: re-enable signature verification before going live
-  // const body = await request.text()
-  // const signature = request.headers.get('stripe-signature')!
-  // try {
-  //   event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!)
-  // } catch (error) {
-  //   return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
-  // }
-  let event
+  const body = await request.text()
+  const signature = request.headers.get('stripe-signature')
+
+  if (!signature) {
+    console.error('[webhook] Missing stripe-signature header')
+    return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 })
+  }
+
+  if (!process.env.STRIPE_WEBHOOK_SECRET) {
+    console.error('[webhook] STRIPE_WEBHOOK_SECRET is not set')
+    return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 })
+  }
+
+  let event: Stripe.Event
   try {
-    event = await request.json()
+    event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET)
   } catch (error) {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[webhook] constructEvent failed:', message)
+    return NextResponse.json({ error: `Webhook signature verification failed: ${message}` }, { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {

@@ -37,11 +37,34 @@ export default function Dashboard() {
 
   useEffect(() => { loadData() }, [])
 
+  const verifyUpgrade = async (email: string) => {
+    try {
+      const res = await fetch('/api/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (res.ok) {
+        setIsPro(true)
+      } else {
+        const data = await res.json()
+        console.error('[verify-payment]', data.error)
+      }
+    } catch (e) {
+      console.error('[verify-payment] fetch failed:', e)
+    }
+    window.history.replaceState({}, '', '/dashboard')
+  }
+
   const loadData = async () => {
     if (!supabase) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { window.location.href = '/'; return }
     setUser(user)
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgraded') === 'true' && user.email) {
+      await verifyUpgrade(user.email)
+    }
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
     setIsPro(data?.is_pro === true || data?.is_pro === 'true')
