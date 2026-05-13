@@ -49,7 +49,7 @@ export default function Dashboard() {
     setUser(user)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
-    setIsPro(data?.is_pro === true || data?.is_pro === 'true')
+    setIsPro(params.get('upgraded') === 'true' || data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
     if (data) generateReport(data)
   }
