@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata: { userId },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: 'https://yourhonesthand.com/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}',
       cancel_url: 'https://yourhonesthand.com/dashboard?cancelled=true',
     })
 
