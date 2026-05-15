@@ -10,75 +10,53 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  let email: string
+  let sessionId: string
   try {
     const body = await request.json()
-    email = body.email
+    sessionId = body.session_id
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
   }
 
-  if (!email) {
-    return NextResponse.json({ error: 'Missing email' }, { status: 400 })
+  if (!sessionId) {
+    return NextResponse.json({ error: 'Missing session_id' }, { status: 400 })
   }
 
-  console.log('[verify-payment] Looking up Stripe customer for email:', email)
-
-  // Find customers matching this email
-  const customers = await stripe.customers.list({ email, limit: 5 })
-  console.log('[verify-payment] Customers found:', customers.data.length)
-
-  if (customers.data.length === 0) {
-    return NextResponse.json({ error: 'No Stripe customer found for this email' }, { status: 404 })
+  let session: Stripe.Checkout.Session
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('[verify-payment] Failed to retrieve session:', message)
+    return NextResponse.json({ error: `Failed to retrieve session: ${message}` }, { status: 400 })
   }
 
-  // Check each customer for an active subscription
-  let activeCustomerId: string | null = null
-  for (const customer of customers.data) {
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'active',
-      limit: 1,
-    })
-    console.log('[verify-payment] Customer', customer.id, 'active subscriptions:', subscriptions.data.length)
-    if (subscriptions.data.length > 0) {
-      activeCustomerId = customer.id
-      break
-    }
+  console.log('[verify-payment] payment_status:', session.payment_status)
+  console.log('[verify-payment] metadata:', session.metadata)
+
+  if (session.payment_status !== 'paid') {
+    return NextResponse.json({ error: 'Payment not completed', payment_status: session.payment_status }, { status: 402 })
   }
 
-  if (!activeCustomerId) {
-    return NextResponse.json({ error: 'No active subscription found' }, { status: 402 })
+  const userId = session.metadata?.userId
+  if (!userId) {
+    console.error('[verify-payment] No userId in session metadata for session:', sessionId)
+    return NextResponse.json({ error: 'No userId in session metadata' }, { status: 400 })
   }
-
-  console.log('[verify-payment] Active customer ID:', activeCustomerId)
-
-  // Look up the Supabase user by email to get their id
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('email', email)
-    .single()
-
-  if (profileError || !profile) {
-    console.error('[verify-payment] Profile lookup failed:', profileError?.message)
-    return NextResponse.json({ error: 'Profile not found for this email' }, { status: 404 })
-  }
-
-  console.log('[verify-payment] Updating profile id:', profile.id)
 
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
       is_pro: true,
-      stripe_customer_id: activeCustomerId,
+      stripe_customer_id: session.customer as string,
     })
-    .eq('id', profile.id)
+    .eq('id', userId)
 
   if (updateError) {
     console.error('[verify-payment] Supabase update failed:', updateError.message)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })
   }
 
+  console.log('[verify-payment] Successfully updated is_pro for userId:', userId)
   return NextResponse.json({ success: true })
 }

@@ -40,16 +40,32 @@ export default function Dashboard() {
   const loadData = async () => {
     if (!supabase) return
     const params = new URLSearchParams(window.location.search)
-    if (params.get('upgraded') === 'true') {
-      setIsPro(true)
+    const sessionId = params.get('session_id')
+    const upgraded = params.get('upgraded') === 'true'
+
+    if (upgraded && sessionId) {
+      try {
+        const res = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+        })
+        if (!res.ok) {
+          const err = await res.json()
+          console.error('[verify-payment]', err.error)
+        }
+      } catch (e) {
+        console.error('[verify-payment] fetch failed:', e)
+      }
       window.history.replaceState({}, '', '/dashboard')
     }
+
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { window.location.href = '/'; return }
     setUser(user)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
-    setIsPro(params.get('upgraded') === 'true' || data?.is_pro === true || data?.is_pro === 'true')
+    setIsPro(upgraded || data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
     if (data) generateReport(data)
   }
