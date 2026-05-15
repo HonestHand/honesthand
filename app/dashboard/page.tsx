@@ -40,32 +40,34 @@ export default function Dashboard() {
   const loadData = async () => {
     if (!supabase) return
     const params = new URLSearchParams(window.location.search)
-    const sessionId = params.get('session_id')
     const upgraded = params.get('upgraded') === 'true'
 
-    if (upgraded && sessionId) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { window.location.href = '/'; return }
+    setUser(session.user)
+
+    if (upgraded) {
       try {
-        const res = await fetch('/api/verify-payment', {
+        const res = await fetch('/api/activate-pro', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: sessionId }),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
         })
         if (!res.ok) {
           const err = await res.json()
-          console.error('[verify-payment]', err.error)
+          console.error('[activate-pro]', err.error)
         }
       } catch (e) {
-        console.error('[verify-payment] fetch failed:', e)
+        console.error('[activate-pro] fetch failed:', e)
       }
       window.history.replaceState({}, '', '/dashboard')
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = '/'; return }
-    setUser(user)
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
     setProfile(data)
-    setIsPro(upgraded || data?.is_pro === true || data?.is_pro === 'true')
+    setIsPro(data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
     if (data) generateReport(data)
   }
