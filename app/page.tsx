@@ -48,6 +48,7 @@ export default function Home() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetSent, setResetSent] = useState(false)
 
   const handleAuth = async () => {
     if (!supabase) return
@@ -79,6 +80,14 @@ export default function Home() {
         <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
           <FloatInput label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
           <FloatInput label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
+          {isLogin && (
+            <div style={{textAlign:'right',marginTop:'-8px',marginBottom:'12px'}}>
+              {resetSent
+                ? <span style={{fontSize:'13px',color:'#1D9E75'}}>Check your email for a reset link.</span>
+                : <span onClick={async () => { if (!supabase || !email) return; await supabase.auth.resetPasswordForEmail(email); setResetSent(true) }} style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}>Forgot password?</span>
+              }
+            </div>
+          )}
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
           <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'14px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',marginTop:'4px'}}>
             {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}

@@ -8,39 +8,20 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-  const token = authHeader.slice(7)
-
-  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { email, userId } = await request.json()
+  if (!email || !userId) {
+    return NextResponse.json({ error: 'Missing email or userId' }, { status: 400 })
   }
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   try {
-    const { data: profileData } = await supabaseAdmin
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('id', user.id)
-      .single()
-
-    let customerId: string | null = profileData?.stripe_customer_id ?? null
-
-    if (!customerId && user.email) {
-      const customers = await stripe.customers.list({ email: user.email, limit: 1 })
-      if (customers.data.length > 0) {
-        customerId = customers.data[0].id
-      }
-    }
-
-    if (!customerId) {
+    const customers = await stripe.customers.list({ email, limit: 1 })
+    if (customers.data.length === 0) {
       return NextResponse.json({ is_pro: false })
     }
 
+    const customerId = customers.data[0].id
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: 'active',
@@ -51,7 +32,7 @@ export async function POST(request: NextRequest) {
       await supabaseAdmin
         .from('profiles')
         .update({ is_pro: true, stripe_customer_id: customerId })
-        .eq('id', user.id)
+        .eq('id', userId)
       return NextResponse.json({ is_pro: true })
     }
 

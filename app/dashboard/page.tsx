@@ -51,10 +51,8 @@ export default function Dashboard() {
       try {
         const res = await fetch('/api/activate-pro', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: session.user.email, userId: session.user.id }),
         })
         const result = await res.json()
         if (res.ok && result.is_pro === true) {
