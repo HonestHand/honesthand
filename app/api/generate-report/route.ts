@@ -15,13 +15,16 @@ export async function POST(request: NextRequest) {
     businessName: profile.business_name,
     industry: profile.industry,
     city: profile.city,
+    county: profile.county || '',
+    entityType: profile.entity_type || '',
     employeeCount: profile.employee_count || 'Not provided',
     annualRevenue: profile.revenue_range,
     isVeteranOwned: profile.is_veteran === true,
     isMinorityOwned: profile.is_minority === true,
     isWomanOwned: profile.is_woman === true,
-    specificNeeds: `Entity type: ${profile.entity_type || 'Not provided'}, County: ${profile.county || 'Not provided'}`,
   }
+
+  console.log('[generate-report] businessData:', JSON.stringify(businessData, null, 2))
 
   const prompt = buildReportPrompt(businessData)
   const encoder = new TextEncoder()

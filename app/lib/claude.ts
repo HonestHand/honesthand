@@ -4,6 +4,8 @@ export interface BusinessData {
   employeeCount: number | string;
   annualRevenue?: string;
   city: string;
+  county?: string;
+  entityType?: string;
   yearsInBusiness?: number | string;
   isMinorityOwned?: boolean;
   isWomanOwned?: boolean;
@@ -33,7 +35,8 @@ Generate a comprehensive HonestHand Opportunity Report for this Texas small busi
 BUSINESS PROFILE
 Business name: ${data.businessName}
 Industry / sector: ${data.industry}
-Location: ${data.city}, Texas
+Location: ${data.city}${data.county ? `, ${data.county} County` : ''}, Texas
+Entity type: ${data.entityType || "Not provided"}
 Number of employees: ${data.employeeCount}
 Annual revenue: ${data.annualRevenue || "Not provided"}
 Years in business: ${data.yearsInBusiness || "Not provided"}

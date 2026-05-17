@@ -46,6 +46,7 @@ export default function Dashboard() {
     if (!session) { window.location.href = '/'; return }
     setUser(session.user)
 
+    let activatedPro = false
     if (upgraded) {
       try {
         const res = await fetch('/api/activate-pro', {
@@ -55,9 +56,11 @@ export default function Dashboard() {
             'Authorization': `Bearer ${session.access_token}`,
           },
         })
-        if (!res.ok) {
-          const err = await res.json()
-          console.error('[activate-pro]', err.error)
+        const result = await res.json()
+        if (res.ok && result.is_pro === true) {
+          activatedPro = true
+        } else {
+          console.error('[activate-pro]', result.error ?? 'is_pro not set')
         }
       } catch (e) {
         console.error('[activate-pro] fetch failed:', e)
@@ -67,7 +70,7 @@ export default function Dashboard() {
 
     const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
     setProfile(data)
-    setIsPro(data?.is_pro === true || data?.is_pro === 'true')
+    setIsPro(activatedPro || data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
     if (data) generateReport(data)
   }

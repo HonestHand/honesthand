@@ -18,7 +18,7 @@ export default function Onboarding() {
     is_woman: false,
   })
 
-  const industries = ['Restaurant / Food & Beverage','Ranch / Farm / Agriculture','Construction / Trades','Retail','Real Estate','Professional Services','Veteran-Owned Business','Other']
+  const industries = ['Restaurant / Food & Beverage','Ranch / Farm / Agriculture','Construction / Trades','Retail','Real Estate','Professional Services','Other']
   const revenueRanges = ['Under $100k','$100k - $250k','$250k - $500k','$500k - $1M','Over $1M']
   const entityTypes = ['Sole Proprietor','LLC','S-Corp','C-Corp','Partnership','Other']
   const employeeCounts = ['Just me (1)','2-5','6-10','11-25','26-50','51-100','100+']
