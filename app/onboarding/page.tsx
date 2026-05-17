@@ -1,4 +1,5 @@
 'use client'
+// Onboarding flow — 3 steps: business info, location/revenue, ownership
 import { useState } from 'react'
 import { supabase } from '../supabase'
 
