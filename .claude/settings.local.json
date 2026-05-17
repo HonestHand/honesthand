@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(nslookup *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(Select-String '\"version\"')",
+      "Bash(Select-Object -First 1)",
+      "Bash(node *)",
+      "Bash(xargs grep -l \"skipProxy\\\\|307\\\\|trailing.*slash\\\\|trailingSlash\")",
+      "Bash(xargs grep -l \"trailingSlash\")",
+      "Bash(xargs grep -l \"getRedirectStatus\\\\|307\")"
+    ]
+  }
+}
