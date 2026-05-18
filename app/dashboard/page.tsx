@@ -58,7 +58,8 @@ export default function Dashboard() {
         })
         const result = await res.json()
         if (res.ok && result.is_pro === true) {
-          activatedPro = true
+          window.location.href = '/dashboard/welcome'
+          return
         } else {
           console.error('[activate-pro]', result.error ?? 'is_pro not set')
         }
@@ -146,7 +147,10 @@ export default function Dashboard() {
   return (
     <div style={{minHeight:'100vh',background:'#F9FAFB',fontFamily:'system-ui'}}>
       <div style={{background:'white',borderBottom:'1px solid #E5E7EB',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{fontSize:'18px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
+        <div style={{display:'flex',alignItems:'center',gap:'24px'}}>
+          <div style={{fontSize:'18px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
+          {isPro && <a href="/community" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Community</a>}
+        </div>
         <button onClick={signOut} style={{fontSize:'12px',padding:'6px 12px',border:'1px solid #E5E7EB',borderRadius:'20px',background:'none',cursor:'pointer',color:'#6B7280'}}>Sign out</button>
       </div>
 
