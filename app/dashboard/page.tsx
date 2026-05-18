@@ -34,6 +34,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isPro, setIsPro] = useState<boolean>(false)
+  const [upgrading, setUpgrading] = useState(false)
+  const [upgradeError, setUpgradeError] = useState('')
 
   useEffect(() => { loadData() }, [])
 
@@ -109,6 +111,8 @@ export default function Dashboard() {
 
   const handleUpgrade = async () => {
     if (!user) return
+    setUpgrading(true)
+    setUpgradeError('')
     try {
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
@@ -119,10 +123,16 @@ export default function Dashboard() {
       if (data.url) {
         window.location.href = data.url
       } else {
+        const msg = data.error || 'Could not start checkout. Please try again.'
         console.error('[handleUpgrade] No URL in response:', data)
+        setUpgradeError(msg)
+        setUpgrading(false)
       }
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e?.message || 'Network error. Please try again.'
       console.error('[handleUpgrade] fetch failed:', e)
+      setUpgradeError(msg)
+      setUpgrading(false)
     }
   }
 
@@ -196,10 +206,11 @@ export default function Dashboard() {
                     </div>
 
                     <div style={{textAlign:'center'}}>
-                      <button onClick={handleUpgrade} style={{background:'white',color:'#1D9E75',border:'none',borderRadius:'10px',padding:'16px 40px',fontSize:'17px',fontWeight:'700',cursor:'pointer',width:'100%',maxWidth:'360px'}}>
-                        Unlock Full Report — $49/mo
+                      <button onClick={handleUpgrade} disabled={upgrading} style={{background:'white',color:'#1D9E75',border:'none',borderRadius:'10px',padding:'16px 40px',fontSize:'17px',fontWeight:'700',cursor:upgrading?'wait':'pointer',width:'100%',maxWidth:'360px',opacity:upgrading?0.8:1}}>
+                        {upgrading ? 'Redirecting to checkout...' : 'Unlock Full Report — $49/mo'}
                       </button>
                       <div style={{fontSize:'12px',opacity:'0.7',marginTop:'10px'}}>Cancel anytime. No contracts. Pays for itself with one credit.</div>
+                      {upgradeError && <div style={{fontSize:'13px',color:'#FCA5A5',marginTop:'8px'}}>{upgradeError}</div>}
                     </div>
                   </div>
                 </>
