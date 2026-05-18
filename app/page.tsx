@@ -81,11 +81,11 @@ export default function Home() {
           <FloatInput label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
           <FloatInput label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
           {isLogin && (
-            <div style={{textAlign:'right',marginTop:'-8px',marginBottom:'12px'}}>
-              {resetSent
-                ? <span style={{fontSize:'13px',color:'#1D9E75'}}>Check your email for a reset link.</span>
-                : <span onClick={async () => { if (!supabase || !email) return; await supabase.auth.resetPasswordForEmail(email); setResetSent(true) }} style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}>Forgot password?</span>
-              }
+            <div style={{marginTop:'-8px',marginBottom:'12px'}}>
+              <div style={{textAlign:'right'}}>
+                <span onClick={async () => { if (!supabase || !email) return; await supabase.auth.resetPasswordForEmail(email); setResetSent(true) }} style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}>Forgot password?</span>
+              </div>
+              {resetSent && <div style={{fontSize:'13px',color:'#1D9E75',marginTop:'6px'}}>Password reset email sent! Check your inbox.</div>}
             </div>
           )}
           {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}

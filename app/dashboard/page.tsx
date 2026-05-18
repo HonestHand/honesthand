@@ -104,14 +104,22 @@ export default function Dashboard() {
   }
 
   const handleUpgrade = async () => {
-    if (!user || !profile) return
-    const res = await fetch('/api/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, email: user.email })
-    })
-    const data = await res.json()
-    if (data.url) window.location.href = data.url
+    if (!user) return
+    try {
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, email: user.email }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        console.error('[handleUpgrade] No URL in response:', data)
+      }
+    } catch (e) {
+      console.error('[handleUpgrade] fetch failed:', e)
+    }
   }
 
   const signOut = async () => {
