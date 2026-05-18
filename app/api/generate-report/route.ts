@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     async start(controller) {
       try {
         const anthropicStream = await client.messages.stream({
-          model: 'claude-sonnet-4-5',
+          model: 'claude-sonnet-4-6',
           max_tokens: 2048,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 5 }],
           system: `You are HonestHand — a straight-talking financial partner for Texas small business owners.

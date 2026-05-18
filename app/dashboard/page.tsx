@@ -67,10 +67,14 @@ export default function Dashboard() {
     }
 
     const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
+    if (!data || !data.business_name) {
+      window.location.href = '/onboarding'
+      return
+    }
     setProfile(data)
     setIsPro(activatedPro || data?.is_pro === true || data?.is_pro === 'true')
     setLoading(false)
-    if (data) generateReport(data)
+    generateReport(data)
   }
 
   const generateReport = async (p: any) => {
