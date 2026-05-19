@@ -3,7 +3,8 @@ import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-  const { userId, email } = await request.json()
+  const { userId, email, origin } = await request.json()
+  const baseUrl = origin || 'https://www.yourhonesthand.com'
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -17,8 +18,8 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata: { userId },
-      success_url: 'https://www.yourhonesthand.com/dashboard?upgraded=true',
-      cancel_url: 'https://www.yourhonesthand.com/dashboard?cancelled=true',
+      success_url: `${baseUrl}/dashboard?upgraded=true`,
+      cancel_url: `${baseUrl}/dashboard?cancelled=true`,
     })
 
     return NextResponse.json({ url: session.url })

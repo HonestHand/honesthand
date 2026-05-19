@@ -138,7 +138,7 @@ export default function Dashboard() {
       const res = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id, email: user.email }),
+        body: JSON.stringify({ userId: user.id, email: user.email, origin: window.location.origin }),
       })
       const data = await res.json()
       if (data.url) {
