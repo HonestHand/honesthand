@@ -120,12 +120,12 @@ export default function Dashboard() {
             const parsed = JSON.parse(line.slice(6))
             if (parsed.status === 'searching') setSearching(true)
             if (parsed.text) { setSearching(false); setReport(prev => prev + parsed.text) }
-            if (parsed.error) { setSearching(false); setReport('ERROR: ' + parsed.error) }
+            if (parsed.error) { setSearching(false); setReport('Error:' + parsed.error) }
           } catch { }
         }
       }
     } catch (e: any) {
-      setReport('ERROR: ' + (e?.message || 'Unknown error occurred'))
+      setReport('Error:' + (e?.message || 'Unknown error occurred'))
       setGenerating(false)
     }
   }
@@ -205,7 +205,7 @@ export default function Dashboard() {
                 <>
                   <div style={{margin:'24px 0 0',padding:'20px',background:'#FFFBEB',border:'2px dashed #F59E0B',borderRadius:'12px',textAlign:'center'}}>
                     <div style={{fontSize:'16px',fontWeight:'700',color:'#92400E',marginBottom:'4px'}}>⚠️ You're only seeing a fraction of your report</div>
-                    <div style={{fontSize:'13px',color:'#B45309'}}>Your full report includes more federal programs, Texas state grants, local city incentives, tax credits you're likely missing, and a personalized 30-day action plan. This preview is just the beginning.</div>
+                    <div style={{fontSize:'13px',color:'#B45309'}}>Your full report includes more federal programs, Texas state grants, local incentives, tax credits you're likely missing, and a personalized 30-day action plan. This preview is just the beginning.</div>
                   </div>
 
                   <div style={{marginTop:'16px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',color:'white'}}>

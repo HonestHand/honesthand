@@ -1,5 +1,4 @@
 'use client'
-// Onboarding flow — 3 steps: business info, location/revenue, ownership
 import { useState } from 'react'
 import { supabase } from '../supabase'
 
@@ -7,6 +6,7 @@ export default function Onboarding() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [industryOther, setIndustryOther] = useState('')
   const [form, setForm] = useState({
     business_name: '',
     industry: '',
@@ -25,10 +25,13 @@ export default function Onboarding() {
   const entityTypes = ['Sole Proprietor','LLC','S-Corp','C-Corp','Partnership','Other']
   const employeeCounts = ['Just me (1)','2-5','6-10','11-25','26-50','51-100','100+']
 
+  const effectiveIndustry = form.industry === 'Other' ? (industryOther.trim() || 'Other') : form.industry
+
   const validateStep = (s: number): string => {
     if (s === 1) {
       if (!form.business_name.trim()) return 'Please enter your business name'
       if (!form.industry) return 'Please select your industry'
+      if (form.industry === 'Other' && !industryOther.trim()) return 'Please describe your industry'
     }
     if (s === 2) {
       if (!form.city.trim()) return 'Please enter your city'
@@ -51,7 +54,10 @@ export default function Onboarding() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
-      const { error: upsertError } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
+      const { error: upsertError } = await supabase.from('profiles').upsert(
+        { id: user.id, ...form, industry: effectiveIndustry },
+        { onConflict: 'id' }
+      )
       if (upsertError) throw upsertError
       window.location.href = '/dashboard'
     } catch (err: any) {
@@ -90,10 +96,19 @@ export default function Onboarding() {
             <div>
               <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>Basic information</div>
               <input style={inputStyle} placeholder="Business name" value={form.business_name} onChange={e => setForm({ ...form, business_name: e.target.value })} />
-              <select style={selectStyle} value={form.industry} onChange={e => setForm({ ...form, industry: e.target.value })}>
+              <select style={selectStyle} value={form.industry} onChange={e => { setForm({ ...form, industry: e.target.value }); setIndustryOther('') }}>
                 <option value="">Select your industry</option>
                 {industries.map(i => (<option key={i} value={i}>{i}</option>))}
               </select>
+              {form.industry === 'Other' && (
+                <input
+                  style={{ ...inputStyle, borderColor: '#1D9E75' }}
+                  placeholder="Describe your industry (e.g. Auto Repair, Daycare, Landscaping)"
+                  value={industryOther}
+                  onChange={e => setIndustryOther(e.target.value)}
+                  autoFocus
+                />
+              )}
               <select style={selectStyle} value={form.entity_type} onChange={e => setForm({ ...form, entity_type: e.target.value })}>
                 <option value="">Select entity type</option>
                 {entityTypes.map(e => (<option key={e} value={e}>{e}</option>))}
