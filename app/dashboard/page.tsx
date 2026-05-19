@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<any>(null)
   const [report, setReport] = useState('')
   const [generating, setGenerating] = useState(false)
+  const [searching, setSearching] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [isPro, setIsPro] = useState<boolean>(false)
@@ -99,6 +100,7 @@ export default function Dashboard() {
 
   const generateReport = async (p: any) => {
     setGenerating(true)
+    setSearching(false)
     setReport('')
     try {
       const res = await fetch('/api/generate-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
@@ -116,8 +118,9 @@ export default function Dashboard() {
           if (!line.startsWith('data: ')) continue
           try {
             const parsed = JSON.parse(line.slice(6))
-            if (parsed.text) setReport(prev => prev + parsed.text)
-            if (parsed.error) setReport('ERROR: ' + parsed.error)
+            if (parsed.status === 'searching') setSearching(true)
+            if (parsed.text) { setSearching(false); setReport(prev => prev + parsed.text) }
+            if (parsed.error) { setSearching(false); setReport('ERROR: ' + parsed.error) }
           } catch { }
         }
       }
@@ -180,15 +183,19 @@ export default function Dashboard() {
         <div style={{background:'white',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB',marginBottom:'24px'}}>
           <div style={{fontSize:'16px',fontWeight:'600',color:'#2C2C2A',marginBottom:'16px'}}>Your Opportunity Report</div>
 
-          {generating && (
+          {(generating || searching) && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
-              <div style={{fontSize:'32px',marginBottom:'12px'}}>🔍</div>
-              <div style={{fontSize:'15px',fontWeight:'500',color:'#2C2C2A',marginBottom:'4px'}}>Analyzing your business...</div>
-              <div style={{fontSize:'13px',color:'#6B7280'}}>Matching against 50+ Texas programs.</div>
+              <div style={{fontSize:'32px',marginBottom:'12px'}}>{searching ? '🌐' : '🔍'}</div>
+              <div style={{fontSize:'15px',fontWeight:'500',color:'#2C2C2A',marginBottom:'4px'}}>
+                {searching ? 'Searching live program databases...' : 'Analyzing your business...'}
+              </div>
+              <div style={{fontSize:'13px',color:'#6B7280'}}>
+                {searching ? 'Verifying current deadlines and funding amounts.' : 'Matching against 50+ Texas programs.'}
+              </div>
             </div>
           )}
 
-          {!generating && report && (
+          {!generating && !searching && report && (
             <div>
               <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8'}}>
                 <div dangerouslySetInnerHTML={{__html: renderMarkdown(isPro ? report : getPreview(report))}} />
@@ -239,7 +246,7 @@ export default function Dashboard() {
             </div>
           )}
 
-          {!generating && !report && (
+          {!generating && !searching && !report && (
             <div style={{textAlign:'center',padding:'40px 0'}}>
               <div style={{fontSize:'14px',color:'#6B7280',marginBottom:'12px'}}>Unable to generate report.</div>
               <button onClick={() => profile && generateReport(profile)} style={{padding:'8px 16px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',cursor:'pointer'}}>Retry</button>

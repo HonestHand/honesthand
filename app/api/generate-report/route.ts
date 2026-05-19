@@ -98,6 +98,8 @@ FORMAT RULES:
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Send heartbeat immediately so the client's fetch() resolves before web searches start
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'searching' })}\n\n`))
       try {
         const anthropicStream = await client.messages.stream({
           model: 'claude-sonnet-4-6',
