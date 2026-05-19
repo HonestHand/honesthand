@@ -28,15 +28,34 @@ export async function POST(request: NextRequest) {
       limit: 1,
     })
 
-    if (subscriptions.data.length > 0) {
-      await supabaseAdmin
-        .from('profiles')
-        .update({ is_pro: true, stripe_customer_id: customerId })
-        .eq('id', userId)
-      return NextResponse.json({ is_pro: true })
+    if (subscriptions.data.length === 0) {
+      return NextResponse.json({ is_pro: false })
     }
 
-    return NextResponse.json({ is_pro: false })
+    const { data: updated, error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({ is_pro: true, stripe_customer_id: customerId })
+      .eq('id', userId)
+      .select('id, is_pro')
+
+    if (updateError) {
+      console.error('[activate-pro] Supabase update error:', updateError)
+      return NextResponse.json({ error: 'DB update failed: ' + updateError.message }, { status: 500 })
+    }
+
+    if (!updated || updated.length === 0) {
+      // Profile row not found by userId — try to set it anyway via upsert
+      console.error('[activate-pro] No rows matched userId:', userId, '— attempting upsert')
+      const { error: upsertError } = await supabaseAdmin
+        .from('profiles')
+        .upsert({ id: userId, is_pro: true, stripe_customer_id: customerId }, { onConflict: 'id' })
+      if (upsertError) {
+        console.error('[activate-pro] Upsert also failed:', upsertError)
+        return NextResponse.json({ error: 'Could not set pro status' }, { status: 500 })
+      }
+    }
+
+    return NextResponse.json({ is_pro: true })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({ error: message }, { status: 500 })
