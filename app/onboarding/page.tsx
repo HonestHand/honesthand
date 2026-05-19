@@ -6,6 +6,7 @@ import { supabase } from '../supabase'
 export default function Onboarding() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const [form, setForm] = useState({
     business_name: '',
     industry: '',
@@ -24,17 +25,37 @@ export default function Onboarding() {
   const entityTypes = ['Sole Proprietor','LLC','S-Corp','C-Corp','Partnership','Other']
   const employeeCounts = ['Just me (1)','2-5','6-10','11-25','26-50','51-100','100+']
 
+  const validateStep = (s: number): string => {
+    if (s === 1) {
+      if (!form.business_name.trim()) return 'Please enter your business name'
+      if (!form.industry) return 'Please select your industry'
+    }
+    if (s === 2) {
+      if (!form.city.trim()) return 'Please enter your city'
+      if (!form.revenue_range) return 'Please select your annual revenue range'
+    }
+    return ''
+  }
+
+  const handleNext = () => {
+    const msg = validateStep(step)
+    if (msg) { setError(msg); return }
+    setError('')
+    setStep(step + 1)
+  }
+
   const handleSubmit = async () => {
     if (!supabase) return
     setLoading(true)
+    setError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
-      const { error } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
-      if (error) throw error
+      const { error: upsertError } = await supabase.from('profiles').upsert({ id: user.id, ...form }, { onConflict: 'id' })
+      if (upsertError) throw upsertError
       window.location.href = '/dashboard'
     } catch (err: any) {
-      alert(err.message)
+      setError(err.message)
     }
     setLoading(false)
   }
@@ -106,11 +127,16 @@ export default function Onboarding() {
               </div>
             </div>
           )}
+          {error && (
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', fontSize: '13px', color: '#DC2626' }}>
+              {error}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
             {step > 1 && (
-              <button onClick={() => setStep(step - 1)} style={{ flex: 1, padding: '12px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', fontWeight: '500', color: '#6B7280', cursor: 'pointer' }}>Back</button>
+              <button onClick={() => { setError(''); setStep(step - 1) }} style={{ flex: 1, padding: '12px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '8px', fontSize: '14px', fontWeight: '500', color: '#6B7280', cursor: 'pointer' }}>Back</button>
             )}
-            <button onClick={() => step < 3 ? setStep(step + 1) : handleSubmit()} disabled={loading} style={{ flex: 1, padding: '12px', background: '#1D9E75', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white', cursor: 'pointer' }}>
+            <button onClick={() => step < 3 ? handleNext() : handleSubmit()} disabled={loading} style={{ flex: 1, padding: '12px', background: '#1D9E75', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white', cursor: 'pointer' }}>
               {loading ? 'Setting up...' : step < 3 ? 'Continue' : 'Generate My Report →'}
             </button>
           </div>
