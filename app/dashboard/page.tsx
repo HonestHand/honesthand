@@ -3,6 +3,15 @@ export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 
+const SAFE_DOMAINS = ['sba.gov','grants.gov','sam.gov','irs.gov','twc.texas.gov','gov.texas.gov','tvc.texas.gov','rd.usda.gov','texaswideopenforbusiness.com','treasury.gov','dol.gov','energy.gov']
+
+function isSafeUrl(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '')
+    return SAFE_DOMAINS.some(d => host === d || host.endsWith('.' + d))
+  } catch { return false }
+}
+
 function renderMarkdown(text: string): string {
   return text
     .replace(/\r\n/g, '\n')
@@ -11,6 +20,12 @@ function renderMarkdown(text: string): string {
     .replace(/^[ \t]*## (.+?)[ \t]*$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:16px 0 6px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
     .replace(/^[ \t]*### (.+?)[ \t]*$/gm, '<h3 style="font-size:14px;font-weight:600;margin:12px 0 4px">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
+      isSafeUrl(url)
+        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;text-decoration:underline">${label}</a>`
+        : `${label} (${url})`
+    )
+    .replace(/^[ \t]*(\d+)\. (.+)$/gm, '<li style="margin-bottom:6px">$2</li>')
     .replace(/^[ \t]*- (.+)$/gm, '<li style="margin-bottom:4px">$1</li>')
     .replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul style="margin:6px 0 10px 20px;padding:0">${m}</ul>`)
     .replace(/^[ \t]*---[ \t]*$/gm, '<hr style="border:none;border-top:1px solid #F3F4F6;margin:8px 0">')
