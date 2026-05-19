@@ -61,6 +61,7 @@ export default function Dashboard() {
     if (!supabase) return
     const params = new URLSearchParams(window.location.search)
     const upgraded = params.get('upgraded') === 'true'
+    const stripeSessionId = params.get('session_id') || undefined
 
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/'; return }
@@ -72,7 +73,7 @@ export default function Dashboard() {
         const res = await fetch('/api/activate-pro', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: session.user.email, userId: session.user.id }),
+          body: JSON.stringify({ email: session.user.email, userId: session.user.id, sessionId: stripeSessionId }),
         })
         const result = await res.json()
         if (res.ok && result.is_pro === true) {

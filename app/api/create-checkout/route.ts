@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
         },
       ],
       metadata: { userId },
-      success_url: `${baseUrl}/dashboard?upgraded=true`,
+      success_url: `${baseUrl}/dashboard?upgraded=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/dashboard?cancelled=true`,
     })
 
