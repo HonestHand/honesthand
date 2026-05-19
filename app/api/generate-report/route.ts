@@ -71,7 +71,11 @@ FORMAT RULES:
 - Use ## for section headers. The ## must be at the very start of the line with nothing before it, no numbers or labels preceding it.
 - Use **bold** for program names and dollar amounts
 - Use bullet points for eligibility requirements
-- Always include: estimated dollar value, eligibility match reason, and next-step action
+- Every opportunity MUST include all four of these fields:
+  • **Value:** estimated dollar value or range
+  • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
+  • **Why you qualify:** one sentence on eligibility match
+  • **Next step:** exact action to take with agency name or URL
 - End with the 30-Day Action Plan as the final section`
 
   const freeSystemPrompt = `You are HonestHand — a straight-talking financial partner for Texas small business owners.
@@ -94,7 +98,11 @@ FORMAT RULES:
 - Use ## for section headers. The ## must be at the very start of the line with nothing before it.
 - Use **bold** for program names and dollar amounts
 - Use bullet points for eligibility requirements
-- Always include estimated dollar value and a next-step action`
+- Every opportunity MUST include all four of these fields:
+  • **Value:** estimated dollar value or range
+  • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
+  • **Why you qualify:** one sentence on eligibility match
+  • **Next step:** exact action to take with agency name or URL`
 
   const stream = new ReadableStream({
     async start(controller) {
