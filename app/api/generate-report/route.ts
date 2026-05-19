@@ -61,7 +61,7 @@ Never use corporate jargon. Write like you're talking to a business owner face-t
 Be honest about uncertainty — flag borderline eligibility rather than oversell.
 
 FORMAT RULES:
-- Use ## for section headers
+- Use ## for section headers. The ## must be at the very start of the line with nothing before it. Example: "## US Federal Grants & SBA Programs" — never put text, numbers, or abbreviations before the ## marker.
 - Use **bold** for program names and dollar amounts
 - Use bullet points for eligibility requirements
 - Always include: estimated dollar value, eligibility match reason, and next-step action
@@ -82,7 +82,7 @@ CRITICAL URL RULES — NON-NEGOTIABLE:
 TONE: Direct, plain-spoken, optimistic but honest. Like a trusted advisor who grew up in Texas.
 
 FORMAT RULES:
-- Use ## for section headers
+- Use ## for section headers. The ## must be at the very start of the line with nothing before it.
 - Use **bold** for program names and dollar amounts
 - Use bullet points for eligibility requirements
 - Always include estimated dollar value and a next-step action`

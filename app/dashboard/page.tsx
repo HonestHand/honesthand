@@ -5,13 +5,15 @@ import { supabase } from '../supabase'
 
 function renderMarkdown(text: string): string {
   return text
-    .replace(/^# (.+)$/gm, '<h1 style="font-size:16px;font-weight:700;color:#2C2C2A;margin:0 0 4px">$1</h1>')
-    .replace(/^## (.+)$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:16px 0 6px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 style="font-size:14px;font-weight:600;margin:12px 0 4px">$1</h3>')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/^[ \t]*# (.+?)[ \t]*$/gm, '<h1 style="font-size:16px;font-weight:700;color:#2C2C2A;margin:0 0 4px">$1</h1>')
+    .replace(/^[ \t]*## (.+?)[ \t]*$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:16px 0 6px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
+    .replace(/^[ \t]*### (.+?)[ \t]*$/gm, '<h3 style="font-size:14px;font-weight:600;margin:12px 0 4px">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^- (.+)$/gm, '<li style="margin-bottom:4px">$1</li>')
+    .replace(/^[ \t]*- (.+)$/gm, '<li style="margin-bottom:4px">$1</li>')
     .replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul style="margin:6px 0 10px 20px;padding:0">${m}</ul>`)
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid #F3F4F6;margin:8px 0">')
+    .replace(/^[ \t]*---[ \t]*$/gm, '<hr style="border:none;border-top:1px solid #F3F4F6;margin:8px 0">')
     .replace(/\n\n/g, '<br/>')
 }
 
