@@ -129,6 +129,7 @@ export default function Community() {
           </div>
           <a href="/dashboard" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>My Report</a>
           <span style={{ fontSize: '13px', color: '#1D9E75', fontWeight: '600' }}>Community</span>
+          <a href="/contact" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>Contact Us</a>
         </div>
         <button
           onClick={async () => { if (supabase) { await supabase.auth.signOut(); window.location.href = '/' } }}

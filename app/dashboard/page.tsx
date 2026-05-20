@@ -214,6 +214,7 @@ export default function Dashboard() {
         <div style={{display:'flex',alignItems:'center',gap:'24px'}}>
           <div style={{fontSize:'18px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
           {isPro && <a href="/community" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Community</a>}
+          <a href="/contact" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Contact Us</a>
         </div>
         <button onClick={signOut} style={{fontSize:'12px',padding:'6px 12px',border:'1px solid #E5E7EB',borderRadius:'20px',background:'none',cursor:'pointer',color:'#6B7280'}}>Sign out</button>
       </div>
