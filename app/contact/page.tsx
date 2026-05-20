@@ -20,6 +20,8 @@ export default function Contact() {
   const [category, setCategory] = useState<Category>('bug')
   const [message, setMessage] = useState('')
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
     const init = async () => {
@@ -40,14 +42,22 @@ export default function Contact() {
     init()
   }, [])
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!message.trim() || !email.trim()) return
-    const subject = encodeURIComponent(`HonestHand — ${CATEGORIES.find(c => c.value === category)?.label}`)
-    const body = encodeURIComponent(
-      `Name / Business: ${name || 'Not provided'}\nEmail: ${email}\nCategory: ${CATEGORIES.find(c => c.value === category)?.label}\n\n${message}`
-    )
-    window.location.href = `mailto:support@yourhonesthand.com?subject=${subject}&body=${body}`
-    setSent(true)
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, category, message, userId: user?.id || null }),
+      })
+      if (!res.ok) throw new Error('Server error')
+      setSent(true)
+    } catch {
+      setSubmitError('Something went wrong. Please email us directly at support@yourhonesthand.com')
+    }
+    setSubmitting(false)
   }
 
   const isLoggedIn = !!user
@@ -92,8 +102,8 @@ export default function Contact() {
         {sent ? (
           <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: '#166534', marginBottom: '6px' }}>Your email client should have opened</div>
-            <div style={{ fontSize: '13px', color: '#15803D', marginBottom: '20px' }}>If it didn't open automatically, email us directly at <strong>support@yourhonesthand.com</strong></div>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: '#166534', marginBottom: '6px' }}>Message received</div>
+            <div style={{ fontSize: '13px', color: '#15803D', marginBottom: '20px' }}>We'll get back to you at <strong>{email}</strong> within 1 business day.</div>
             <a href="/dashboard" style={{ display: 'inline-block', padding: '10px 24px', background: '#1D9E75', color: 'white', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
               Back to my report
             </a>
@@ -143,12 +153,18 @@ export default function Contact() {
               />
             </div>
 
+            {submitError && (
+              <div style={{ marginBottom: '12px', padding: '10px 14px', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', fontSize: '13px', color: '#DC2626' }}>
+                {submitError}
+              </div>
+            )}
+
             <button
               onClick={handleSubmit}
-              disabled={!message.trim() || !email.trim()}
-              style={{ width: '100%', padding: '13px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: !message.trim() || !email.trim() ? 'not-allowed' : 'pointer', opacity: !message.trim() || !email.trim() ? 0.5 : 1 }}
+              disabled={submitting || !message.trim() || !email.trim()}
+              style={{ width: '100%', padding: '13px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: submitting || !message.trim() || !email.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !message.trim() || !email.trim() ? 0.5 : 1 }}
             >
-              Send Message
+              {submitting ? 'Sending...' : 'Send Message'}
             </button>
 
             <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
