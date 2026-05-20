@@ -46,7 +46,7 @@ export default function Contact() {
     const body = encodeURIComponent(
       `Name / Business: ${name || 'Not provided'}\nEmail: ${email}\nCategory: ${CATEGORIES.find(c => c.value === category)?.label}\n\n${message}`
     )
-    window.location.href = `mailto:honesthand.tx@gmail.com?subject=${subject}&body=${body}`
+    window.location.href = `mailto:support@yourhonesthand.com?subject=${subject}&body=${body}`
     setSent(true)
   }
 
@@ -93,7 +93,7 @@ export default function Contact() {
           <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#166534', marginBottom: '6px' }}>Your email client should have opened</div>
-            <div style={{ fontSize: '13px', color: '#15803D', marginBottom: '20px' }}>If it didn't open automatically, email us directly at <strong>honesthand.tx@gmail.com</strong></div>
+            <div style={{ fontSize: '13px', color: '#15803D', marginBottom: '20px' }}>If it didn't open automatically, email us directly at <strong>support@yourhonesthand.com</strong></div>
             <a href="/dashboard" style={{ display: 'inline-block', padding: '10px 24px', background: '#1D9E75', color: 'white', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
               Back to my report
             </a>
@@ -152,7 +152,7 @@ export default function Contact() {
             </button>
 
             <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
-              Or email us directly at <a href="mailto:honesthand.tx@gmail.com" style={{ color: '#1D9E75' }}>honesthand.tx@gmail.com</a>
+              Or email us directly at <a href="mailto:support@yourhonesthand.com" style={{ color: '#1D9E75' }}>support@yourhonesthand.com</a>
             </div>
           </div>
         )}
