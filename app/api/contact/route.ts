@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const result = await resend.emails.send({
-        from: 'HonestHand <support@yourhonesthand.com>',
+        from: 'HonestHand <onboarding@resend.dev>',
         to: 'honesthand.tx@gmail.com',
         subject: `New message: ${CATEGORY_LABELS[category] || category}`,
         html: `
