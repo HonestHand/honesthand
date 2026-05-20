@@ -43,6 +43,8 @@ export default function Community() {
   const [formContent, setFormContent] = useState('')
   const [formType, setFormType] = useState<PostType>('win')
   const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
+  const MAX_CHARS = 500
 
   useEffect(() => { loadData() }, [])
 
@@ -79,17 +81,15 @@ export default function Community() {
 
   const handleLike = async (postId: string) => {
     if (!supabase || likedPosts.has(postId)) return
-    const post = posts.find(p => p.id === postId)
-    if (!post) return
-    const newLikes = (post.likes || 0) + 1
     setLikedPosts(prev => new Set([...prev, postId]))
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: newLikes } : p))
-    await supabase.from('community_posts').update({ likes: newLikes }).eq('id', postId)
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p))
+    await supabase.rpc('increment_likes', { post_id: postId })
   }
 
   const handleSubmit = async () => {
     if (!supabase || !profile || !formContent.trim()) return
     setSubmitting(true)
+    setFormError('')
     const { data, error: insertError } = await supabase
       .from('community_posts')
       .insert({
@@ -97,14 +97,14 @@ export default function Community() {
         business_name: profile.business_name,
         industry: profile.industry,
         city: profile.city,
-        content: formContent.trim(),
+        content: formContent.trim().slice(0, MAX_CHARS),
         post_type: formType,
         likes: 0,
       })
       .select()
       .single()
     if (insertError) {
-      setError('Failed to post. Please try again.')
+      setFormError('Failed to post. Please try again.')
     } else if (data) {
       setPosts(prev => [data, ...prev])
       setFormContent('')
@@ -174,7 +174,7 @@ export default function Community() {
             </div>
             <textarea
               value={formContent}
-              onChange={e => setFormContent(e.target.value)}
+              onChange={e => setFormContent(e.target.value.slice(0, MAX_CHARS))}
               placeholder={
                 formType === 'win' ? 'Share a grant you won, a program you found, or a tip that helped...' :
                 formType === 'question' ? 'Ask the community about grants, programs, or running a Texas business...' :
@@ -182,8 +182,16 @@ export default function Community() {
               }
               style={{ width: '100%', minHeight: '100px', padding: '12px', borderRadius: '8px', border: '1px solid #E5E7EB', fontSize: '14px', resize: 'vertical', outline: 'none', boxSizing: 'border-box', fontFamily: 'system-ui', color: '#2C2C2A' }}
             />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <span style={{ fontSize: '12px', color: formContent.length >= MAX_CHARS ? '#DC2626' : '#9CA3AF' }}>
+                {formContent.length}/{MAX_CHARS}
+              </span>
+            </div>
+            {formError && (
+              <div style={{ fontSize: '13px', color: '#DC2626', marginTop: '8px' }}>{formError}</div>
+            )}
             <div style={{ display: 'flex', gap: '8px', marginTop: '12px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setShowForm(false); setFormContent('') }} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', background: 'white', color: '#6B7280', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={() => { setShowForm(false); setFormContent(''); setFormError('') }} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #E5E7EB', background: 'white', color: '#6B7280', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !formContent.trim()}
