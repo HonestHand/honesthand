@@ -100,7 +100,7 @@ FORMAT RULES:
 
       const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 8000,
+        max_tokens: 16000,
         tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 8 }],
         system: systemPrompt,
         messages: [{ role: 'user', content: buildReportPrompt(businessData) }],

@@ -123,7 +123,7 @@ FORMAT RULES:
       try {
         const anthropicStream = await client.messages.stream({
           model: 'claude-sonnet-4-6',
-          max_tokens: isPro ? 8000 : 2048,
+          max_tokens: isPro ? 16000 : 2048,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: isPro ? 8 : 3 }],
           system: isPro ? proSystemPrompt : freeSystemPrompt,
           messages: [{ role: 'user', content: prompt }],
