@@ -65,7 +65,9 @@ ${data.isPro ? `REQUIRED SECTIONS FOR PRO REPORT:
 
 7. **Industry-Specific Programs** — 3–4 niche opportunities for ${data.industry}. Trade association grants, industry foundation funding, sector-specific SBA programs, professional association resources.
 
-8. **30-Day Action Plan** — 8 concrete steps ranked from easiest win to most effort. Include: agency name, real phone number or URL where known, exact action to take, and estimated time required.`
+8. **30-Day Action Plan** — 8 concrete steps ranked from easiest win to most effort. Include: agency name, real phone number or URL where known, exact action to take, and estimated time required.${data.isVeteranOwned ? `
+
+9. **Veteran Resource Organizations — Free & Discounted Supplies, Equipment & Technology** — 3–5 real organizations that provide tangible non-cash benefits to veteran business owners. Cover free or discounted laptops/computers, software, office supplies, tools, mentorship, and training programs. Examples include Computers for Veterans, Dell Reconnect, PCs for People, Microsoft VETS program, Bunker Labs, SCORE (veteran priority), IVMF at Syracuse, SBA Boots to Business, and Hiring Our Heroes. Only include programs you can verify are currently active. Use the same 4-field format (Value, Deadline, Why you qualify, Next step) for each.` : ''}`
     : `REPORT SECTIONS:
 
 1. **Federal Grants & Programs** — Top 2–3 federal opportunities. Include program name, estimated value, eligibility match, and where to apply.

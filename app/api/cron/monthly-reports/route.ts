@@ -60,6 +60,19 @@ REQUIRED SECTIONS (cover all 8, hit 25+ total opportunities):
 7. Industry-Specific Programs — niche grants, trade associations, industry grants for their sector (3–4)
 8. 30-Day Action Plan — 8 concrete steps ranked from easiest win to most effort. Include agency names, real phone numbers where known, and exact next actions.
 
+VETERAN-OWNED BUSINESSES ONLY — If the business profile says veteran-owned, add a 9th section:
+9. Veteran Resource Organizations — Free & Discounted Supplies, Equipment & Technology (3–5 items)
+Cover real organizations that provide tangible non-cash benefits to veteran business owners, such as:
+- Free or heavily discounted computers/laptops (e.g., Computers for Veterans, Dell Reconnect, PCs for People)
+- Free or discounted software (Microsoft VETS program, Salesforce for Veterans, QuickBooks discounts via SBA partners)
+- Free office supplies, tools, or business equipment from veteran-focused nonprofits
+- Bunker Labs resources and network benefits
+- SCORE mentorship (free, veteran priority pairing)
+- SBA Boots to Business program materials and follow-on resources
+- Institute for Veterans and Military Families (IVMF) at Syracuse — programs, toolkits, and free training
+- Hiring Our Heroes / U.S. Chamber of Commerce Foundation veteran business resources
+Only include programs you can verify are real and active. Be honest if a program has limited availability or requires application. Apply the same 4-field format (Value, Deadline, Why you qualify, Next step) to each item in this section.
+
 GEOGRAPHIC ACCURACY — NON-NEGOTIABLE:
 - Never call a Texas town a "city." Many Texas communities are incorporated as towns, not cities — use the correct designation. Small communities (under ~5,000 people) are almost always towns.
 - Some small Texas communities are unincorporated — they have no town government at all, only county government. For unincorporated communities, all local government functions run through the County Judge and Commissioners Court. There is no city or town to offer incentives.
