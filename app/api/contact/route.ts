@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
   if (process.env.RESEND_API_KEY) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
-      await resend.emails.send({
-        from: 'HonestHand <onboarding@resend.dev>',
+      const result = await resend.emails.send({
+        from: 'HonestHand <support@yourhonesthand.com>',
         to: 'honesthand.tx@gmail.com',
         subject: `New message: ${CATEGORY_LABELS[category] || category}`,
         html: `
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
           </div>
         `,
       })
+      console.log('[contact] resend result:', JSON.stringify(result))
     } catch (e) {
-      // Notification failure should not block the user's submission
       console.error('[contact] resend error:', e)
     }
   }
