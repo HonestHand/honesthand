@@ -245,6 +245,12 @@ export default function Dashboard() {
                 <div dangerouslySetInnerHTML={{__html: renderMarkdown(isPro ? report : getPreview(report))}} />
               </div>
 
+              {isPro && (
+                <div style={{marginTop:'24px',padding:'14px 16px',background:'#F9FAFB',border:'1px solid #E5E7EB',borderRadius:'8px',fontSize:'12px',color:'#6B7280',lineHeight:'1.6'}}>
+                  <strong style={{color:'#374151'}}>Disclaimer:</strong> This report is for informational purposes only and does not constitute legal, financial, or tax advice. Program availability, funding amounts, and deadlines change frequently — always verify directly with the administering agency before applying. Eligibility determinations are estimates based on the information you provided. HonestHand is not a licensed attorney, CPA, or financial advisor. Consult a qualified professional before making business or financial decisions.
+                </div>
+              )}
+
               {!isPro && (
                 <>
                   <div style={{margin:'24px 0 0',padding:'20px',background:'#FFFBEB',border:'2px dashed #F59E0B',borderRadius:'12px',textAlign:'center'}}>
