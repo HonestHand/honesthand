@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildReportPrompt } from '../../lib/claude'
 
-export const maxDuration = 120
+export const maxDuration = 300
 
 export async function POST(request: NextRequest) {
   const profile = await request.json()
