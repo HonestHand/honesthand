@@ -265,6 +265,66 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
   )
 }
 
+// ─── Opportunity card helpers ─────────────────────────────────────────────────
+
+/**
+ * Strip bold-markdown heading prefixes that Claude sometimes emits inside
+ * field values, e.g. "**Why you qualify:** You are a…" → "You are a…"
+ */
+function cleanMarkdownHeading(text: string): string {
+  return text
+    .replace(/^\*\*\s*(why you qualify|next step|recommended next step|action|overview|summary)[:\s]*\*\*\s*/i, '')
+    .replace(/^\*\*[^*]{1,50}\*\*[:\s]+/, '')  // any short bold prefix
+    .replace(/^#+\s+/, '')                       // markdown ATX headings
+    .trim()
+}
+
+/**
+ * Return the first `n` sentences of `text` plus whether anything was cut.
+ * Sentence boundary = . ! ? followed by a space (avoids cutting "$350,000.").
+ */
+function truncateToSentences(text: string, n: number): { preview: string; hasMore: boolean } {
+  const clean = cleanMarkdownHeading(text)
+  // Short text — nothing to truncate
+  if (clean.length < 100) return { preview: clean, hasMore: false }
+
+  let sentenceCount = 0
+  let cutIndex = -1
+
+  for (let i = 0; i < clean.length - 1; i++) {
+    if ('.!?'.includes(clean[i]) && clean[i + 1] === ' ') {
+      sentenceCount++
+      if (sentenceCount === n) {
+        cutIndex = i + 1
+        break
+      }
+    }
+  }
+
+  if (cutIndex === -1) return { preview: clean, hasMore: false }
+  return {
+    preview: clean.slice(0, cutIndex).trim(),
+    hasMore: cutIndex < clean.length - 5,
+  }
+}
+
+/**
+ * Infer a short funding-type label from badge text.
+ * Returns null if no recognisable type is found.
+ */
+function inferFundingType(badges: Badge[]): string | null {
+  const labels = badges.map(b => b.label.toLowerCase())
+  if (labels.some(l => l.includes('sba')))              return 'SBA-backed financing'
+  if (labels.some(l => l.includes('grant')))             return 'Grant funding'
+  if (labels.some(l => l.includes('tax credit')))        return 'Tax credit'
+  if (labels.some(l => l.includes('tax deduction')))     return 'Tax deduction'
+  if (labels.some(l => l.includes('loan')))              return 'Loan program'
+  if (labels.some(l => l.includes('rebate')))            return 'Rebate program'
+  if (labels.some(l => l.includes('contract')))          return "Gov't contract"
+  if (labels.some(l => l.includes('certification')))     return 'Certification'
+  return null
+}
+
 // ─── Opportunity card ─────────────────────────────────────────────────────────
 
 function OpportunityCard({
@@ -278,13 +338,35 @@ function OpportunityCard({
   isSaved?: boolean
   onToggleSave?: (id: string) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
+  const [showGuidance, setShowGuidance] = useState(false)
+
+  const hasValue    = !!(opp.value && opp.value !== 'See program details')
+  const hasDeadline = !!opp.deadline
+
+  // Clean raw text fields — removes markdown heading artifacts
+  const whyRaw  = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify)  : null
+  const nextRaw = opp.nextStep    ? cleanMarkdownHeading(opp.nextStep)    : null
+
+  // Truncated previews shown directly on the card
+  const whySummary  = whyRaw  ? truncateToSentences(whyRaw,  3) : null
+  const nextSummary = nextRaw ? truncateToSentences(nextRaw, 2) : null
+
+  // Show "View full guidance" only when something was actually cut
+  const hasMore = !!(whySummary?.hasMore || nextSummary?.hasMore)
+
+  const fundingType  = inferFundingType(opp.badges)
+
+  // Safely truncate the value display to 50 chars
+  const valueDisplay = hasValue
+    ? ((opp.value?.length ?? 0) > 50 ? opp.value!.slice(0, 48) + '…' : opp.value)
+    : null
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-3 last:mb-0">
-      {/* Card header */}
+
+      {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3">
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-start justify-between gap-2 mb-2.5">
           <h3 className="text-[15px] font-semibold text-[#2C2C2A] leading-snug flex-1">
             {isFirst && (
               <span className="inline-flex items-center mr-2 px-2 py-0.5 rounded text-[10px] font-bold bg-[#1D9E75] text-white tracking-wide uppercase">
@@ -293,7 +375,7 @@ function OpportunityCard({
             )}
             {opp.name}
           </h3>
-          {/* Save / bookmark button — -m-1 p-2 gives ~40 px touch target */}
+          {/* Save / bookmark — -m-1 p-2 keeps ~40 px touch target */}
           {onToggleSave && (
             <button
               onClick={e => { e.stopPropagation(); onToggleSave(opp.id) }}
@@ -308,88 +390,142 @@ function OpportunityCard({
           )}
         </div>
 
-        {/* Badges row */}
-        <div className="flex flex-wrap gap-1.5 mb-3">
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5 mb-4">
           {opp.badges.map((b, i) => <BadgeChip key={i} badge={b} />)}
         </div>
 
-        {/* Value + Deadline chips */}
-        <div className="flex flex-wrap gap-2">
-          {opp.value && opp.value !== 'See program details' && (
-            <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-3 py-2 flex-1 min-w-[140px]">
-              <span className="text-base">💰</span>
-              <div>
-                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Funding Value</div>
-                <div className="text-[13px] font-semibold text-[#2C2C2A] leading-tight">{opp.value}</div>
-              </div>
-            </div>
-          )}
-          {opp.deadline && (
-            <div className={`flex items-center gap-1.5 rounded-lg px-3 py-2 flex-1 min-w-[140px] ${
-              opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'
-            }`}>
-              <span className="text-base">{opp.isRolling ? '🟢' : '📅'}</span>
-              <div>
-                <div className="text-[10px] text-gray-400 font-medium uppercase tracking-wide">Deadline</div>
-                <div className={`text-[13px] font-semibold leading-tight ${
-                  opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
-                }`}>
-                  {opp.deadline}
+        {/* ── Summary snapshot grid ──
+            Single column on mobile, two columns on md+.
+            If only one card exists it spans full width at all sizes. */}
+        {(hasValue || hasDeadline) && (
+          <div className={`grid gap-3 ${hasValue && hasDeadline ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
+
+            {/* Funding Snapshot */}
+            {hasValue && (
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
+                  <span>💰</span><span>Funding Snapshot</span>
+                </div>
+                <div className="text-[18px] font-bold text-[#2C2C2A] leading-tight mb-1">
+                  {valueDisplay}
+                </div>
+                {fundingType && (
+                  <div className="text-[12px] text-gray-500 mb-1">{fundingType}</div>
+                )}
+                <div className="text-[11px] text-gray-400">
+                  {opp.isRolling
+                    ? 'Rolling application'
+                    : opp.isUrgent
+                      ? '⚡ Deadline approaching'
+                      : 'Fixed deadline'}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+
+            {/* Deadline / Timing */}
+            {hasDeadline && (
+              <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'}`}>
+                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
+                  <span>{opp.isRolling ? '🟢' : '📅'}</span>
+                  <span>{opp.isRolling ? 'Timing' : 'Deadline'}</span>
+                </div>
+                <div className={`text-[18px] font-bold leading-tight mb-1 ${
+                  opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
+                }`}>
+                  {opp.isRolling
+                    ? 'Rolling'
+                    : ((opp.deadline?.length ?? 0) > 28 ? opp.deadline!.slice(0, 26) + '…' : opp.deadline)}
+                </div>
+                {opp.isRolling ? (
+                  <div className="text-[12px] text-gray-500">Apply anytime</div>
+                ) : (
+                  <div className={`text-[11px] ${opp.isUrgent ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>
+                    {opp.isUrgent ? '⚡ Act soon' : 'Verify with agency'}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-gray-50 mx-4" />
-
-      {/* Why you qualify */}
-      {opp.whyQualify && (
-        <div className="px-4 py-3">
-          <div className="text-[11px] font-semibold text-[#1D9E75] uppercase tracking-wide mb-1">
-            Why you qualify
-          </div>
-          <p
-            className="text-[13px] text-gray-600 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderInline(opp.whyQualify) }}
-          />
-        </div>
-      )}
-
-      {/* Next step — collapsible */}
-      {opp.nextStep && (
-        <div className="border-t border-gray-50 mx-4" />
-      )}
-      {opp.nextStep && (
-        <div className="px-4 py-3">
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="flex items-center justify-between w-full group"
-          >
-            <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide group-hover:text-[#1D9E75] transition-colors">
-              Next step
+      {/* ── Why You Qualify ── */}
+      {whySummary && (
+        <>
+          <div className="border-t border-gray-50 mx-4" />
+          <div className="px-4 py-3.5">
+            <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
+              Why You Qualify
             </div>
-            <span className={`text-gray-400 text-xs transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}>
-              ▼
-            </span>
-          </button>
-          {expanded && (
             <p
-              className="text-[13px] text-gray-700 leading-relaxed mt-2"
-              dangerouslySetInnerHTML={{ __html: renderInline(opp.nextStep) }}
+              className="text-[13px] text-gray-600 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderInline(whySummary.preview) }}
             />
-          )}
-          {!expanded && (
-            <p className="text-[12px] text-gray-400 mt-1 truncate">
-              {opp.nextStep.replace(/\*\*/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').slice(0, 80)}…
-            </p>
-          )}
-        </div>
+          </div>
+        </>
       )}
 
-      {/* Official source footer */}
+      {/* ── Recommended Next Step ── */}
+      {nextSummary && (
+        <>
+          <div className="border-t border-gray-50 mx-4" />
+          <div className="px-4 py-3.5">
+            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
+              Recommended Next Step
+            </div>
+            <p
+              className="text-[13px] text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderInline(nextSummary.preview) }}
+            />
+          </div>
+        </>
+      )}
+
+      {/* ── View Full Guidance (expandable) ──
+          Only rendered when truncation actually occurred. */}
+      {hasMore && (
+        <>
+          <div className="border-t border-gray-50 mx-4" />
+          <div className="px-4 py-3">
+            <button
+              onClick={() => setShowGuidance(v => !v)}
+              className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
+            >
+              <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
+              {showGuidance ? 'Hide full guidance' : 'View full guidance'}
+            </button>
+            {showGuidance && (
+              <div className="mt-3 space-y-4">
+                {whyRaw && whySummary?.hasMore && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
+                      Full Qualification Detail
+                    </div>
+                    <p
+                      className="text-[13px] text-gray-600 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderInline(whyRaw) }}
+                    />
+                  </div>
+                )}
+                {nextRaw && nextSummary?.hasMore && (
+                  <div>
+                    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
+                      Full Next Steps
+                    </div>
+                    <p
+                      className="text-[13px] text-gray-700 leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ── Official source footer ── */}
       {opp.sourceAgency && (
         <>
           <div className="border-t border-gray-50 mx-4" />
