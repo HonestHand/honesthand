@@ -354,12 +354,7 @@ function OpportunityCard({
   // Show "View full guidance" only when something was actually cut
   const hasMore = !!(whySummary?.hasMore || nextSummary?.hasMore)
 
-  const fundingType  = inferFundingType(opp.badges)
-
-  // Safely truncate the value display to 50 chars
-  const valueDisplay = hasValue
-    ? ((opp.value?.length ?? 0) > 50 ? opp.value!.slice(0, 48) + '…' : opp.value)
-    : null
+  const fundingType = inferFundingType(opp.badges)
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-3 last:mb-0">
@@ -401,24 +396,42 @@ function OpportunityCard({
         {(hasValue || hasDeadline) && (
           <div className={`grid gap-3 ${hasValue && hasDeadline ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
 
-            {/* Funding Snapshot */}
+            {/* Funding Snapshot — vertical rows, no truncation on key values */}
             {hasValue && (
               <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
-                  <span>💰</span><span>Funding Snapshot</span>
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                  Funding Snapshot
                 </div>
-                <div className="text-[18px] font-bold text-[#2C2C2A] leading-tight mb-1">
-                  {valueDisplay}
-                </div>
-                {fundingType && (
-                  <div className="text-[12px] text-gray-500 mb-1">{fundingType}</div>
-                )}
-                <div className="text-[11px] text-gray-400">
-                  {opp.isRolling
-                    ? 'Rolling application'
-                    : opp.isUrgent
-                      ? '⚡ Deadline approaching'
-                      : 'Fixed deadline'}
+                <div className="space-y-2.5">
+                  {/* Primary value — wraps naturally, never truncated */}
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">💰</span>
+                    <span className="text-[15px] font-bold text-[#2C2C2A] leading-snug">
+                      {opp.value}
+                    </span>
+                  </div>
+                  {/* Funding type */}
+                  {fundingType && (
+                    <div className="flex items-start gap-2.5">
+                      <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">🏛</span>
+                      <span className="text-[13px] text-gray-600 leading-snug">{fundingType}</span>
+                    </div>
+                  )}
+                  {/* Application status */}
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">
+                      {opp.isRolling ? '🟢' : opp.isUrgent ? '⚡' : '📋'}
+                    </span>
+                    <span className={`text-[13px] leading-snug font-medium ${
+                      opp.isUrgent && !opp.isRolling ? 'text-amber-600' : 'text-gray-600'
+                    }`}>
+                      {opp.isRolling
+                        ? 'Rolling application'
+                        : opp.isUrgent
+                          ? 'Deadline approaching'
+                          : 'Fixed deadline'}
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -433,9 +446,7 @@ function OpportunityCard({
                 <div className={`text-[18px] font-bold leading-tight mb-1 ${
                   opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
                 }`}>
-                  {opp.isRolling
-                    ? 'Rolling'
-                    : ((opp.deadline?.length ?? 0) > 28 ? opp.deadline!.slice(0, 26) + '…' : opp.deadline)}
+                  {opp.isRolling ? 'Rolling' : opp.deadline}
                 </div>
                 {opp.isRolling ? (
                   <div className="text-[12px] text-gray-500">Apply anytime</div>
