@@ -430,21 +430,6 @@ function OpportunityCard({
                       </span>
                     </div>
                   )}
-                  {/* Application status */}
-                  <div className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 leading-none mt-0.5">
-                      {opp.isRolling ? '🟢' : opp.isUrgent ? '⚡' : '📋'}
-                    </span>
-                    <span className={`text-[13px] leading-snug font-medium ${
-                      opp.isUrgent && !opp.isRolling ? 'text-amber-600' : 'text-gray-600'
-                    }`}>
-                      {opp.isRolling
-                        ? 'Rolling application'
-                        : opp.isUrgent
-                          ? 'Deadline approaching'
-                          : 'Fixed deadline'}
-                    </span>
-                  </div>
                 </div>
               </div>
             )}
