@@ -340,8 +340,8 @@ function OpportunityCard({
 }) {
   const [showGuidance, setShowGuidance] = useState(false)
 
-  const hasValue    = !!(opp.value && opp.value !== 'See program details')
-  const hasDeadline = !!opp.deadline
+  const hasValue    = opp.amountDisplay !== 'See program details'
+  const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
   // Clean raw text fields — removes markdown heading artifacts
   const whyRaw  = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify)  : null
@@ -396,30 +396,43 @@ function OpportunityCard({
         {(hasValue || hasDeadline) && (
           <div className={`grid gap-3 ${hasValue && hasDeadline ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
 
-            {/* Funding Snapshot — vertical rows, no truncation on key values */}
+            {/* ── Funding Snapshot ──
+                Uses extracted structured fields — never raw AI prose blobs.
+                amountDisplay = dollar amount only (wraps, never truncated)
+                fundingHighlight = short benefit extracted from value text
+                fundingType = inferred from badges */}
             {hasValue && (
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   Funding Snapshot
                 </div>
                 <div className="space-y-2.5">
-                  {/* Primary value — wraps naturally, never truncated */}
+                  {/* Dollar amount — extracted clean, wraps naturally */}
                   <div className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">💰</span>
+                    <span className="flex-shrink-0 leading-none mt-0.5">💰</span>
                     <span className="text-[15px] font-bold text-[#2C2C2A] leading-snug">
-                      {opp.value}
+                      {opp.amountDisplay}
                     </span>
                   </div>
-                  {/* Funding type */}
+                  {/* Funding type from badge inference */}
                   {fundingType && (
                     <div className="flex items-start gap-2.5">
-                      <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">🏛</span>
+                      <span className="flex-shrink-0 leading-none mt-0.5">🏛</span>
                       <span className="text-[13px] text-gray-600 leading-snug">{fundingType}</span>
+                    </div>
+                  )}
+                  {/* Short benefit highlight extracted from value prose */}
+                  {opp.fundingHighlight && (
+                    <div className="flex items-start gap-2.5">
+                      <span className="flex-shrink-0 leading-none mt-0.5">🎖</span>
+                      <span className="text-[13px] text-gray-600 leading-snug capitalize-first">
+                        {opp.fundingHighlight}
+                      </span>
                     </div>
                   )}
                   {/* Application status */}
                   <div className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 text-[15px] leading-none mt-0.5">
+                    <span className="flex-shrink-0 leading-none mt-0.5">
                       {opp.isRolling ? '🟢' : opp.isUrgent ? '⚡' : '📋'}
                     </span>
                     <span className={`text-[13px] leading-snug font-medium ${
@@ -436,25 +449,28 @@ function OpportunityCard({
               </div>
             )}
 
-            {/* Deadline / Timing */}
+            {/* ── Deadline / Timing ──
+                deadlineDisplay = clean label only ("Rolling", "March 31, 2025")
+                deadlineContext = one-line context ("Apply anytime", "Opens quarterly") */}
             {hasDeadline && (
               <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'}`}>
-                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
+                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   <span>{opp.isRolling ? '🟢' : '📅'}</span>
                   <span>{opp.isRolling ? 'Timing' : 'Deadline'}</span>
                 </div>
-                <div className={`text-[18px] font-bold leading-tight mb-1 ${
-                  opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
-                }`}>
-                  {opp.isRolling ? 'Rolling' : opp.deadline}
-                </div>
-                {opp.isRolling ? (
-                  <div className="text-[12px] text-gray-500">Apply anytime</div>
-                ) : (
-                  <div className={`text-[11px] ${opp.isUrgent ? 'text-amber-600 font-semibold' : 'text-gray-400'}`}>
-                    {opp.isUrgent ? '⚡ Act soon' : 'Verify with agency'}
+                <div className="space-y-1.5">
+                  <div className={`text-[18px] font-bold leading-tight ${
+                    opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
+                  }`}>
+                    {opp.deadlineDisplay}
                   </div>
-                )}
+                  {opp.deadlineContext && (
+                    <div className="text-[12px] text-gray-500">{opp.deadlineContext}</div>
+                  )}
+                  {opp.isUrgent && !opp.isRolling && (
+                    <div className="text-[11px] text-amber-600 font-semibold mt-1">⚡ Act soon</div>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -15,9 +15,9 @@ export interface Badge {
 export interface ParsedOpportunity {
   id: string
   name: string
-  value: string
+  value: string           // raw full value text (kept for badge/value logic)
   valueNum: number
-  deadline: string
+  deadline: string        // raw full deadline text (kept for badge/urgency logic)
   deadlineDate?: Date     // parsed Date when a specific deadline is extractable
   whyQualify: string
   nextStep: string
@@ -28,6 +28,11 @@ export interface ParsedOpportunity {
   isUrgent: boolean
   sourceAgency?: string   // extracted from nextStep (e.g. "SBA.gov", "TWC Texas")
   sourceUrl?: string      // official URL if found in nextStep
+  // ── Structured display fields (extracted from raw prose) ──────────────────
+  amountDisplay: string         // dollar amount only, no trailing prose
+  fundingHighlight: string | null  // short benefit/use-case extracted from value
+  deadlineDisplay: string       // clean timing label: "Rolling", "March 31, 2025", etc.
+  deadlineContext: string | null   // one-line timing context: "Apply anytime", "Opens quarterly"
 }
 
 export interface ActionPlanStep {
@@ -268,6 +273,111 @@ function deriveBadges(
   return badges.slice(0, 3)
 }
 
+// ─── Structured field extractors ─────────────────────────────────────────────
+
+/**
+ * Pull only the dollar amount / range out of a raw value string.
+ * e.g. "Up to $5,000,000 for restaurant equipment and buildout…"
+ *   → "Up to $5,000,000"
+ *
+ * Never truncates if the entire string IS already just an amount.
+ */
+function extractAmount(rawValue: string): string {
+  if (!rawValue || rawValue === 'See program details') return rawValue || 'See program details'
+
+  // Strategy 1: cut at the first ". " that arrives within 90 chars (first sentence)
+  const sentenceEnd = rawValue.search(/\.\s/)
+  if (sentenceEnd > 4 && sentenceEnd < 90) return rawValue.slice(0, sentenceEnd).trim()
+
+  // Strategy 2: cut at ` for ` / ` to fund ` / ` which ` / ` that ` after a dollar/percent figure
+  const cutMatch = rawValue.match(
+    /^(.{8,80}?(?:\$[\d,]+[KMBkmb]?(?:\s*[–-]\s*\$[\d,]+[KMBkmb]?)?|[\d]+\s*%|\bpercent\b)[^,]*?)\s+(?:for|to fund|to cover|in order|which|that|and (?:can|may|is)|—|–)\b/i
+  )
+  if (cutMatch) return cutMatch[1].trim()
+
+  // Strategy 3: short value — use as-is
+  if (rawValue.length <= 80) return rawValue
+
+  // Fallback: hard cut at 80 chars (last resort, but for amounts this should rarely trigger)
+  return rawValue.slice(0, 78) + '…'
+}
+
+/**
+ * Extract a short benefit/highlight from the value prose.
+ * Looks for eligibility keywords: equipment, buildout, veteran reductions, etc.
+ * Returns null if nothing concise is found.
+ */
+function extractHighlight(rawValue: string): string | null {
+  if (!rawValue || rawValue.length < 25) return null
+
+  // Patterns that indicate a useful short benefit phrase
+  const patterns: RegExp[] = [
+    /\bfor\s+((?:restaurant|equipment|buildout|working capital|real estate|renovation|expansion|inventory|payroll)[^.,]{0,50})/i,
+    /(veteran\s+(?:fee\s+reduction|advantage|priority|discounts?)[^.,]{0,40})/i,
+    /((?:reduced|waived|no)\s+(?:origination\s+)?fees?[^.,]{0,40})/i,
+    /(women[-\s]owned[^.,]{0,40})/i,
+    /(minority[-\s]owned[^.,]{0,40})/i,
+    /((?:match(?:ing)?|no\s+match)\s+(?:required|needed|grant)[^.,]{0,30})/i,
+  ]
+
+  for (const p of patterns) {
+    const m = rawValue.match(p)
+    if (m) {
+      const candidate = (m[1] || m[0]).trim()
+      if (candidate.length > 6 && candidate.length < 60) return candidate
+    }
+  }
+
+  return null
+}
+
+/**
+ * Extract just the timing label from raw deadline prose.
+ * e.g. "Rolling. Applications accepted year-round through SBA lenders."
+ *   → "Rolling"
+ * e.g. "March 31, 2025. Submissions must be received before midnight."
+ *   → "March 31, 2025"
+ */
+function extractDeadlineDisplay(rawDeadline: string): string {
+  if (!rawDeadline) return 'Verify with agency'
+  if (rawDeadline === 'Verify with agency') return 'Verify with agency'
+
+  const dl = rawDeadline.toLowerCase()
+
+  if (dl.startsWith('rolling') || dl.includes('open enrollment') || dl.startsWith('anytime')) return 'Rolling'
+
+  // Cut at first ". " if it arrives within 50 chars
+  const sentenceEnd = rawDeadline.search(/\.\s/)
+  if (sentenceEnd > 2 && sentenceEnd < 50) return rawDeadline.slice(0, sentenceEnd).trim()
+
+  // Cut at ". " anywhere in short strings
+  if (rawDeadline.length <= 50) return rawDeadline
+
+  return rawDeadline.slice(0, 48).trim() + '…'
+}
+
+/**
+ * Extract a one-line timing context from raw deadline prose.
+ * Returns null when nothing useful is in the text.
+ */
+function extractDeadlineContext(rawDeadline: string): string | null {
+  if (!rawDeadline) return null
+  const dl = rawDeadline.toLowerCase()
+
+  if (dl.includes('rolling') || dl.includes('anytime'))  return 'Apply anytime'
+  if (dl.includes('quarterly'))                           return 'Opens quarterly'
+  if (dl.includes('annually') || dl.includes('annual'))  return 'Renews annually'
+  if (dl.includes('typically'))                           return 'Estimated window'
+  if (dl.includes('fall 20') || dl.includes('spring 20') || dl.includes('summer 20') || dl.includes('winter 20')) {
+    const m = rawDeadline.match(/(fall|spring|summer|winter)\s+20\d\d/i)
+    if (m) return `Estimated: ${m[0]}`
+  }
+  if (dl.includes('reminder'))                            return 'Set a reminder'
+  if (dl.includes('verify'))                              return 'Confirm with agency'
+
+  return null
+}
+
 // ─── Opportunity parser ───────────────────────────────────────────────────────
 
 function parseOpportunities(sectionText: string, category: SectionCategory): ParsedOpportunity[] {
@@ -300,24 +410,34 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
 
     const value      = extractField(block, 'Value')      || extractField(block, 'value')
     const deadline   = extractField(block, 'Deadline')   || extractField(block, 'deadline')
-    const whyQualify = extractField(block, 'Why you qualify') || extractField(block, 'Why You Qualify')
-    const nextStep   = extractField(block, 'Next step')  || extractField(block, 'Next Step')
 
-    const valueNum   = parseDollarMax(value)
-    const dl         = deadline.toLowerCase()
-    const isRolling  = dl.includes('rolling') || dl.includes('anytime') || dl.includes('open enrollment')
+    // Strip residual ** markdown from text fields so the UI never sees bold artifacts
+    const stripBold  = (s: string) => s.replace(/\*\*/g, '').trim()
+    const whyQualify = stripBold(extractField(block, 'Why you qualify') || extractField(block, 'Why You Qualify'))
+    const nextStep   = stripBold(extractField(block, 'Next step')  || extractField(block, 'Next Step'))
+
+    const valueNum    = parseDollarMax(value)
+    const dl          = deadline.toLowerCase()
+    const isRolling   = dl.includes('rolling') || dl.includes('anytime') || dl.includes('open enrollment')
     const isHighValue = valueNum >= 10_000
-    const isUrgent   = !!deadline && !isRolling && !dl.includes('verify') && !dl.includes('typically') && deadline !== ''
+    const isUrgent    = !!deadline && !isRolling && !dl.includes('verify') && !dl.includes('typically') && deadline !== ''
 
     const badges       = deriveBadges(name, value, deadline, block, category)
     const src          = extractSource(nextStep)
     const deadlineStr  = deadline || 'Verify with agency'
     const deadlineDate = parseDeadlineDate(deadlineStr)
 
+    // Structured display fields — extracted from raw prose, never raw blobs
+    const rawValue         = value || 'See program details'
+    const amountDisplay    = extractAmount(rawValue)
+    const fundingHighlight = extractHighlight(rawValue)
+    const deadlineDisplay  = extractDeadlineDisplay(deadlineStr)
+    const deadlineContext  = extractDeadlineContext(deadlineStr)
+
     opportunities.push({
       id: `${category}-${i}-${name.slice(0, 16).replace(/\W/g, '-')}`,
       name,
-      value:      value || 'See program details',
+      value:      rawValue,
       valueNum,
       deadline:   deadlineStr,
       deadlineDate,
@@ -330,6 +450,10 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
       isUrgent,
       sourceAgency: src?.agency,
       sourceUrl:    src?.url,
+      amountDisplay,
+      fundingHighlight,
+      deadlineDisplay,
+      deadlineContext,
     })
   }
 
