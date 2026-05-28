@@ -669,6 +669,7 @@ function UpgradeWall({
           {upgrading ? 'Redirecting to checkout…' : 'Unlock Full Report — $49/mo'}
         </button>
         <p className="text-[12px] opacity-70 mt-3">Cancel anytime. No contracts. Pays for itself with one credit.</p>
+        <p className="text-[11px] font-semibold mt-2 uppercase tracking-widest opacity-90">💡 This subscription can be a tax write-off</p>
         {upgradeError && (
           <p className="text-[13px] text-red-200 mt-2">{upgradeError}</p>
         )}
