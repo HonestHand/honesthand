@@ -139,6 +139,9 @@ export default function Onboarding() {
               <div style={{ padding: '16px', background: '#E1F5EE', borderRadius: '12px', marginBottom: '16px' }}>
                 <div style={{ fontSize: '13px', fontWeight: '500', color: '#085041', marginBottom: '4px' }}>Your report is almost ready</div>
                 <div style={{ fontSize: '12px', color: '#1D9E75', lineHeight: '1.6' }}>We'll match your business against 50+ Texas programs and show you exactly what you qualify for.</div>
+                <div style={{ fontSize: '11px', color: '#6B9E8A', lineHeight: '1.6', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(29,158,117,0.2)' }}>
+                  Results are for informational purposes only and do not constitute financial, legal, or tax advice. Always verify program eligibility directly with the administering agency.
+                </div>
               </div>
             </div>
           )}
@@ -156,7 +159,9 @@ export default function Onboarding() {
             </button>
           </div>
         </div>
-        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '12px', color: '#9CA3AF' }}>Your information is secure and never shared</div>
+        <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '11px', color: '#9CA3AF', lineHeight: '1.6', maxWidth: '380px', margin: '16px auto 0' }}>
+          Your information is secure and never shared. HonestHand provides informational research only — not legal, financial, or tax advice.
+        </div>
       </div>
     </div>
   )

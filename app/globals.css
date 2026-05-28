@@ -48,3 +48,42 @@ input::placeholder {
   -webkit-text-fill-color: #9CA3AF;
   opacity: 1;
 }
+
+/* ── scrollbar-hide ──────────────────────────────────────────────────────────
+   Used by the category filter tabs in ReportView so the horizontal scroll
+   track doesn't appear on iOS/Android.
+   (Tailwind v4 does not ship this utility by default.)              */
+.scrollbar-hide {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE / Edge */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;               /* Chrome / Safari / WebKit */
+}
+
+/* ── Mobile nav tap targets ──────────────────────────────────────────────────
+   The dashboard nav uses inline styles which can only be augmented via
+   !important from an external stylesheet. We bump padding so each link
+   gives at least a 40 px touch target on small screens.              */
+@media (max-width: 640px) {
+  .hh-nav-links {
+    flex-wrap: wrap !important;
+    gap: 4px 16px !important;
+  }
+  .hh-nav-link {
+    padding: 6px 0 !important;     /* vertical tap target */
+    display: inline-block !important;
+  }
+}
+
+/* ── Mobile page padding ─────────────────────────────────────────────────────
+   The report card and page body have fixed 24 px padding from inline styles.
+   On very narrow screens we tighten it to 16 px.                     */
+@media (max-width: 480px) {
+  .hh-page-body {
+    padding: 16px !important;
+  }
+  .hh-card {
+    padding: 16px !important;
+  }
+}

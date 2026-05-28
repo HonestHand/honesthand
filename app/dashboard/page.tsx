@@ -2,114 +2,95 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
+import ReportView from '../components/ReportView'
 
-const SAFE_DOMAINS = ['sba.gov','grants.gov','sam.gov','irs.gov','twc.texas.gov','gov.texas.gov','tvc.texas.gov','rd.usda.gov','texaswideopenforbusiness.com','treasury.gov','dol.gov','energy.gov']
+// ─── Rotating loading messages ────────────────────────────────────────────────
 
-function isSafeUrl(url: string): boolean {
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, '')
-    return SAFE_DOMAINS.some(d => host === d || host.endsWith('.' + d))
-  } catch { return false }
+const LOADING_MESSAGES = [
+  { icon: '🔍', primary: 'Analyzing your business profile…',        sub: 'Matching against programs for your industry.' },
+  { icon: '🌐', primary: 'Scanning SBA program databases…',          sub: 'Checking active federal loans, grants, and resources.' },
+  { icon: '🏛️', primary: 'Reviewing Texas state incentive programs…', sub: 'TWC, TDA, Governor\'s Office, and more.' },
+  { icon: '📍', primary: 'Checking county-level opportunities…',      sub: 'Local EDC programs, city grants, and municipal incentives.' },
+  { icon: '🎖️', primary: 'Verifying veteran-owned business programs…', sub: 'TVC, SBA VOSB, set-aside contracts, and resources.' },
+  { icon: '💡', primary: 'Analyzing industry-specific funding…',      sub: 'Trade associations, sector grants, and niche programs.' },
+  { icon: '🧾', primary: 'Identifying tax credits and deductions…',   sub: 'WOTC, Section 179, R&D credits, energy incentives.' },
+  { icon: '📋', primary: 'Verifying current deadlines…',              sub: 'Confirming which programs are open and accepting applications.' },
+  { icon: '✅', primary: 'Building your personalized report…',        sub: 'Ranking opportunities by easiest win first.' },
+]
+
+function LoadingState({ searching }: { searching: boolean }) {
+  const [msgIndex, setMsgIndex] = useState(0)
+
+  useEffect(() => {
+    if (!searching) return
+    const interval = setInterval(() => {
+      setMsgIndex(i => (i + 1) % LOADING_MESSAGES.length)
+    }, 3200)
+    return () => clearInterval(interval)
+  }, [searching])
+
+  const msg = searching ? LOADING_MESSAGES[msgIndex] : LOADING_MESSAGES[0]
+
+  return (
+    <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+      <div style={{ fontSize: '36px', marginBottom: '16px' }}>{msg.icon}</div>
+      <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '6px' }}>
+        {msg.primary}
+      </div>
+      <div style={{ fontSize: '13px', color: '#6B7280', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto' }}>
+        {msg.sub}
+      </div>
+      <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              background: i === msgIndex % 3 ? '#1D9E75' : '#E5E7EB',
+              transition: 'background 0.3s ease',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  )
 }
 
-function parseMarkdownTable(block: string): string {
-  const lines = block.trim().split('\n').filter(l => l.trim().startsWith('|'))
-  if (lines.length < 2) return block
+// ─── Minimum section count to identify a Pro report ──────────────────────────
+// Free reports have 3 sections; Pro reports have 8+. We use 5 as the threshold
+// so that upgrading users automatically get a fresh Pro report generated.
+const MIN_PRO_SECTION_COUNT = 5
 
-  const parseRow = (line: string) =>
-    line.split('|').slice(1, -1).map(cell => cell.trim())
-
-  const isSeparator = (line: string) => /^\|[\s|:-]+\|$/.test(line.trim())
-
-  let html = '<div style="overflow-x:auto;margin:12px 0 16px">'
-  html += '<table style="width:100%;border-collapse:collapse;font-size:13px">'
-
-  let headerDone = false
-  for (const line of lines) {
-    if (isSeparator(line)) { headerDone = true; continue }
-    const cells = parseRow(line)
-    if (!headerDone) {
-      html += '<thead><tr>' + cells.map(c =>
-        `<th style="text-align:left;padding:8px 12px;background:#F3F4F6;border:1px solid #E5E7EB;font-weight:700;color:#2C2C2A;white-space:nowrap">${c}</th>`
-      ).join('') + '</tr></thead><tbody>'
-    } else {
-      const isTotal = cells.some(c => c.toLowerCase().includes('total'))
-      const rowStyle = isTotal
-        ? 'background:#F0FDF8;font-weight:700'
-        : 'background:white'
-      html += '<tr>' + cells.map(c =>
-        `<td style="padding:8px 12px;border:1px solid #E5E7EB;${rowStyle};color:#374151">${c}</td>`
-      ).join('') + '</tr>'
-    }
-  }
-  html += '</tbody></table></div>'
-  return html
-}
-
-function renderMarkdown(text: string): string {
-  // Normalize line endings first
-  let result = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-
-  // Replace markdown tables before other processing
-  result = result.replace(/((?:[ \t]*\|.+\|\n?){2,})/g, (match) => {
-    const lines = match.trim().split('\n')
-    const hasTableRow = lines.some(l => l.trim().startsWith('|'))
-    const hasSeparator = lines.some(l => /^\|[\s|:-]+\|$/.test(l.trim()))
-    return (hasTableRow && hasSeparator) ? parseMarkdownTable(match) : match
-  })
-
-  return result
-    .replace(/^[ \t]*# (.+?)[ \t]*$/gm, '<h1 style="font-size:16px;font-weight:700;color:#2C2C2A;margin:0 0 4px">$1</h1>')
-    .replace(/^[ \t]*## (.+?)[ \t]*$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:16px 0 6px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
-    .replace(/^[ \t]*### (.+?)[ \t]*$/gm, '<h3 style="font-size:14px;font-weight:600;margin:12px 0 4px">$1</h3>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
-      isSafeUrl(url)
-        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;text-decoration:underline">${label}</a>`
-        : `${label} (${url})`
-    )
-    .replace(/^[ \t]*(\d+)\. (.+)$/gm, '<li style="margin-bottom:6px">$2</li>')
-    .replace(/^[ \t]*- (.+)$/gm, '<li style="margin-bottom:4px">$1</li>')
-    .replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul style="margin:6px 0 10px 20px;padding:0">${m}</ul>`)
-    .replace(/^[ \t]*---[ \t]*$/gm, '<hr style="border:none;border-top:1px solid #F3F4F6;margin:8px 0">')
-    .replace(/\n\n/g, '<br/>')
-}
-
-function getPreview(text: string): string {
-  const lines = text.split('\n')
-  let preview = ''
-  let headerCount = 0
-  for (const line of lines) {
-    if (line.startsWith('## ')) headerCount++
-    if (headerCount >= 3) break
-    preview += line + '\n'
-  }
-  return preview || text.slice(0, 1200)
-}
+// ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [profile, setProfile] = useState<any>(null)
-  const [report, setReport] = useState('')
-  const [generating, setGenerating] = useState(false)
-  const [searching, setSearching] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
-  const [isPro, setIsPro] = useState<boolean>(false)
-  const [upgrading, setUpgrading] = useState(false)
+  const [profile,      setProfile]      = useState<any>(null)
+  const [report,       setReport]       = useState('')
+  const [reportDate,   setReportDate]   = useState<string | null>(null)
+  const [generating,   setGenerating]   = useState(false)
+  const [searching,    setSearching]    = useState(false)
+  const [loading,      setLoading]      = useState(true)
+  const [user,         setUser]         = useState<any>(null)
+  const [isPro,        setIsPro]        = useState(false)
+  const [upgrading,    setUpgrading]    = useState(false)
   const [upgradeError, setUpgradeError] = useState('')
+  const [refreshConfirm, setRefreshConfirm] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
     if (!supabase) return
-    const params = new URLSearchParams(window.location.search)
-    const upgraded = params.get('upgraded') === 'true'
+    const params       = new URLSearchParams(window.location.search)
+    const upgraded     = params.get('upgraded') === 'true'
     const stripeSessionId = params.get('session_id') || undefined
 
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/'; return }
     setUser(session.user)
 
+    // ── Handle post-checkout upgrade activation ──
     let activatedPro = false
     if (upgraded) {
       try {
@@ -131,27 +112,68 @@ export default function Dashboard() {
       window.history.replaceState({}, '', '/dashboard')
     }
 
-    const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single()
-    if (!data || !data.business_name) {
+    // ── Load profile ──
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
+
+    if (!profileData || !profileData.business_name) {
       window.location.href = '/onboarding'
       return
     }
-    setProfile(data)
-    setIsPro(activatedPro || data?.is_pro === true || data?.is_pro === 'true')
+    setProfile(profileData)
+
+    const proStatus = activatedPro || profileData?.is_pro === true || profileData?.is_pro === 'true'
+    setIsPro(proStatus)
     setLoading(false)
-    generateReport(data)
+
+    // ── Load stored report ──
+    const { data: storedReport } = await supabase
+      .from('reports')
+      .select('content, generated_at')
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (storedReport?.content) {
+      const sectionCount = (storedReport.content.match(/^## /gm) || []).length
+      const isProReport  = sectionCount >= MIN_PRO_SECTION_COUNT
+
+      if (proStatus && !isProReport) {
+        // User upgraded but stored report is the old free preview — regenerate
+        generateReport(profileData, session.user.id)
+      } else {
+        // Show cached report immediately — no API call
+        setReport(storedReport.content)
+        setReportDate(storedReport.generated_at ?? null)
+      }
+    } else {
+      // No stored report — generate for the first time
+      generateReport(profileData, session.user.id)
+    }
   }
 
-  const generateReport = async (p: any) => {
+  const generateReport = async (p: any, userId?: string) => {
+    const uid = userId || user?.id
     setGenerating(true)
     setSearching(false)
     setReport('')
+    setReportDate(null)
+    setRefreshConfirm(false)
+
     try {
-      const res = await fetch('/api/generate-report', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(p) })
-      const reader = res.body!.getReader()
+      const res = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(p),
+      })
+      const reader  = res.body!.getReader()
       const decoder = new TextDecoder()
-      let buffer = ''
+      let buffer    = ''
+      let fullReport = ''
       setGenerating(false)
+
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -163,14 +185,44 @@ export default function Dashboard() {
           try {
             const parsed = JSON.parse(line.slice(6))
             if (parsed.status === 'searching') setSearching(true)
-            if (parsed.text) { setSearching(false); setReport(prev => prev + parsed.text) }
-            if (parsed.error) { setSearching(false); setReport('Error:' + parsed.error) }
-          } catch { }
+            if (parsed.text) {
+              setSearching(false)
+              fullReport += parsed.text
+              setReport(prev => prev + parsed.text)
+            }
+            if (parsed.error) {
+              setSearching(false)
+              setReport('Error: ' + parsed.error)
+            }
+          } catch { /* ignore parse errors in SSE stream */ }
+        }
+      }
+
+      // Persist completed report
+      if (fullReport && uid) {
+        try {
+          await fetch('/api/save-report', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: uid, content: fullReport }),
+          })
+          setReportDate(new Date().toISOString())
+        } catch (e) {
+          console.error('[save-report] failed:', e)
         }
       }
     } catch (e: any) {
-      setReport('Error:' + (e?.message || 'Unknown error occurred'))
+      setReport('Error: ' + (e?.message || 'Unknown error occurred'))
       setGenerating(false)
+    }
+  }
+
+  const handleRefreshRequest = () => {
+    if (refreshConfirm) {
+      generateReport(profile)
+    } else {
+      setRefreshConfirm(true)
+      setTimeout(() => setRefreshConfirm(false), 5000)
     }
   }
 
@@ -179,7 +231,7 @@ export default function Dashboard() {
     setUpgrading(true)
     setUpgradeError('')
     try {
-      const res = await fetch('/api/create-checkout', {
+      const res  = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, email: user.email, origin: window.location.origin }),
@@ -188,15 +240,11 @@ export default function Dashboard() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        const msg = data.error || 'Could not start checkout. Please try again.'
-        console.error('[handleUpgrade] No URL in response:', data)
-        setUpgradeError(msg)
+        setUpgradeError(data.error || 'Could not start checkout. Please try again.')
         setUpgrading(false)
       }
     } catch (e: any) {
-      const msg = e?.message || 'Network error. Please try again.'
-      console.error('[handleUpgrade] fetch failed:', e)
-      setUpgradeError(msg)
+      setUpgradeError(e?.message || 'Network error. Please try again.')
       setUpgrading(false)
     }
   }
@@ -206,104 +254,144 @@ export default function Dashboard() {
     window.location.href = '/'
   }
 
-  if (loading) return <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'100vh',fontFamily:'system-ui'}}>Loading...</div>
+  // ── Loading skeleton ──
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', fontFamily: 'system-ui' }}>
+        Loading…
+      </div>
+    )
+  }
+
+  const isActive = generating || searching
 
   return (
-    <div style={{minHeight:'100vh',background:'#F9FAFB',fontFamily:'system-ui'}}>
-      <div style={{background:'white',borderBottom:'1px solid #E5E7EB',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={{display:'flex',alignItems:'center',gap:'24px'}}>
-          <div style={{fontSize:'18px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
-          {isPro && <a href="/community" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Community</a>}
-          <a href="/contact" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Contact Us</a>
+    <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: 'system-ui' }}>
+
+      {/* ── Nav ── */}
+      <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="hh-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A' }}>
+            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+          </div>
+          {isPro && (
+            <a href="/community" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+              Community
+            </a>
+          )}
+          <a href="/profile" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+            Profile
+          </a>
+          <a href="/contact" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+            Contact Us
+          </a>
         </div>
-        <button onClick={signOut} style={{fontSize:'12px',padding:'6px 12px',border:'1px solid #E5E7EB',borderRadius:'20px',background:'none',cursor:'pointer',color:'#6B7280'}}>Sign out</button>
+        <button
+          onClick={signOut}
+          style={{ fontSize: '12px', padding: '6px 12px', border: '1px solid #E5E7EB', borderRadius: '20px', background: 'none', cursor: 'pointer', color: '#6B7280' }}
+        >
+          Sign out
+        </button>
       </div>
 
-      <div style={{maxWidth:'800px',margin:'0 auto',padding:'24px'}}>
-        <div style={{marginBottom:'24px'}}>
-          <div style={{fontSize:'22px',fontWeight:'700',color:'#2C2C2A'}}>Welcome, {profile?.business_name} 👋</div>
-          <div style={{fontSize:'14px',color:'#6B7280',marginTop:'4px'}}>{profile?.industry} · {profile?.city}, TX · {profile?.revenue_range}</div>
-        </div>
+      {/* ── Page body ── */}
+      <div className="hh-page-body" style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
 
-        <div style={{background:'white',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB',marginBottom:'24px'}}>
-          <div style={{fontSize:'16px',fontWeight:'600',color:'#2C2C2A',marginBottom:'16px'}}>Your Opportunity Report</div>
-
-          {(generating || searching) && (
-            <div style={{textAlign:'center',padding:'40px 0'}}>
-              <div style={{fontSize:'32px',marginBottom:'12px'}}>{searching ? '🌐' : '🔍'}</div>
-              <div style={{fontSize:'15px',fontWeight:'500',color:'#2C2C2A',marginBottom:'4px'}}>
-                {searching ? 'Searching live program databases...' : 'Analyzing your business...'}
-              </div>
-              <div style={{fontSize:'13px',color:'#6B7280'}}>
-                {searching ? 'Verifying current deadlines and funding amounts.' : 'Matching against 50+ Texas programs.'}
-              </div>
+        {/* Header row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: '#2C2C2A' }}>
+              Welcome, {profile?.business_name} 👋
             </div>
-          )}
+            <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
+              {profile?.industry} · {profile?.city}, TX · {profile?.revenue_range}
+            </div>
+            {/* Profile completeness nudge — shown when optional fields are missing */}
+            {profile && (() => {
+              const missing = ['county', 'entity_type', 'employee_count'].filter(k => !profile[k])
+              if (missing.length === 0) return null
+              const labels: Record<string, string> = { county: 'county', entity_type: 'entity type', employee_count: 'employee count' }
+              return (
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', color: '#F59E0B' }}>⚡</span>
+                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                    Add {missing.map(k => labels[k]).join(' and ')} for better-matched results
+                  </span>
+                  <a href="/profile" style={{ fontSize: '12px', color: '#1D9E75', fontWeight: '500', textDecoration: 'none' }}>
+                    Edit Profile →
+                  </a>
+                </div>
+              )
+            })()}
+          </div>
 
-          {!generating && !searching && report && (
-            <div>
-              <div style={{fontSize:'14px',color:'#374151',lineHeight:'1.8'}}>
-                <div dangerouslySetInnerHTML={{__html: renderMarkdown(isPro ? report : getPreview(report))}} />
-              </div>
-
-              {isPro && (
-                <div style={{marginTop:'24px',padding:'14px 16px',background:'#F9FAFB',border:'1px solid #E5E7EB',borderRadius:'8px',fontSize:'12px',color:'#6B7280',lineHeight:'1.6'}}>
-                  <strong style={{color:'#374151'}}>Disclaimer:</strong> This report is for informational purposes only and does not constitute legal, financial, or tax advice. Program availability, funding amounts, and deadlines change frequently — always verify directly with the administering agency before applying. Eligibility determinations are estimates based on the information you provided. HonestHand is not a licensed attorney, CPA, or financial advisor. Consult a qualified professional before making business or financial decisions.
+          {/* Refresh control — Pro only, when report is ready */}
+          {report && !isActive && isPro && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+              <button
+                onClick={handleRefreshRequest}
+                style={{
+                  padding: '8px 16px',
+                  background: refreshConfirm ? '#FEF3C7' : 'white',
+                  border: `1.5px solid ${refreshConfirm ? '#F59E0B' : '#E5E7EB'}`,
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  color: refreshConfirm ? '#92400E' : '#6B7280',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {refreshConfirm ? '⚠️ Confirm refresh?' : '↻ Refresh Report'}
+              </button>
+              {refreshConfirm && (
+                <div style={{ fontSize: '11px', color: '#9CA3AF', textAlign: 'right' }}>
+                  This will regenerate your full report.
                 </div>
               )}
-
-              {!isPro && (
-                <>
-                  <div style={{margin:'24px 0 0',padding:'20px',background:'#FFFBEB',border:'2px dashed #F59E0B',borderRadius:'12px',textAlign:'center'}}>
-                    <div style={{fontSize:'16px',fontWeight:'700',color:'#92400E',marginBottom:'4px'}}>⚠️ You're only seeing a fraction of your report</div>
-                    <div style={{fontSize:'13px',color:'#B45309'}}>Your full report includes more federal programs, Texas state grants, local incentives, tax credits you're likely missing, and a personalized 30-day action plan. This preview is just the beginning.</div>
-                  </div>
-
-                  <div style={{marginTop:'16px',background:'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)',borderRadius:'12px',padding:'28px',color:'white'}}>
-                    <div style={{textAlign:'center',marginBottom:'20px'}}>
-                      <div style={{fontSize:'22px',fontWeight:'700',marginBottom:'6px'}}>Your full report is ready</div>
-                      <div style={{fontSize:'14px',opacity:'0.9'}}>HonestHand Pro — the financial partner that earns its keep.</div>
-                    </div>
-
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'12px',marginBottom:'24px'}}>
-                      {[
-                        {icon:'📋', title:'Full Opportunity Report', desc:'Every federal, state, and local program you qualify for — not just the top 3'},
-                        {icon:'⏰', title:'Deadline Reminders', desc:'Never miss a grant window. We alert you before applications close'},
-                        {icon:'🔄', title:'Monthly Updates', desc:'Programs change. Your report refreshes every month with new opportunities'},
-                        {icon:'🎖️', title:'Veteran & Minority Programs', desc:'Exclusive set-aside contracts and grants most owners never find'},
-                        {icon:'💰', title:'Tax Credit Finder', desc:'WOTC, R&D credits, Section 179, energy credits — we find what your accountant missed'},
-                        {icon:'📍', title:'Local Intelligence', desc:'City and county programs specific to your area that national tools never surface'},
-                        {icon:'📞', title:'30-Day Action Plan', desc:'Step-by-step with real phone numbers, URLs, and contacts — not just program names'},
-                        {icon:'📈', title:'Priority Ranking', desc:'Opportunities sorted by easiest win first so you know exactly where to start'},
-                      ].map(({icon, title, desc}) => (
-                        <div key={title} style={{background:'rgba(255,255,255,0.12)',borderRadius:'10px',padding:'14px'}}>
-                          <div style={{fontSize:'20px',marginBottom:'6px'}}>{icon}</div>
-                          <div style={{fontSize:'13px',fontWeight:'700',marginBottom:'4px'}}>{title}</div>
-                          <div style={{fontSize:'12px',opacity:'0.85',lineHeight:'1.5'}}>{desc}</div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div style={{textAlign:'center'}}>
-                      <button onClick={handleUpgrade} disabled={upgrading} style={{background:'white',color:'#1D9E75',border:'none',borderRadius:'10px',padding:'16px 40px',fontSize:'17px',fontWeight:'700',cursor:upgrading?'wait':'pointer',width:'100%',maxWidth:'360px',opacity:upgrading?0.8:1}}>
-                        {upgrading ? 'Redirecting to checkout...' : 'Unlock Full Report — $49/mo'}
-                      </button>
-                      <div style={{fontSize:'12px',opacity:'0.7',marginTop:'10px'}}>Cancel anytime. No contracts. Pays for itself with one credit.</div>
-                      {upgradeError && <div style={{fontSize:'13px',color:'#FCA5A5',marginTop:'8px'}}>{upgradeError}</div>}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {!generating && !searching && !report && (
-            <div style={{textAlign:'center',padding:'40px 0'}}>
-              <div style={{fontSize:'14px',color:'#6B7280',marginBottom:'12px'}}>Unable to generate report.</div>
-              <button onClick={() => profile && generateReport(profile)} style={{padding:'8px 16px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'13px',cursor:'pointer'}}>Retry</button>
             </div>
           )}
         </div>
+
+        {/* Report card */}
+        <div className="hh-card" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E5E7EB', marginBottom: '24px' }}>
+          <div style={{ fontSize: '16px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>
+            Your Opportunity Report
+          </div>
+
+          {/* Generating / searching state */}
+          {isActive && <LoadingState searching={searching} />}
+
+          {/* Report content */}
+          {!isActive && report && (
+            <ReportView
+              report={report}
+              isPro={isPro}
+              reportDate={reportDate}
+              onUpgrade={handleUpgrade}
+              upgrading={upgrading}
+              upgradeError={upgradeError}
+              userId={user?.id}
+            />
+          )}
+
+          {/* Empty / error state */}
+          {!isActive && !report && (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '12px' }}>
+                Unable to load report.
+              </div>
+              <button
+                onClick={() => profile && generateReport(profile)}
+                style={{ padding: '8px 16px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
+              >
+                Generate Report
+              </button>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   )

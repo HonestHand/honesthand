@@ -123,6 +123,21 @@ export default function Home() {
           </div>
         ))}
       </div>
+      <div style={{padding:'24px',background:'#F9FAFB',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6'}}>
+        {[
+          {icon:'🏛️',label:'Official .gov sources only',sub:'Every opportunity links to a verified government agency'},
+          {icon:'🔍',label:'Live search verified',sub:'We check current program status before every report'},
+          {icon:'📅',label:'Current deadlines & funding',sub:'Real amounts and real dates — no outdated databases'},
+        ].map((t,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:i<2?'16px':'0',maxWidth:'480px',margin:i<2?'0 auto 16px':'0 auto'}}>
+            <div style={{width:'36px',height:'36px',background:'white',borderRadius:'50%',border:'1px solid #E5E7EB',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',flexShrink:0}}>{t.icon}</div>
+            <div>
+              <div style={{fontSize:'13px',fontWeight:'600',color:'#2C2C2A'}}>{t.label}</div>
+              <div style={{fontSize:'12px',color:'#6B7280',marginTop:'2px',lineHeight:'1.5'}}>{t.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
       <div style={{padding:'48px 24px',maxWidth:'600px',margin:'0 auto'}}>
         <div style={{fontSize:'22px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'32px'}}>How It Works</div>
         {[{num:'1',title:'Tell us about your business',desc:"Fill out a 5-minute form. Industry, location, revenue range. That's all we need."},{num:'2',title:"We find what you're owed",desc:'HonestHand matches your business against thousands of grants, tax credits, and incentives — federal, state, and local.'},{num:'3',title:'Claim it with confidence',desc:'You get a personalized report with every opportunity, its dollar value, its deadline, and exactly how to claim it.'}].map((step,i)=>(
@@ -158,7 +173,10 @@ export default function Home() {
       </div>
       <div style={{borderTop:'1px solid #F3F4F6',padding:'24px',textAlign:'center'}}>
         <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',marginBottom:'4px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
-        <div style={{fontSize:'12px',color:'#6B7280'}}>The financial partner that earns its keep · yourhonesthand.com · Texas · Est. 2026</div>
+        <div style={{fontSize:'12px',color:'#6B7280',marginBottom:'12px'}}>The financial partner that earns its keep · yourhonesthand.com · Texas · Est. 2026</div>
+        <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.7',maxWidth:'480px',margin:'0 auto'}}>
+          For informational purposes only. Not financial, legal, or tax advice. Program availability and eligibility not guaranteed. Always verify directly with the administering agency before applying.
+        </div>
       </div>
     </div>
   )
