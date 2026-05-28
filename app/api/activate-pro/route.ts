@@ -16,15 +16,12 @@ export async function POST(request: NextRequest) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
 
   try {
-    let customerId: string | null = null
-
     if (sessionId) {
       // Preferred path: retrieve checkout session directly — no email ambiguity
       const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId)
       if (checkoutSession.payment_status !== 'paid' && checkoutSession.status !== 'complete') {
         return NextResponse.json({ is_pro: false })
       }
-      customerId = checkoutSession.customer as string | null
     } else if (email) {
       // Fallback: search by email
       const customers = await stripe.customers.list({ email, limit: 1 })
@@ -36,17 +33,13 @@ export async function POST(request: NextRequest) {
         limit: 1,
       })
       if (subscriptions.data.length === 0) return NextResponse.json({ is_pro: false })
-      customerId = customer.id
     } else {
       return NextResponse.json({ error: 'Missing email or sessionId' }, { status: 400 })
     }
 
-    const updatePayload: Record<string, unknown> = { is_pro: true }
-    if (customerId) updatePayload.stripe_customer_id = customerId
-
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('profiles')
-      .update(updatePayload)
+      .update({ is_pro: true })
       .eq('id', userId)
       .select('id, is_pro')
 
@@ -59,7 +52,7 @@ export async function POST(request: NextRequest) {
       console.error('[activate-pro] no rows matched userId:', userId, '— upserting')
       const { error: upsertError } = await supabaseAdmin
         .from('profiles')
-        .upsert({ id: userId, is_pro: true, ...(customerId ? { stripe_customer_id: customerId } : {}) }, { onConflict: 'id' })
+        .upsert({ id: userId, is_pro: true }, { onConflict: 'id' })
       if (upsertError) {
         console.error('[activate-pro] upsert failed:', upsertError)
         return NextResponse.json({ error: 'Could not set pro status' }, { status: 500 })

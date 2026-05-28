@@ -46,10 +46,7 @@ export async function POST(request: NextRequest) {
 
   const { error: updateError } = await supabase
     .from('profiles')
-    .update({
-      is_pro: true,
-      stripe_customer_id: session.customer as string,
-    })
+    .update({ is_pro: true })
     .eq('id', userId)
 
   if (updateError) {
