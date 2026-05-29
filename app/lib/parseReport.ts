@@ -284,7 +284,8 @@ function deriveBadges(
  * Strict dollar-amount extractor.
  * Matches the monetary figure at the start of the value string and stops there.
  * "Up to $5,000,000 for restaurant equipment…" → "Up to $5,000,000"
- * Never returns trailing prose.
+ * "$10,000–$25,000 (one-time, non-repayable)"  → "$10,000–$25,000"
+ * Never returns trailing prose or parentheticals.
  */
 function extractAmount(rawValue: string): string {
   if (!rawValue || rawValue === 'See program details') return rawValue || 'See program details'
@@ -292,7 +293,8 @@ function extractAmount(rawValue: string): string {
   // 1. Try to match an explicit amount pattern at the start
   const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?)?))/i
   const amtMatch = rawValue.match(amountRe)
-  if (amtMatch && amtMatch[1].includes('$')) return amtMatch[1].trim()
+  if (amtMatch && amtMatch[1].includes('$'))
+    return amtMatch[1].trim().replace(/\s*\([^)]{1,60}\)\s*$/, '').trim()
 
   // 2. Percentage-based (tax credits): "20% of qualified wages"
   const pctMatch = rawValue.match(/^(\d+(?:\.\d+)?%(?:\s+of\s+[\w\s]{3,30})?)/i)
@@ -342,6 +344,7 @@ function inferFundingType(name: string, rawValue: string, category: SectionCateg
 function inferFundingStyle(name: string, rawValue: string, category: SectionCategory): string | null {
   const c = (name + ' ' + rawValue).toLowerCase()
 
+  if (c.includes('one-time') || c.includes('one time'))return 'One-time grant'
   if (c.includes('non-repayable') || c.includes('does not need to be repaid')) return 'Non-repayable grant'
   if (c.includes('forgivable'))                        return 'Potentially forgivable'
   if (c.includes('matching') && (c.includes('grant') || c.includes('required'))) return 'Matching grant required'
@@ -396,10 +399,18 @@ function deriveFundingHighlight(
   return null
 }
 
+/** Title-case a short string for display labels. */
+function toTitleCase(str: string): string {
+  return str.replace(/\b\w/g, c => c.toUpperCase())
+}
+
 /**
  * Extract just the timing label from raw deadline prose.
- * "Rolling. Applications accepted year-round…" → "Rolling"
- * "March 31, 2025. Submissions must be…"       → "March 31, 2025"
+ * "Rolling. Applications accepted year-round…"      → "Rolling"
+ * "March 31, 2025. Submissions must be…"            → "March 31, 2025"
+ * "Typically opens in late 2026 — monitor…"         → "Opens Late 2026"
+ * "Next cycle anticipated late 2026 — monitor…"     → "Late 2026"
+ * "Expected Fall 2026"                              → "Fall 2026"
  */
 function extractDeadlineDisplay(rawDeadline: string): string {
   if (!rawDeadline) return 'Verify with agency'
@@ -407,6 +418,18 @@ function extractDeadlineDisplay(rawDeadline: string): string {
 
   const dl = rawDeadline.toLowerCase()
   if (dl.startsWith('rolling') || dl.includes('open enrollment') || dl.startsWith('anytime')) return 'Rolling'
+
+  // "Typically opens [in] [period]" → "Opens [Period]"
+  const typM = rawDeadline.match(/typically\s+opens?\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  if (typM) return `Opens ${toTitleCase(typM[1])}`
+
+  // "[anticipated|expected] [period]" — may be prefixed with "next cycle" etc.
+  const antM = rawDeadline.match(/(?:anticipated|expected)\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  if (antM) return toTitleCase(antM[1])
+
+  // Standalone season + year anywhere: "Fall 2026", "Late 2026"
+  const seasonM = rawDeadline.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
+  if (seasonM) return toTitleCase(seasonM[1])
 
   const dot = rawDeadline.search(/\.\s/)
   if (dot > 2 && dot < 50) return rawDeadline.slice(0, dot).trim()
@@ -425,9 +448,9 @@ function extractDeadlineContext(rawDeadline: string): string | null {
   if (dl.includes('rolling') || dl.includes('anytime'))       return 'Apply anytime'
   if (dl.includes('quarterly'))                                return 'Opens quarterly'
   if (dl.includes('annually') || dl.includes('annual'))       return 'Renews annually'
-  if (dl.includes('typically'))                                return 'Estimated window'
+  if (dl.includes('typically') || dl.includes('anticipated') || dl.includes('expected')) return 'Monitor next cycle'
   const seasonMatch = rawDeadline.match(/(fall|spring|summer|winter)\s+20\d\d/i)
-  if (seasonMatch)                                             return `Estimated: ${seasonMatch[0]}`
+  if (seasonMatch)                                             return 'Monitor next cycle'
   if (dl.includes('reminder'))                                 return 'Set a reminder'
   if (dl.includes('verify'))                                   return 'Confirm with agency'
 

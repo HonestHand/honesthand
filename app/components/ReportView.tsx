@@ -350,8 +350,8 @@ function OpportunityCard({
   const whyRaw      = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify) : null
   const nextRaw     = opp.nextStep    ? cleanMarkdownHeading(opp.nextStep)   : null
   const whyFiltered = whyRaw ? filterQualSentences(whyRaw) : null
-  const whySummary  = whyFiltered ? truncateToSentences(whyFiltered, 2) : null
-  const nextSummary = nextRaw     ? truncateToSentences(nextRaw, 2)     : null
+  const whySummary  = whyFiltered ? truncateToSentences(whyFiltered, 1) : null
+  const nextSummary = nextRaw     ? truncateToSentences(nextRaw, 1)     : null
 
   // Show "View full guidance" when truncation or sentence-filtering removed content
   const hasMore = !!(
@@ -457,7 +457,9 @@ function OpportunityCard({
                     {opp.deadlineDisplay}
                   </div>
                   {opp.deadlineContext && (
-                    <div className="text-[12px] text-gray-500">{opp.deadlineContext}</div>
+                    <div className="text-[12px] text-gray-500">
+                      {opp.deadlineContext === 'Monitor next cycle' ? '⚠️ ' : ''}{opp.deadlineContext}
+                    </div>
                   )}
                   {opp.isUrgent && !opp.isRolling && (
                     <div className="text-[11px] text-amber-600 font-semibold mt-1">⚡ Act soon</div>
