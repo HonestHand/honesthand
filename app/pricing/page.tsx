@@ -233,10 +233,11 @@ export default function PricingPage() {
           Simple, Transparent Pricing
         </div>
         <h1
-          className="text-[32px] font-bold leading-tight mb-4"
+          className="text-[28px] sm:text-[32px] font-bold leading-tight mb-4"
           style={{ color: '#2C2C2A', letterSpacing: '-0.4px' }}
         >
-          Start free. Go deeper with Pro.
+          <span className="block">Start free.</span>
+          <span className="block whitespace-nowrap">Go deeper with Pro.</span>
         </h1>
         <p className="text-[16px] leading-relaxed" style={{ color: '#6B7280' }}>
           Honest Hand helps Texas business owners find grants, loans, tax credits, and incentives they're already entitled to.
