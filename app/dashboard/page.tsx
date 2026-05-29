@@ -1,8 +1,9 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import ReportView from '../components/ReportView'
+import { trackEvent } from '../lib/analytics'
 
 // ─── Rotating loading messages ────────────────────────────────────────────────
 
@@ -76,7 +77,11 @@ export default function Dashboard() {
   const [isPro,        setIsPro]        = useState(false)
   const [upgrading,    setUpgrading]    = useState(false)
   const [upgradeError, setUpgradeError] = useState('')
-  const [refreshConfirm, setRefreshConfirm] = useState(false)
+  const [refreshConfirm,   setRefreshConfirm]   = useState(false)
+  const [emailUnverified,  setEmailUnverified]  = useState(false)
+  const [resendingVerify,  setResendingVerify]  = useState(false)
+  const [verifyResentOk,   setVerifyResentOk]   = useState(false)
+  const paywallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -89,6 +94,10 @@ export default function Dashboard() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { window.location.href = '/'; return }
     setUser(session.user)
+    // Soft verification check — show banner if not confirmed, but don't block access
+    if (!session.user.email_confirmed_at) {
+      setEmailUnverified(true)
+    }
 
     // ── Handle post-checkout upgrade activation ──
     let activatedPro = false
@@ -249,7 +258,36 @@ export default function Dashboard() {
     }
   }
 
+  const handleResendVerification = async () => {
+    if (!user?.email) return
+    setResendingVerify(true)
+    try {
+      await fetch('/api/emails/resend-verification', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: user.email }),
+      })
+      trackEvent('verification_resend_clicked', {}, user?.id)
+      setVerifyResentOk(true)
+    } catch { /* non-fatal */ }
+    setResendingVerify(false)
+  }
+
+  // Abandoned-paywall trigger: fire after 12 s of the upgrade wall being visible
+  const handlePaywallVisible = (userId: string) => {
+    if (paywallTimerRef.current) return   // already scheduled
+    trackEvent('paywall_viewed', {}, userId)
+    paywallTimerRef.current = setTimeout(() => {
+      fetch('/api/emails/abandoned-paywall', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ userId }),
+      }).catch(() => {})
+    }, 12_000)
+  }
+
   const signOut = async () => {
+    if (paywallTimerRef.current) clearTimeout(paywallTimerRef.current)
     if (supabase) await supabase.auth.signOut()
     window.location.href = '/'
   }
@@ -293,6 +331,40 @@ export default function Dashboard() {
           Sign out
         </button>
       </div>
+
+      {/* ── Email verification banner ── */}
+      {emailUnverified && (
+        <div style={{ background: '#FEF3C7', borderBottom: '1px solid #FCD34D', padding: '12px 24px' }}>
+          <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📬</span>
+              <span style={{ fontSize: '13px', color: '#92400E', fontWeight: '500' }}>
+                Check your inbox to verify your email before accessing your full Honest Hand report.
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
+              {verifyResentOk ? (
+                <span style={{ fontSize: '12px', color: '#065F46', fontWeight: '600' }}>✓ Email sent — check your inbox</span>
+              ) : (
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendingVerify}
+                  style={{ fontSize: '12px', padding: '6px 14px', background: '#F59E0B', color: 'white', border: 'none', borderRadius: '20px', cursor: 'pointer', fontWeight: '600', opacity: resendingVerify ? 0.7 : 1 }}
+                >
+                  {resendingVerify ? 'Sending…' : 'Resend verification email'}
+                </button>
+              )}
+              <button
+                onClick={() => setEmailUnverified(false)}
+                style={{ fontSize: '18px', background: 'none', border: 'none', cursor: 'pointer', color: '#92400E', lineHeight: 1 }}
+                aria-label="Dismiss"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Page body ── */}
       <div className="hh-page-body" style={{ maxWidth: '800px', margin: '0 auto', padding: '24px' }}>
@@ -373,6 +445,7 @@ export default function Dashboard() {
               upgrading={upgrading}
               upgradeError={upgradeError}
               userId={user?.id}
+              onPaywallVisible={!isPro && user?.id ? () => handlePaywallVisible(user.id) : undefined}
             />
           )}
 

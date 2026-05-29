@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/monthly-reports",
       "schedule": "0 12 1 * *"
+    },
+    {
+      "path": "/api/cron/mid-month-insights",
+      "schedule": "0 12 15 * *"
     }
   ]
 }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
+import { sendEmail } from '../../lib/emailSender'
+import { proConfirmedEmail } from '../../lib/emailTemplates'
 
 export async function POST(request: NextRequest) {
   const supabaseAdmin = createClient(
@@ -58,6 +60,32 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Could not set pro status' }, { status: 500 })
       }
     }
+
+    // ── Pro confirmation email (non-fatal) ────────────────────────────────
+    void (async () => {
+      try {
+        const [
+          { data: profile },
+          { data: { user: authUser } },
+        ] = await Promise.all([
+          supabaseAdmin.from('profiles').select('business_name').eq('id', userId).single(),
+          supabaseAdmin.auth.admin.getUserById(userId),
+        ])
+        const toEmail = authUser?.email
+        if (!toEmail) return
+        const businessName = profile?.business_name || 'Your business'
+        const template = proConfirmedEmail({ businessName })
+        await sendEmail({
+          userId,
+          to:      toEmail,
+          type:    'pro_confirmed',
+          subject: template.subject,
+          html:    template.html,
+        })
+      } catch (err) {
+        console.error('[activate-pro] confirmation email failed (non-fatal):', err)
+      }
+    })()
 
     return NextResponse.json({ is_pro: true })
   } catch (error) {

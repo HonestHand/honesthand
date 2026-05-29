@@ -840,6 +840,34 @@ function UpgradeWall({
   )
 }
 
+// ─── Upgrade wall wrapper (fires paywall-visible callback once on mount) ─────
+
+function UpgradeWallWithTrigger({
+  onUpgrade,
+  upgrading,
+  upgradeError,
+  onPaywallVisible,
+}: {
+  onUpgrade: () => void
+  upgrading: boolean
+  upgradeError: string
+  onPaywallVisible?: () => void
+}) {
+  useEffect(() => {
+    onPaywallVisible?.()
+  // We intentionally run this only once on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <UpgradeWall
+      onUpgrade={onUpgrade}
+      upgrading={upgrading}
+      upgradeError={upgradeError}
+    />
+  )
+}
+
 // ─── Main ReportView component ────────────────────────────────────────────────
 
 interface ReportViewProps {
@@ -850,6 +878,8 @@ interface ReportViewProps {
   upgrading: boolean
   upgradeError: string
   userId?: string
+  /** Called once when the upgrade wall becomes visible — used to schedule paywall email. */
+  onPaywallVisible?: () => void
 }
 
 export default function ReportView({
@@ -860,6 +890,7 @@ export default function ReportView({
   upgrading,
   upgradeError,
   userId,
+  onPaywallVisible,
 }: ReportViewProps) {
   const parsed = useMemo(() => parseReport(report), [report])
 
@@ -1033,7 +1064,12 @@ export default function ReportView({
 
       {/* Free user upgrade wall */}
       {!isPro && (
-        <UpgradeWall onUpgrade={onUpgrade} upgrading={upgrading} upgradeError={upgradeError} />
+        <UpgradeWallWithTrigger
+          onUpgrade={onUpgrade}
+          upgrading={upgrading}
+          upgradeError={upgradeError}
+          onPaywallVisible={onPaywallVisible}
+        />
       )}
     </div>
   )

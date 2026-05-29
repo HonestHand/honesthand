@@ -41,6 +41,50 @@ function FloatInput({ label, type, value, onChange, autoComplete }: {
   )
 }
 
+// ─── Disposable email domain blocklist ───────────────────────────────────────
+// Conservative list — only well-known temp-mail services. Not aggressive.
+const DISPOSABLE_DOMAINS = new Set([
+  'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+  'guerrillamail.biz','guerrillamail.de','guerrillamail.info','sharklasers.com',
+  'guerrillamailblock.com','grr.la','spam4.me','yopmail.com','tempmail.com',
+  'temp-mail.org','throwaway.email','maildrop.cc','trashmail.com','trashmail.me',
+  'dispostable.com','fakeinbox.com','mailnull.com','spamgourmet.com',
+  'mintemail.com','spamherelots.com','trashmail.at','discard.email',
+])
+
+function validateEmail(raw: string): string | null {
+  const addr = raw.trim().toLowerCase()
+  if (!addr) return 'Please enter your email address.'
+  // RFC-5321-ish check (generous but catches obvious fakes)
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(addr)) {
+    return 'Please enter a valid email address so we can send your report and account updates.'
+  }
+  const domain = addr.split('@')[1]
+  if (DISPOSABLE_DOMAINS.has(domain)) {
+    return 'Temporary email addresses cannot be used. Please sign up with a permanent business or personal email.'
+  }
+  return null
+}
+
+// ─── Password strength rules ──────────────────────────────────────────────────
+
+interface PasswordRule { label: string; test: (p: string) => boolean }
+const PASSWORD_RULES: PasswordRule[] = [
+  { label: 'At least 8 characters',         test: p => p.length >= 8            },
+  { label: 'One uppercase letter (A–Z)',     test: p => /[A-Z]/.test(p)          },
+  { label: 'One lowercase letter (a–z)',     test: p => /[a-z]/.test(p)          },
+  { label: 'One number (0–9)',               test: p => /[0-9]/.test(p)          },
+  { label: 'One special character (!@#…)',   test: p => /[^A-Za-z0-9]/.test(p)  },
+]
+function passwordStrength(p: string): number {
+  return PASSWORD_RULES.filter(r => r.test(p)).length
+}
+function passwordValid(p: string): boolean {
+  return PASSWORD_RULES.every(r => r.test(p))
+}
+
+// ─── Auth panel ───────────────────────────────────────────────────────────────
+
 export default function Home() {
   const [showAuth, setShowAuth] = useState(false)
   const [isLogin, setIsLogin] = useState(false)
@@ -49,6 +93,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
+  const [showPwRules, setShowPwRules] = useState(false)
 
   // Auto-open signup when linked from pricing page (?signup=true)
   useEffect(() => {
@@ -62,17 +107,70 @@ export default function Home() {
 
   const handleAuth = async () => {
     if (!supabase) return
-    setLoading(true)
     setError('')
-    try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (isLogin) {
+      setLoading(true)
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email:    normalizedEmail,
+          password,
+        })
         if (error) throw error
         window.location.href = '/dashboard'
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
+      } catch (err: any) {
+        setError(err.message)
+      }
+      setLoading(false)
+      return
+    }
+
+    // ── Signup validation ──
+    const emailErr = validateEmail(normalizedEmail)
+    if (emailErr) { setError(emailErr); return }
+
+    if (!passwordValid(password)) {
+      setError('Your password needs to meet all the requirements shown below.')
+      setShowPwRules(true)
+      return
+    }
+
+    setLoading(true)
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email:    normalizedEmail,
+        password,
+        options:  {
+          // After the user clicks the verification link, they land on /auth/confirm.
+          // Make sure https://yourhonesthand.com/auth/confirm is in
+          // Supabase Dashboard → Auth → URL Configuration → Redirect URLs.
+          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+        },
+      })
+      if (signUpError) throw signUpError
+
+      // Fire welcome email (non-blocking)
+      const userId = data?.user?.id
+      if (userId) {
+        fetch('/api/emails/welcome', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ userId, email: normalizedEmail }),
+        }).catch(() => {})
+      }
+
+      // Detect whether email confirmation is required
+      const isAutoConfirmed = !!data?.user?.email_confirmed_at
+
+      if (isAutoConfirmed) {
+        // Email confirmation disabled in Supabase project — proceed directly
         window.location.href = '/onboarding'
+      } else {
+        // Email confirmation required — show verify-email page
+        const params = new URLSearchParams({ email: normalizedEmail })
+        window.location.href = `/verify-email?${params.toString()}`
       }
     } catch (err: any) {
       setError(err.message)
@@ -80,32 +178,112 @@ export default function Home() {
     setLoading(false)
   }
 
+  const pwStrength = passwordStrength(password)
+
   if (showAuth) return (
     <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
       <div style={{width:'100%',maxWidth:'400px'}}>
-        <div style={{textAlign:'center',marginBottom:'32px'}}>
+        <div style={{textAlign:'center',marginBottom:'28px'}}>
           <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'8px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
           <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
         <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
-          <FloatInput label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
-          <FloatInput label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
-          {isLogin && (
-            <div style={{marginTop:'-8px',marginBottom:'12px'}}>
-              <div style={{textAlign:'right'}}>
-                <span onClick={async () => { if (!supabase || !email) return; await supabase.auth.resetPasswordForEmail(email); setResetSent(true) }} style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}>Forgot password?</span>
+          {/* Email */}
+          <FloatInput
+            label="Email address"
+            type="email"
+            value={email}
+            onChange={v => setEmail(v.trim().toLowerCase())}
+            autoComplete="email"
+          />
+
+          {/* Password */}
+          <FloatInput
+            label="Password"
+            type="password"
+            value={password}
+            onChange={v => { setPassword(v); if (!isLogin) setShowPwRules(true) }}
+            autoComplete={isLogin ? 'current-password' : 'new-password'}
+          />
+
+          {/* Password strength indicator — signup only */}
+          {!isLogin && (showPwRules || password.length > 0) && (
+            <div style={{marginTop:'-8px',marginBottom:'16px',padding:'12px',background:'#F9FAFB',borderRadius:'8px',border:'1px solid #F3F4F6'}}>
+              <div style={{fontSize:'11px',fontWeight:'600',color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>
+                Password requirements
               </div>
+              {/* Strength bar */}
+              <div style={{display:'flex',gap:'3px',marginBottom:'10px'}}>
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} style={{flex:1,height:'3px',borderRadius:'2px',background: i <= pwStrength ? (pwStrength <= 2 ? '#EF4444' : pwStrength <= 3 ? '#F59E0B' : '#1D9E75') : '#E5E7EB',transition:'background 0.2s'}} />
+                ))}
+              </div>
+              {PASSWORD_RULES.map(rule => {
+                const met = rule.test(password)
+                return (
+                  <div key={rule.label} style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
+                    <span style={{fontSize:'11px',color: met ? '#1D9E75' : '#9CA3AF',fontWeight:'600',width:'12px',flexShrink:0}}>
+                      {met ? '✓' : '○'}
+                    </span>
+                    <span style={{fontSize:'12px',color: met ? '#2C2C2A' : '#9CA3AF'}}>{rule.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Forgot password */}
+          {isLogin && (
+            <div style={{marginTop:'-8px',marginBottom:'12px',textAlign:'right'}}>
+              <span
+                onClick={async () => {
+                  if (!supabase || !email.trim()) return
+                  await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase())
+                  setResetSent(true)
+                }}
+                style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}
+              >
+                Forgot password?
+              </span>
               {resetSent && <div style={{fontSize:'13px',color:'#1D9E75',marginTop:'6px'}}>Password reset email sent! Check your inbox.</div>}
             </div>
           )}
-          {error && <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px'}}>{error}</div>}
-          <button onClick={handleAuth} disabled={loading} style={{width:'100%',padding:'14px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',marginTop:'4px'}}>
-            {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Free Account'}
+
+          {error && (
+            <div style={{color:'#DC2626',fontSize:'13px',marginBottom:'12px',padding:'10px 12px',background:'#FEF2F2',borderRadius:'8px',border:'1px solid #FECACA'}}>
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handleAuth}
+            disabled={loading}
+            style={{width:'100%',padding:'14px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:loading?'not-allowed':'pointer',marginBottom:'12px',marginTop:'4px',opacity:loading?0.7:1}}
+          >
+            {loading ? 'Please wait…' : isLogin ? 'Sign In' : 'Create Free Account'}
           </button>
-          <div style={{textAlign:'center',fontSize:'13px',color:'#6B7280'}}>
+
+          <div style={{textAlign:'center',fontSize:'13px',color:'#6B7280',marginBottom:'12px'}}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
-            <span onClick={()=>setIsLogin(!isLogin)} style={{color:'#1D9E75',cursor:'pointer',fontWeight:'500'}}>{isLogin ? 'Sign up free' : 'Sign in'}</span>
+            <span
+              onClick={() => { setIsLogin(!isLogin); setError(''); setShowPwRules(false) }}
+              style={{color:'#1D9E75',cursor:'pointer',fontWeight:'500'}}
+            >
+              {isLogin ? 'Sign up free' : 'Sign in'}
+            </span>
           </div>
+
+          {/* Trust copy — signup only */}
+          {!isLogin && (
+            <div style={{borderTop:'1px solid #F3F4F6',paddingTop:'12px',marginTop:'4px'}}>
+              <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.6',textAlign:'center'}}>
+                🔒 Honest Hand uses your business information only to match relevant funding opportunities and improve your report accuracy.
+              </div>
+              <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.6',textAlign:'center',marginTop:'4px'}}>
+                Verify your email to protect your account and make sure your reports reach the right inbox.
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-import { Resend } from 'resend'
 import { buildReportPrompt } from '../../../lib/claude'
+import { sendEmail } from '../../../lib/emailSender'
+import { monthlyReportEmail } from '../../../lib/emailTemplates'
 
 export const maxDuration = 300
 
@@ -130,57 +131,32 @@ FORMAT RULES:
 
       results.success++
 
-      // ── Monthly email notification (non-fatal) ─────────────────────────────
-      if (process.env.RESEND_API_KEY) {
-        try {
-          const { data: { user: authUser } } = await supabase.auth.admin.getUserById(profile.id)
-          const email = authUser?.email
-          if (email) {
-            const resend    = new Resend(process.env.RESEND_API_KEY)
+      // ── Monthly report email (non-fatal, deduplicated) ─────────────────────
+      try {
+        const { data: { user: authUser } } = await supabase.auth.admin.getUserById(profile.id)
+        const toEmail = authUser?.email
+        if (toEmail) {
+          // Respect email_monthly_reports preference (default true if column missing)
+          const prefOk = profile.email_monthly_reports !== false
+          if (prefOk) {
             const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
             const bizName   = profile.business_name || 'Your business'
-            await resend.emails.send({
-              from: 'HonestHand <onboarding@resend.dev>',
-              to: email,
-              subject: `Your ${monthYear} HonestHand Report is Ready`,
-              html: `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F9FAFB;font-family:system-ui,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:40px auto;background:white;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;">
-    <tr><td style="background:#1D9E75;padding:28px 32px;text-align:center;">
-      <div style="font-size:22px;font-weight:700;color:white;letter-spacing:-0.3px;">Honest<span style="opacity:0.8">Hand</span></div>
-    </td></tr>
-    <tr><td style="padding:32px;">
-      <p style="margin:0 0 8px;font-size:18px;font-weight:700;color:#2C2C2A;">Your ${monthYear} report is ready, ${bizName}.</p>
-      <p style="margin:0 0 24px;font-size:14px;color:#6B7280;line-height:1.6;">
-        We've run a fresh scan of Texas grants, tax credits, federal programs, and local incentives — and updated your personalized report with the latest opportunities and deadlines.
-      </p>
-      <a href="https://yourhonesthand.com/dashboard"
-         style="display:inline-block;background:#1D9E75;color:white;font-size:15px;font-weight:600;padding:13px 28px;border-radius:10px;text-decoration:none;">
-        View My Updated Report →
-      </a>
-      <p style="margin:24px 0 0;font-size:12px;color:#9CA3AF;line-height:1.6;">
-        Programs and deadlines change monthly. Log in to see what's new and take action before windows close.
-      </p>
-    </td></tr>
-    <tr><td style="padding:16px 32px 28px;border-top:1px solid #F3F4F6;">
-      <p style="margin:0;font-size:11px;color:#9CA3AF;line-height:1.6;">
-        HonestHand · yourhonesthand.com · Texas · Est. 2026<br>
-        For informational purposes only. Not financial, legal, or tax advice.<br>
-        You're receiving this because you have an active HonestHand Pro subscription.
-      </p>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+            const template  = monthlyReportEmail({ businessName: bizName, monthYear })
+            const result    = await sendEmail({
+              userId:  profile.id,
+              to:      toEmail,
+              type:    'monthly_report',
+              subject: template.subject,
+              html:    template.html,
             })
+            if (!result.sent) {
+              console.log('[cron] monthly email not sent for', profile.id, ':', result.reason)
+            }
           }
-        } catch (emailErr) {
-          // Email failure is non-fatal — report was already saved successfully
-          console.error('[cron] email failed for', profile.id, emailErr)
         }
+      } catch (emailErr) {
+        // Email failure is non-fatal — report was already saved successfully
+        console.error('[cron] email error for', profile.id, emailErr)
       }
     } catch (err) {
       results.failed++

@@ -54,6 +54,24 @@ export default function ProfilePage() {
   const [userId,      setUserId]      = useState('')
   const [industryOther, setIndustryOther] = useState('')
 
+  // Email preferences
+  type EmailPrefs = {
+    email_monthly_reports:    boolean
+    email_midmonth_insights:  boolean
+    email_deadline_reminders: boolean
+    email_marketing:          boolean
+  }
+  const DEFAULT_PREFS: EmailPrefs = {
+    email_monthly_reports:    true,
+    email_midmonth_insights:  true,
+    email_deadline_reminders: true,
+    email_marketing:          true,
+  }
+  const [emailPrefs,       setEmailPrefs]       = useState<EmailPrefs>(DEFAULT_PREFS)
+  const [savingPrefs,      setSavingPrefs]      = useState(false)
+  const [savedPrefs,       setSavedPrefs]       = useState(false)
+  const [prefSaveError,    setPrefSaveError]    = useState('')
+
   const [form, setForm] = useState<FormState>({
     business_name: '',
     industry: '',
@@ -84,6 +102,14 @@ export default function ProfilePage() {
     if (!profile?.business_name) { window.location.href = '/onboarding'; return }
 
     setIsPro(profile.is_pro === true || profile.is_pro === 'true')
+
+    // Load email preferences (columns may not exist yet — graceful defaults)
+    setEmailPrefs({
+      email_monthly_reports:    profile.email_monthly_reports    !== false,
+      email_midmonth_insights:  profile.email_midmonth_insights  !== false,
+      email_deadline_reminders: profile.email_deadline_reminders !== false,
+      email_marketing:          profile.email_marketing          !== false,
+    })
 
     // Restore industry — detect "Other" (a custom industry not in the predefined list)
     const knownIndustries = INDUSTRIES.slice(0, -1) // everything except 'Other'
@@ -140,6 +166,31 @@ export default function ProfilePage() {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
     }
     setSaving(false)
+  }
+
+  const handleSavePrefs = async () => {
+    if (!supabase || !userId) return
+    setSavingPrefs(true)
+    setPrefSaveError('')
+    setSavedPrefs(false)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(emailPrefs)
+        .eq('id', userId)
+      if (error) throw error
+      setSavedPrefs(true)
+      setTimeout(() => setSavedPrefs(false), 4000)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Could not save preferences.'
+      // If columns don't exist yet, show a friendly note rather than a raw DB error
+      setPrefSaveError(
+        msg.includes('column') || msg.includes('does not exist')
+          ? 'Email preference columns are not set up yet. Run the SQL migration in your Supabase dashboard to enable this feature.'
+          : msg
+      )
+    }
+    setSavingPrefs(false)
   }
 
   // ── Completeness ──────────────────────────────────────────────────────────
@@ -411,6 +462,93 @@ export default function ProfilePage() {
                   {' '}to regenerate with your updated profile.
                 </span>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* ── Email Preferences ── */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mt-5">
+          <h2 className="text-[15px] font-semibold text-[#2C2C2A] mb-1">Email Preferences</h2>
+          <p className="text-xs text-gray-400 mb-5 leading-relaxed">
+            Transactional emails (verification, password reset, subscription receipts) cannot be disabled.
+          </p>
+
+          {/*
+            SQL migration required before these toggles save successfully.
+            Run in Supabase Dashboard → SQL Editor:
+
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email_monthly_reports    boolean DEFAULT true;
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email_midmonth_insights  boolean DEFAULT true;
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email_deadline_reminders boolean DEFAULT true;
+            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS email_marketing          boolean DEFAULT true;
+          */}
+
+          <div className="space-y-3">
+            {(
+              [
+                {
+                  key:   'email_monthly_reports'    as const,
+                  label: 'Monthly report emails',
+                  sub:   'Get notified when your monthly report is refreshed',
+                },
+                {
+                  key:   'email_midmonth_insights'  as const,
+                  label: 'Mid-month check-ins',
+                  sub:   'Useful reminders and tips around the 15th of each month',
+                },
+                {
+                  key:   'email_deadline_reminders' as const,
+                  label: 'Deadline reminders',
+                  sub:   'Alerts for upcoming application and program deadlines',
+                },
+                {
+                  key:   'email_marketing'          as const,
+                  label: 'Product updates',
+                  sub:   'New features, platform improvements, and announcements',
+                },
+              ] as const
+            ).map(({ key, label, sub }) => (
+              <div
+                key={key}
+                className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-[#F0FDF8] transition-colors"
+                onClick={() => setEmailPrefs(prev => ({ ...prev, [key]: !prev[key] }))}
+              >
+                <div>
+                  <div className="text-sm font-medium text-[#2C2C2A]">{label}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
+                </div>
+                {/* Toggle pill */}
+                <div
+                  className="flex-shrink-0 ml-4 w-10 h-5 rounded-full relative transition-colors"
+                  style={{ background: emailPrefs[key] ? '#1D9E75' : '#D1D5DB' }}
+                >
+                  <div
+                    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200"
+                    style={{ left: emailPrefs[key] ? '22px' : '2px' }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {prefSaveError && (
+            <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 leading-relaxed">
+              {prefSaveError}
+            </div>
+          )}
+
+          <button
+            onClick={handleSavePrefs}
+            disabled={savingPrefs}
+            className="mt-5 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity"
+            style={{ background: '#1D9E75', opacity: savingPrefs ? 0.7 : 1 }}
+          >
+            {savingPrefs ? 'Saving…' : 'Save Email Preferences'}
+          </button>
+
+          {savedPrefs && (
+            <div className="mt-3 px-4 py-2.5 bg-[#E1F5EE] border border-[#1D9E75]/20 rounded-lg text-xs text-[#065F46]">
+              ✓ Email preferences saved.
             </div>
           )}
         </div>
