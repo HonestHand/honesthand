@@ -81,6 +81,92 @@ Be honest about uncertainty. If a program might not apply, say so. If eligibilit
 `;
 }
 
+// ─── Nonprofit report ─────────────────────────────────────────────────────────
+
+export interface NonprofitData {
+  orgName: string
+  missionArea: string
+  is501c3: boolean
+  ein?: string
+  city: string
+  county?: string
+  populationsServed?: string
+  annualBudget?: string
+  yearsOperating?: string
+  currentPrograms?: string
+  fundingGoals?: string
+  grantHistory?: string
+  orgFocus?: string[]
+  fundingTypeNeeds?: string[]
+  isPro?: boolean
+}
+
+export function buildNonprofitReportPrompt(data: NonprofitData): string {
+  const focusLine = data.orgFocus?.length
+    ? `Organization focus areas: ${data.orgFocus.join(', ')}`
+    : 'No specific focus areas listed'
+
+  const fundingLine = data.fundingTypeNeeds?.length
+    ? `Funding needs: ${data.fundingTypeNeeds.join(', ')}`
+    : 'General operating and program funding'
+
+  const scope = data.isPro
+    ? `Generate a FULL PRO NONPROFIT FUNDING REPORT with a minimum of 25 distinct opportunities across all 8 required sections. Every opportunity must be real, specific to this organization, and actionable.`
+    : `Generate a preview nonprofit funding report covering the top 3 sections only (Foundation Grants, Government Grants, Capacity Building), with 2–3 opportunities each.`
+
+  const proSections = `REQUIRED SECTIONS FOR PRO NONPROFIT REPORT:
+
+1. **Foundation Grants — Private & Community Foundations** — 5–7 opportunities. Include private foundations (family, corporate-endowed), Texas community foundations (Communities Foundation of Texas, Houston Endowment, San Antonio Area Foundation, etc.), and national foundations with Texas grantmaking aligned to this mission area. Include estimated grant size, eligibility match, and how to apply.
+
+2. **Federal & Government Grants** — 4–6 opportunities. Match to the org's mission: HHS, HRSA, HUD, DOJ, DOE, USDA, AmeriCorps, NEA, NEH, ACF, SAMHSA, or FEMA Nonprofit Security Grant — whichever apply. Specify program names, not just agencies.
+
+3. **Texas State Funding for Nonprofits** — 3–5 opportunities. Texas Health & Human Services Commission, Texas Education Agency, Texas Commission on the Arts, Texas Parks & Wildlife, Office of the Governor criminal justice division, Texas Workforce Commission, Texas Department of Housing & Community Affairs. Match to mission area.
+
+4. **Local / City / County Funding** — 2–4 opportunities specific to ${data.city}${data.county ? ` and ${data.county} County` : ''}. Local foundation chapters, city budget allocations for nonprofits, county social services contracts, United Way chapter funding. Be honest if local programs are hard to verify for small communities.
+
+5. **Corporate Sponsorships & Giving Programs** — 3–5 opportunities. Texas-headquartered or operating companies with structured nonprofit giving programs aligned to this mission. Include H-E-B, AT&T, ExxonMobil, Frost Bank, Valero, Southwest Airlines, Dell, or others relevant to the mission area. Include application process and typical grant size.
+
+6. **Capacity Building, Technology & Organizational Development** — 3–4 opportunities. Google for Nonprofits (Google Workspace, Ad Grants), Microsoft for Nonprofits, Salesforce.org Power of Us, TechBridge, capacity-building grants from foundations, BoardSource, or training programs. These strengthen the org's infrastructure and grant readiness.
+
+7. **Program-Specific & Mission-Aligned Funding** — 3–4 niche opportunities from national nonprofits, sector-specific funders, or issue-focused foundations directly aligned to this mission area. Be specific — match to ${data.missionArea}.
+
+8. **30-Day Grant Readiness Action Plan** — 8 concrete steps ranked from easiest win to most strategic. Start with free registrations that unlock funding (SAM.gov, GuideStar/Candid profile, grants.gov registration). Include real contact info, URLs, or search instructions. End with the highest-effort but highest-value action.${data.orgFocus?.includes('faith_based') ? `
+
+9. **Faith-Based & Community Organization Grants** — 3–4 opportunities specifically for faith-based nonprofits: FEMA Nonprofit Security Grant Program, HUD Faith and Opportunity Initiative, local interfaith foundation grants, and any applicable denominational mission funds. Note 501(c)(3) requirements for each.` : ''}`
+
+  const freeSections = `REPORT SECTIONS:
+
+1. **Foundation Grants** — Top 2–3 foundation opportunities aligned to this mission area and location. Include estimated grant size and application path.
+
+2. **Government Grants** — Top 2–3 federal or Texas state grants matching this organization's mission and operating budget size.
+
+3. **Capacity Building Resources** — Top 2–3 resources or grants to strengthen the organization (technology, training, operations, or strategic planning support).`
+
+  return `
+${scope}
+
+---
+NONPROFIT PROFILE
+Organization name: ${data.orgName}
+Mission area: ${data.missionArea}
+501(c)(3) confirmed: ${data.is501c3 ? 'Yes' : 'No / Pending'}
+EIN: ${data.ein || 'Not provided'}
+Location: ${data.city}${data.county ? `, ${data.county} County` : ''}, Texas
+Populations served: ${data.populationsServed || 'Not specified'}
+Annual operating budget: ${data.annualBudget || 'Not provided'}
+Years operating: ${data.yearsOperating || 'Not provided'}
+${focusLine}
+${fundingLine}
+Grant history: ${data.grantHistory || 'Not provided'}
+---
+
+${data.isPro ? proSections : freeSections}
+
+---
+Be honest about uncertainty. If a program requires 501(c)(3) status and this org doesn't have it yet, say so and suggest fiscal sponsorship as a near-term path. Flag any opportunities where a small or new organization faces heightened competition — don't oversell. The goal is actionable intelligence, not a feel-good list.
+`
+}
+
 export function buildPreviewPrompt(data: Pick<BusinessData, "industry" | "city" | "employeeCount">): string {
   return `
 Give a Texas small business owner in the ${data.industry} industry, based in ${data.city} with ${data.employeeCount} employees, their top 3 most actionable funding opportunities available right now.

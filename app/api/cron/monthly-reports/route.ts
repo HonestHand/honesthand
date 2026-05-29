@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-import { buildReportPrompt } from '../../../lib/claude'
+import { buildReportPrompt, buildNonprofitReportPrompt, NonprofitData } from '../../../lib/claude'
 import { sendEmail } from '../../../lib/emailSender'
 import { monthlyReportEmail } from '../../../lib/emailTemplates'
 
@@ -97,28 +97,88 @@ FORMAT RULES:
   • **Next step:** exact action to take with agency name or URL
 - End with the 30-Day Action Plan as the final section`
 
+  const nonprofitSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
+The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles. Never reference past years or outdated grant cycles.
+Your job is to find EVERY real foundation grant, government grant, corporate sponsorship, and capacity-building resource this nonprofit qualifies for.
+
+THIS IS A PRO NONPROFIT REPORT. You must surface a minimum of 25 distinct opportunities across all categories below.
+
+USE YOUR WEB SEARCH TOOL to verify grant cycles and deadlines are current as of ${currentDate}.
+
+CRITICAL URL RULES: Only link to verified root domains for government agencies and well-known foundations. Write "Search: [program name] at [funder]" if uncertain. Never guess URLs.
+
+REQUIRED SECTIONS (cover all 8, 25+ opportunities total):
+1. Foundation Grants — Private & Community Foundations (5–7)
+2. Federal & Government Grants (4–6)
+3. Texas State Funding for Nonprofits (3–5)
+4. Local / City / County Funding (2–4)
+5. Corporate Sponsorships & Giving Programs (3–5)
+6. Capacity Building, Technology & Organizational Development (3–4)
+7. Program-Specific & Mission-Aligned Funding (3–4)
+8. 30-Day Grant Readiness Action Plan — 8 concrete steps
+
+GEOGRAPHIC ACCURACY: Never call a Texas town a "city." Do not invent foundation programs for small localities.
+LANGUAGE RULES: Use nonprofit language (mission, programs, community impact, populations served, operating support, grant readiness). Do NOT use business/revenue/profit language.
+TONE: Direct, mission-focused, honest. Like a trusted grants consultant who knows Texas nonprofits.
+
+FORMAT RULES:
+- ## for section headers (at line start, no preceding text)
+- **bold** for program names and dollar amounts
+- Every opportunity MUST include: **Value:**, **Deadline:**, **Why you qualify:**, **Next step:**`
+
   for (const profile of profiles ?? []) {
     try {
-      const businessData = {
-        businessName: profile.business_name,
-        industry: profile.industry,
-        city: profile.city,
-        county: profile.county || '',
-        entityType: profile.entity_type || '',
-        employeeCount: profile.employee_count || 'Not provided',
-        annualRevenue: profile.revenue_range,
-        isVeteranOwned: profile.is_veteran === true,
-        isMinorityOwned: profile.is_minority === true,
-        isWomanOwned: profile.is_woman === true,
-        isPro: true,
+      const isNonprofit = profile.user_type === 'nonprofit'
+
+      let reportPrompt: string
+      let activeSystemPrompt: string
+
+      if (isNonprofit) {
+        const nonprofitData: NonprofitData = {
+          orgName:          profile.business_name,
+          missionArea:      profile.mission_area       || 'General nonprofit services',
+          is501c3:          profile.is_501c3            === true,
+          ein:              profile.ein                 || undefined,
+          city:             profile.city,
+          county:           profile.county              || '',
+          populationsServed: profile.populations_served || undefined,
+          annualBudget:     profile.annual_budget       || undefined,
+          yearsOperating:   profile.years_operating     || undefined,
+          orgFocus:         profile.org_focus
+                              ? (profile.org_focus as string).split(',').filter(Boolean)
+                              : [],
+          fundingTypeNeeds: profile.funding_type_needs
+                              ? (profile.funding_type_needs as string).split(',').filter(Boolean)
+                              : [],
+          grantHistory:     profile.grant_history       || undefined,
+          isPro: true,
+        }
+        reportPrompt      = buildNonprofitReportPrompt(nonprofitData)
+        activeSystemPrompt = nonprofitSystemPrompt
+      } else {
+        const businessData = {
+          businessName: profile.business_name,
+          industry:     profile.industry,
+          city:         profile.city,
+          county:       profile.county        || '',
+          entityType:   profile.entity_type   || '',
+          employeeCount: profile.employee_count || 'Not provided',
+          annualRevenue: profile.revenue_range,
+          isVeteranOwned:  profile.is_veteran  === true,
+          isMinorityOwned: profile.is_minority === true,
+          isWomanOwned:    profile.is_woman    === true,
+          isPro: true,
+        }
+        reportPrompt      = buildReportPrompt(businessData)
+        activeSystemPrompt = systemPrompt
       }
 
       const message = await anthropic.messages.create({
         model: 'claude-sonnet-4-6',
         max_tokens: 16000,
         tools: [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: 8 }],
-        system: systemPrompt,
-        messages: [{ role: 'user', content: buildReportPrompt(businessData) }],
+        system: activeSystemPrompt,
+        messages: [{ role: 'user', content: reportPrompt }],
       })
 
       const textBlock = message.content.find(b => b.type === 'text')
@@ -140,8 +200,9 @@ FORMAT RULES:
           const prefOk = profile.email_monthly_reports !== false
           if (prefOk) {
             const monthYear = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-            const bizName   = profile.business_name || 'Your business'
-            const template  = monthlyReportEmail({ businessName: bizName, monthYear })
+            const bizName   = profile.business_name || 'Your organization'
+            const userType  = (profile.user_type === 'nonprofit' ? 'nonprofit' : 'business') as 'business' | 'nonprofit'
+            const template  = monthlyReportEmail({ businessName: bizName, monthYear, userType })
             const result    = await sendEmail({
               userId:  profile.id,
               to:      toEmail,

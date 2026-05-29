@@ -94,11 +94,19 @@ export function welcomeEmail(params: { email: string }): { subject: string; html
 
 export function freeReportReadyEmail(params: {
   businessName: string
+  userType?: 'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName } = params
+  const { businessName, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = `Your HonestHand preview is ready, ${businessName}`
-  const body = `
-    ${h1(`Your funding preview is ready.`)}
+  const body = isNp ? `
+    ${h1("Your nonprofit funding preview is ready.")}
+    ${p(`We've put together a preview report for <strong>${businessName}</strong> showing a sample of the foundation grants, government funding, and capacity-building resources available to organizations like yours in Texas.`)}
+    ${p("This preview shows what the full report looks like. To unlock every funding opportunity we found — including local foundation grants, corporate giving programs, capacity-building resources, and a 30-day grant readiness plan — upgrade to Pro.")}
+    ${ctaButton("View My Preview Report", `${BASE_URL}/dashboard`)}
+    ${p("<br>Your free preview will remain accessible in your dashboard.")}
+  ` : `
+    ${h1("Your funding preview is ready.")}
     ${p(`We've put together a preview report for <strong>${businessName}</strong> showing a sample of the grants, loans, and incentives available to businesses like yours in Texas.`)}
     ${p("This preview shows what the full report looks like. To unlock every program we found — including local city and county programs, tax credits, certification pathways, and a 30-day action plan — upgrade to Pro.")}
     ${ctaButton("View My Preview Report", `${BASE_URL}/dashboard`)}
@@ -114,10 +122,27 @@ export function freeReportReadyEmail(params: {
 
 export function proReportReadyEmail(params: {
   businessName: string
+  userType?: 'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName } = params
+  const { businessName, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = `Your full HonestHand report is ready — ${businessName}`
-  const body = `
+  const body = isNp ? `
+    ${h1("Your full nonprofit funding report is ready.")}
+    ${p(`We've completed a live search for <strong>${businessName}</strong> and your personalized nonprofit funding report is ready to view.`)}
+    ${p("Your report includes:")}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      ${li("Foundation grants — private, community, and national funders")}
+      ${li("Federal and government grant programs")}
+      ${li("Texas state nonprofit funding")}
+      ${li("Local city, county, and community foundation opportunities")}
+      ${li("Corporate sponsorships and giving programs")}
+      ${li("Capacity building, technology, and organizational development grants")}
+      ${li("A 30-day grant readiness action plan")}
+    </ul>
+    ${ctaButton("View My Full Report", `${BASE_URL}/dashboard`)}
+    ${p("<br>Grant cycles open and close throughout the year. Log in to review your opportunities before deadlines pass.")}
+  ` : `
     ${h1("Your full report is ready.")}
     ${p(`We've completed a live search for <strong>${businessName}</strong> and your personalized funding report is ready to view.`)}
     ${p("Your report includes:")}
@@ -143,10 +168,25 @@ export function proReportReadyEmail(params: {
 
 export function proConfirmedEmail(params: {
   businessName: string
+  userType?: 'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName } = params
+  const { businessName, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = "Your HonestHand Pro subscription is active"
-  const body = `
+  const body = isNp ? `
+    ${h1("Pro is active. Here's what you just unlocked.")}
+    ${p(`<strong>${businessName}</strong> now has full access to HonestHand Pro.`)}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      ${li("<strong>Full funding dashboard</strong> — every grant and program we found, not just a preview")}
+      ${li("<strong>Foundation, government & corporate grants</strong> — all categories")}
+      ${li("<strong>Deadline and grant cycle tracking</strong> — so you never miss an application window")}
+      ${li("<strong>Monthly report refresh</strong> — updated every month with current programs")}
+      ${li("<strong>Verified source links</strong> — every opportunity links back to the actual funder")}
+    </ul>
+    ${p("We're generating your first full nonprofit funding report now. You'll receive another email when it's ready.")}
+    ${ctaButton("Go to My Dashboard", `${BASE_URL}/dashboard`)}
+    ${p("<br>Questions about your subscription? Visit <a href=\"${BASE_URL}/contact\" style=\"color:#1D9E75;\">our contact page</a> or reply to this email.")}
+  ` : `
     ${h1("Pro is active. Here's what you just unlocked.")}
     ${p(`<strong>${businessName}</strong> now has full access to HonestHand Pro.`)}
     <ul style="margin:0 0 16px;padding-left:20px;">
@@ -171,10 +211,24 @@ export function proConfirmedEmail(params: {
 export function monthlyReportEmail(params: {
   businessName: string
   monthYear:    string
+  userType?:    'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName, monthYear } = params
+  const { businessName, monthYear, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = `Your ${monthYear} HonestHand report is ready`
-  const body = `
+  const body = isNp ? `
+    ${h1(`Your ${monthYear} nonprofit funding report is ready.`)}
+    ${p(`We've run a fresh search for <strong>${businessName}</strong> and updated your report with the latest grant programs, foundation cycles, and funding deadlines.`)}
+    ${p("What we check every month:")}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      ${li("New and renewed foundation grant cycles")}
+      ${li("Updated federal and state program deadlines")}
+      ${li("Corporate giving program changes")}
+      ${li("New capacity-building and technology grant opportunities")}
+    </ul>
+    ${p("Grant windows open and close throughout the year. Log in now to see what's active and take action before deadlines pass.")}
+    ${ctaButton("View My Updated Report", `${BASE_URL}/dashboard`)}
+  ` : `
     ${h1(`Your ${monthYear} report is ready.`)}
     ${p(`We've run a fresh search for <strong>${businessName}</strong> and updated your report with the latest programs, funding amounts, and deadlines.`)}
     ${p("What we check every month:")}
@@ -198,10 +252,32 @@ export function monthlyReportEmail(params: {
 export function midMonthInsightEmail(params: {
   businessName: string
   monthYear:    string
+  userType?:    'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName, monthYear } = params
+  const { businessName, monthYear, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = `A funding reminder for ${businessName} — ${monthYear}`
-  const body = `
+  const body = isNp ? `
+    ${h1("A quick check-in from HonestHand.")}
+    ${p(`We're halfway through ${monthYear}. A few things worth keeping in mind for <strong>${businessName}</strong>:`)}
+
+    <table cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 20px;border:1px solid #E5E7EB;border-radius:12px;overflow:hidden;">
+      <tr><td style="padding:16px 20px;border-bottom:1px solid #F3F4F6;">
+        <div style="font-size:13px;font-weight:600;color:#2C2C2A;margin-bottom:4px;">📅 Check your grant deadlines</div>
+        <div style="font-size:13px;color:#6B7280;line-height:1.6;">Foundation deadlines and government grant cycles often cluster around end-of-quarter or fiscal year. If there are opportunities in your report with upcoming LOI or application deadlines, now is the time to act.</div>
+      </td></tr>
+      <tr><td style="padding:16px 20px;border-bottom:1px solid #F3F4F6;">
+        <div style="font-size:13px;font-weight:600;color:#2C2C2A;margin-bottom:4px;">📋 Profile completeness matters</div>
+        <div style="font-size:13px;color:#6B7280;line-height:1.6;">Adding your county, populations served, and annual budget helps us match you to location-specific and size-matched grant programs. If you haven't filled those in, it's worth doing before your next report refresh.</div>
+      </td></tr>
+      <tr><td style="padding:16px 20px;">
+        <div style="font-size:13px;font-weight:600;color:#2C2C2A;margin-bottom:4px;">🏛️ Rolling grant programs are open now</div>
+        <div style="font-size:13px;color:#6B7280;line-height:1.6;">Grant programs marked "Rolling" in your report accept applications year-round — there's no seasonal deadline, but there's also no reason to wait. Every month you delay is a month of eligible funding you're not pursuing.</div>
+      </td></tr>
+    </table>
+
+    ${ctaButton("Review My Report", `${BASE_URL}/dashboard`)}
+  ` : `
     ${h1("A quick check-in from HonestHand.")}
     ${p(`We're halfway through ${monthYear}. A few things worth keeping in mind for <strong>${businessName}</strong>:`)}
 
@@ -233,16 +309,37 @@ export function midMonthInsightEmail(params: {
 export function abandonedPaywallEmail(params: {
   businessName: string
   previewOpportunityCount?: number
+  userType?: 'business' | 'nonprofit'
 }): { subject: string; html: string } {
-  const { businessName, previewOpportunityCount } = params
-  const countLine = previewOpportunityCount
-    ? `Your preview shows ${previewOpportunityCount} example programs. The full report goes deeper — covering all 8 categories and 25+ real opportunities identified for your business.`
-    : "Your business profile is complete and your full report is ready to generate."
+  const { businessName, previewOpportunityCount, userType = 'business' } = params
+  const isNp = userType === 'nonprofit'
   const subject = `${businessName} — your funding opportunities are still waiting`
-  const body = `
+
+  const body = isNp ? `
+    ${h1("Your nonprofit funding opportunities are still here.")}
+    ${p(`You set up an organization profile for <strong>${businessName}</strong> and got a preview of what HonestHand found.`)}
+    ${p(previewOpportunityCount
+      ? `Your preview shows ${previewOpportunityCount} example programs. The full report goes deeper — covering all 8 categories and 25+ real funding opportunities identified for your mission.`
+      : "Your organization profile is complete and your full funding report is ready to generate."
+    )}
+    ${p("The full report includes:")}
+    <ul style="margin:0 0 16px;padding-left:20px;">
+      ${li("Every foundation, government, and corporate grant we identified — not just a sample")}
+      ${li("Local city, county, and community foundation programs")}
+      ${li("Capacity-building and technology grants")}
+      ${li("A 30-day grant readiness action plan")}
+      ${li("Verified deadlines and direct links to funders")}
+    </ul>
+    ${p("When you're ready to see the full picture, your report is one click away.")}
+    ${ctaButton("View My Full Report", `${BASE_URL}/dashboard`)}
+    ${p("<br>HonestHand Pro is $49/month. Cancel anytime.")}
+  ` : `
     ${h1("Your funding opportunities are still here.")}
     ${p(`You set up a business profile for <strong>${businessName}</strong> and got a preview of what HonestHand found.`)}
-    ${p(countLine)}
+    ${p(previewOpportunityCount
+      ? `Your preview shows ${previewOpportunityCount} example programs. The full report goes deeper — covering all 8 categories and 25+ real opportunities identified for your business.`
+      : "Your business profile is complete and your full report is ready to generate."
+    )}
     ${p("The full report includes:")}
     <ul style="margin:0 0 16px;padding-left:20px;">
       ${li("Every grant, loan, and tax credit we identified — not just a sample")}

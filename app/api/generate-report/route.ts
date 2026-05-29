@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { buildReportPrompt } from '../../lib/claude'
+import { buildReportPrompt, buildNonprofitReportPrompt, NonprofitData } from '../../lib/claude'
 
 export const maxDuration = 300
 
@@ -12,24 +12,51 @@ export async function POST(request: NextRequest) {
   })
 
   const isPro = profile.is_pro === true || profile.is_pro === 'true'
+  const isNonprofit = profile.user_type === 'nonprofit'
 
-  const businessData = {
-    businessName: profile.business_name,
-    industry: profile.industry,
-    city: profile.city,
-    county: profile.county || '',
-    entityType: profile.entity_type || '',
-    employeeCount: profile.employee_count || 'Not provided',
-    annualRevenue: profile.revenue_range,
-    isVeteranOwned: profile.is_veteran === true,
-    isMinorityOwned: profile.is_minority === true,
-    isWomanOwned: profile.is_woman === true,
-    isPro,
+  let prompt: string
+
+  if (isNonprofit) {
+    const nonprofitData: NonprofitData = {
+      orgName:          profile.business_name,
+      missionArea:      profile.mission_area       || 'General nonprofit services',
+      is501c3:          profile.is_501c3            === true,
+      ein:              profile.ein                 || undefined,
+      city:             profile.city,
+      county:           profile.county              || '',
+      populationsServed: profile.populations_served || undefined,
+      annualBudget:     profile.annual_budget       || undefined,
+      yearsOperating:   profile.years_operating     || undefined,
+      currentPrograms:  profile.current_programs    || undefined,
+      fundingGoals:     profile.funding_goals       || undefined,
+      grantHistory:     profile.grant_history       || undefined,
+      orgFocus:         profile.org_focus
+                          ? (profile.org_focus as string).split(',').filter(Boolean)
+                          : [],
+      fundingTypeNeeds: profile.funding_type_needs
+                          ? (profile.funding_type_needs as string).split(',').filter(Boolean)
+                          : [],
+      isPro,
+    }
+    console.log('[generate-report] nonprofitData:', JSON.stringify(nonprofitData, null, 2))
+    prompt = buildNonprofitReportPrompt(nonprofitData)
+  } else {
+    const businessData = {
+      businessName: profile.business_name,
+      industry:     profile.industry,
+      city:         profile.city,
+      county:       profile.county        || '',
+      entityType:   profile.entity_type   || '',
+      employeeCount: profile.employee_count || 'Not provided',
+      annualRevenue: profile.revenue_range,
+      isVeteranOwned:  profile.is_veteran  === true,
+      isMinorityOwned: profile.is_minority === true,
+      isWomanOwned:    profile.is_woman    === true,
+      isPro,
+    }
+    console.log('[generate-report] businessData:', JSON.stringify(businessData, null, 2))
+    prompt = buildReportPrompt(businessData)
   }
-
-  console.log('[generate-report] businessData:', JSON.stringify(businessData, null, 2))
-
-  const prompt = buildReportPrompt(businessData)
   const encoder = new TextEncoder()
   const currentDate = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
@@ -129,6 +156,99 @@ FORMAT RULES:
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL`
 
+  // ── Nonprofit system prompts ────────────────────────────────────────────────
+  const nonprofitProSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
+The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles. Never reference past years or outdated grant cycles.
+Your job is to find EVERY real foundation grant, government grant, corporate sponsorship, and capacity-building resource this nonprofit qualifies for.
+
+THIS IS A PRO NONPROFIT REPORT. You must surface a minimum of 25 distinct opportunities across all categories below.
+Do not pad the list — every opportunity must be real and applicable to this specific organization and mission area.
+
+USE YOUR WEB SEARCH TOOL to verify:
+- That grant programs are currently active and accepting applications or LOIs as of ${currentDate}
+- Current grant amounts, deadlines, and eligibility requirements (grant cycles change every year)
+- Local foundation programs specific to the organization's city and county
+- Mission-aligned national and Texas funders for this specific mission area
+Search before writing each section so your data is current, not from training data.
+
+CRITICAL URL RULES — NON-NEGOTIABLE:
+- Only link to these verified root domains: grants.gov, sam.gov, hhs.gov, hrsa.gov, justice.gov, hud.gov, ed.gov, usda.gov, arts.gov, acl.gov, acf.hhs.gov, fema.gov, dol.gov, hhs.texas.gov, tpwd.texas.gov, tda.texas.gov, gov.texas.gov, txcourts.gov
+- For foundation websites, only link to root domains you are 100% certain exist (e.g., kresge.org, gatesfoundation.org, houstondowment.org, cftexas.org)
+- NEVER construct specific page paths — only root domains or well-known top-level paths like grants.gov/search-grants
+- If you are not 100% certain a URL is real, write "Search: [program name] at [foundation/agency name]" instead
+- Never make up or guess URLs — a broken link is worse than no link
+
+REQUIRED SECTIONS (cover all 8, hit 25+ total opportunities):
+1. Foundation Grants — Private & Community Foundations (5–7 opportunities)
+2. Federal & Government Grants (4–6 opportunities)
+3. Texas State Funding for Nonprofits (3–5 opportunities)
+4. Local / City / County Funding (2–4 opportunities based on their specific location)
+5. Corporate Sponsorships & Giving Programs (3–5 opportunities)
+6. Capacity Building, Technology & Organizational Development (3–4 opportunities)
+7. Program-Specific & Mission-Aligned Funding (3–4 opportunities)
+8. 30-Day Grant Readiness Action Plan — 8 concrete steps ranked from easiest win to most strategic. Start with free registrations (SAM.gov, GuideStar/Candid, grants.gov) that unlock additional funding. Include real contact info or URLs where known.
+
+GEOGRAPHIC ACCURACY — NON-NEGOTIABLE:
+- Never call a Texas town a "city." Many Texas communities are incorporated as towns, not cities — use the correct designation.
+- Some small Texas communities are unincorporated — they have no town government at all, only county government.
+- Do not invent formal community foundation programs for small localities. Many small Texas communities have limited local foundation infrastructure. Be honest.
+- If local programs are hard to verify for a small community, say so and direct the org to contact their county judge's office or the United Way chapter for their region.
+
+LANGUAGE RULES — NON-NEGOTIABLE:
+- Use nonprofit language throughout: mission, programs, community impact, populations served, operating support, grant readiness, donor alignment, capacity building
+- Do NOT use: revenue growth, business expansion, small business loans, tax credits for businesses, profit, customers
+- Write to a nonprofit leader — executive director, program director, board member — not a business owner
+- For organizations WITHOUT confirmed 501(c)(3) status: note which opportunities require it, and suggest fiscal sponsorship as a near-term path forward
+
+TONE: Direct, mission-focused, and genuinely helpful. Like a trusted grants consultant who knows Texas nonprofits.
+Be honest about borderline eligibility — flag it rather than oversell. If a small or new organization faces more competition for certain grants, say so plainly.
+
+FORMAT RULES:
+- Use ## for section headers. The ## must be at the very start of the line with nothing before it, no numbers or labels preceding it.
+- Use **bold** for program names and dollar amounts
+- Use bullet points for eligibility requirements
+- Every opportunity MUST include all four of these fields:
+  • **Value:** estimated grant size or range
+  • **Deadline:** specific date (e.g. "LOI by: October 15, 2026"), or "Rolling — apply anytime", or "Typically opens: [month] — verify with funder" if the exact date is uncertain. Never omit this field.
+  • **Why you qualify:** one sentence on eligibility match
+  • **Next step:** exact action to take with funder name or URL
+- End with the 30-Day Grant Readiness Action Plan as the final section`
+
+  const nonprofitFreeSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
+The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles.
+
+Generate a preview nonprofit funding report with the top 3 sections only: Foundation Grants, Government Grants, and Capacity Building.
+Include 2–3 opportunities per section. Make each one count — real programs, accurate grant amounts, honest eligibility.
+
+USE YOUR WEB SEARCH TOOL to confirm each program is currently active and accepting applications or LOIs as of ${currentDate} before including it.
+
+CRITICAL URL RULES — NON-NEGOTIABLE:
+- Only link to these verified root domains: grants.gov, sam.gov, hhs.gov, arts.gov, hhs.texas.gov, gov.texas.gov
+- For foundations, only link to root domains you are 100% certain exist
+- If you are not 100% certain a URL is real, write "Search: [program name] at [agency/foundation]" instead
+- Never make up or guess URLs
+
+LANGUAGE RULES — NON-NEGOTIABLE:
+- Use nonprofit language: mission, programs, community impact, operating support, grant readiness
+- Do NOT use: business, revenue, profit
+
+TONE: Direct, mission-focused, honest. Like a grants consultant who knows Texas nonprofits.
+
+FORMAT RULES:
+- Use ## for section headers. The ## must be at the very start of the line with nothing before it.
+- Use **bold** for program names and dollar amounts
+- Use bullet points for eligibility requirements
+- Every opportunity MUST include all four of these fields:
+  • **Value:** estimated grant size or range
+  • **Deadline:** specific date or cycle — never omit this field
+  • **Why you qualify:** one sentence on eligibility match
+  • **Next step:** exact action to take with funder name or URL`
+
+  // ── Select the right system prompt ──────────────────────────────────────────
+  const selectedSystemPrompt = isNonprofit
+    ? (isPro ? nonprofitProSystemPrompt : nonprofitFreeSystemPrompt)
+    : (isPro ? proSystemPrompt : freeSystemPrompt)
+
   const stream = new ReadableStream({
     async start(controller) {
       // Send heartbeat immediately so the client's fetch() resolves before web searches start
@@ -138,7 +258,7 @@ FORMAT RULES:
           model: 'claude-sonnet-4-6',
           max_tokens: isPro ? 16000 : 2048,
           tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: isPro ? 8 : 3 }],
-          system: isPro ? proSystemPrompt : freeSystemPrompt,
+          system: selectedSystemPrompt,
           messages: [{ role: 'user', content: prompt }],
         })
 

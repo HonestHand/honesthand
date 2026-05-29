@@ -31,6 +31,8 @@ export type AnalyticsEventName =
   | 'checkout_abandoned'
   | 'checkout_recovered'
   | 'paywall_viewed'
+  | 'onboarding_type_selected'
+  | 'nonprofit_onboarding_completed'
 
 /**
  * Fire an analytics event.

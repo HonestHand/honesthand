@@ -7,30 +7,51 @@ import { trackEvent } from '../lib/analytics'
 
 // ─── Rotating loading messages ────────────────────────────────────────────────
 
-const LOADING_MESSAGES = [
-  { icon: '🔍', primary: 'Analyzing your business profile…',        sub: 'Matching against programs for your industry.' },
-  { icon: '🌐', primary: 'Scanning SBA program databases…',          sub: 'Checking active federal loans, grants, and resources.' },
+const LOADING_MESSAGES_BUSINESS = [
+  { icon: '🔍', primary: 'Analyzing your business profile…',         sub: 'Matching against programs for your industry.' },
+  { icon: '🌐', primary: 'Scanning SBA program databases…',           sub: 'Checking active federal loans, grants, and resources.' },
   { icon: '🏛️', primary: 'Reviewing Texas state incentive programs…', sub: 'TWC, TDA, Governor\'s Office, and more.' },
-  { icon: '📍', primary: 'Checking county-level opportunities…',      sub: 'Local EDC programs, city grants, and municipal incentives.' },
+  { icon: '📍', primary: 'Checking county-level opportunities…',       sub: 'Local EDC programs, city grants, and municipal incentives.' },
   { icon: '🎖️', primary: 'Verifying veteran-owned business programs…', sub: 'TVC, SBA VOSB, set-aside contracts, and resources.' },
-  { icon: '💡', primary: 'Analyzing industry-specific funding…',      sub: 'Trade associations, sector grants, and niche programs.' },
-  { icon: '🧾', primary: 'Identifying tax credits and deductions…',   sub: 'WOTC, Section 179, R&D credits, energy incentives.' },
-  { icon: '📋', primary: 'Verifying current deadlines…',              sub: 'Confirming which programs are open and accepting applications.' },
-  { icon: '✅', primary: 'Building your personalized report…',        sub: 'Ranking opportunities by easiest win first.' },
+  { icon: '💡', primary: 'Analyzing industry-specific funding…',       sub: 'Trade associations, sector grants, and niche programs.' },
+  { icon: '🧾', primary: 'Identifying tax credits and deductions…',    sub: 'WOTC, Section 179, R&D credits, energy incentives.' },
+  { icon: '📋', primary: 'Verifying current deadlines…',               sub: 'Confirming which programs are open and accepting applications.' },
+  { icon: '✅', primary: 'Building your personalized report…',         sub: 'Ranking opportunities by easiest win first.' },
 ]
 
-function LoadingState({ searching }: { searching: boolean }) {
+const LOADING_MESSAGES_NONPROFIT = [
+  { icon: '🔍', primary: 'Analyzing your organization profile…',      sub: 'Matching against grants for your mission area.' },
+  { icon: '🌐', primary: 'Scanning federal grant databases…',          sub: 'Checking HHS, DOJ, HUD, AmeriCorps, NEA, and more.' },
+  { icon: '🏛️', primary: 'Reviewing Texas nonprofit programs…',        sub: 'HHSC, TEA, TCA, Governor\'s Office, and more.' },
+  { icon: '📍', primary: 'Checking local foundation opportunities…',   sub: 'Community foundations, city allocations, and county programs.' },
+  { icon: '🤝', primary: 'Identifying corporate giving programs…',     sub: 'Texas companies with giving programs aligned to your mission.' },
+  { icon: '💡', primary: 'Finding mission-aligned funders…',           sub: 'National foundations, issue-specific funders, capacity grants.' },
+  { icon: '🧾', primary: 'Reviewing capacity-building resources…',     sub: 'Tech grants, training programs, and org development funding.' },
+  { icon: '📋', primary: 'Verifying current grant cycles…',            sub: 'Confirming which foundations are accepting applications.' },
+  { icon: '✅', primary: 'Building your nonprofit funding report…',    sub: 'Ranking opportunities by grant readiness and mission fit.' },
+]
+
+// Pick the right set based on profile type (called with isNonprofit flag)
+function getLoadingMessages(isNonprofit: boolean) {
+  return isNonprofit ? LOADING_MESSAGES_NONPROFIT : LOADING_MESSAGES_BUSINESS
+}
+
+// Keep a single alias for the legacy default so the component still compiles
+const LOADING_MESSAGES = LOADING_MESSAGES_BUSINESS
+
+function LoadingState({ searching, isNonprofit = false }: { searching: boolean; isNonprofit?: boolean }) {
   const [msgIndex, setMsgIndex] = useState(0)
+  const messages = getLoadingMessages(isNonprofit)
 
   useEffect(() => {
     if (!searching) return
     const interval = setInterval(() => {
-      setMsgIndex(i => (i + 1) % LOADING_MESSAGES.length)
+      setMsgIndex(i => (i + 1) % messages.length)
     }, 3200)
     return () => clearInterval(interval)
-  }, [searching])
+  }, [searching, messages.length])
 
-  const msg = searching ? LOADING_MESSAGES[msgIndex] : LOADING_MESSAGES[0]
+  const msg = searching ? messages[msgIndex] : messages[0]
 
   return (
     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
@@ -301,7 +322,8 @@ export default function Dashboard() {
     )
   }
 
-  const isActive = generating || searching
+  const isActive    = generating || searching
+  const isNonprofit = profile?.user_type === 'nonprofit'
 
   return (
     <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: 'system-ui' }}>
@@ -376,13 +398,24 @@ export default function Dashboard() {
               Welcome, {profile?.business_name} 👋
             </div>
             <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
-              {profile?.industry} · {profile?.city}, TX · {profile?.revenue_range}
+              {isNonprofit
+                ? `${profile?.mission_area || 'Nonprofit'} · ${profile?.city}, TX${profile?.annual_budget ? ` · ${profile.annual_budget}` : ''}`
+                : `${profile?.industry} · ${profile?.city}, TX · ${profile?.revenue_range}`
+              }
             </div>
-            {/* Profile completeness nudge — shown when optional fields are missing */}
+            {/* Profile completeness nudge */}
             {profile && (() => {
-              const missing = ['county', 'entity_type', 'employee_count'].filter(k => !profile[k])
+              const missing = isNonprofit
+                ? ['county', 'populations_served', 'annual_budget'].filter(k => !profile[k])
+                : ['county', 'entity_type', 'employee_count'].filter(k => !profile[k])
               if (missing.length === 0) return null
-              const labels: Record<string, string> = { county: 'county', entity_type: 'entity type', employee_count: 'employee count' }
+              const labels: Record<string, string> = {
+                county:             'county',
+                entity_type:        'entity type',
+                employee_count:     'employee count',
+                populations_served: 'populations served',
+                annual_budget:      'annual budget',
+              }
               return (
                 <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '11px', color: '#F59E0B' }}>⚡</span>
@@ -429,11 +462,11 @@ export default function Dashboard() {
         {/* Report card */}
         <div className="hh-card" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E5E7EB', marginBottom: '24px' }}>
           <div style={{ fontSize: '16px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>
-            Your Opportunity Report
+            {isNonprofit ? 'Nonprofit Funding Opportunities' : 'Your Opportunity Report'}
           </div>
 
           {/* Generating / searching state */}
-          {isActive && <LoadingState searching={searching} />}
+          {isActive && <LoadingState searching={searching} isNonprofit={isNonprofit} />}
 
           {/* Report content */}
           {!isActive && report && (

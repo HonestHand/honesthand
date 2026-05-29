@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   const { data: profiles, error } = await supabase
     .from('profiles')
-    .select('id, business_name, email_midmonth_insights')
+    .select('id, business_name, email_midmonth_insights, user_type')
     .eq('is_pro', true)
 
   if (error) {
@@ -46,8 +46,9 @@ export async function GET(request: NextRequest) {
       const toEmail = authUser?.email
       if (!toEmail) { results.skipped++; continue }
 
-      const bizName  = profile.business_name || 'Your business'
-      const template = midMonthInsightEmail({ businessName: bizName, monthYear })
+      const bizName  = profile.business_name || 'Your organization'
+      const userType = (profile.user_type === 'nonprofit' ? 'nonprofit' : 'business') as 'business' | 'nonprofit'
+      const template = midMonthInsightEmail({ businessName: bizName, monthYear, userType })
 
       const result = await sendEmail({
         userId:  profile.id,

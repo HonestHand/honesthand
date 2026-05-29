@@ -48,15 +48,16 @@ export async function POST(request: NextRequest) {
         { data: profile },
         { data: { user: authUser } },
       ] = await Promise.all([
-        supabaseAdmin.from('profiles').select('business_name, is_pro, email_monthly_reports').eq('id', userId).single(),
+        supabaseAdmin.from('profiles').select('business_name, is_pro, email_monthly_reports, user_type').eq('id', userId).single(),
         supabaseAdmin.auth.admin.getUserById(userId),
       ])
 
       const email = authUser?.email
       if (!email) return
 
-      const businessName = profile?.business_name || 'Your business'
-      const isPro        = profile?.is_pro === true || profile?.is_pro === 'true'
+      const orgName    = profile?.business_name || 'Your organization'
+      const isPro      = profile?.is_pro === true || profile?.is_pro === 'true'
+      const userType   = (profile?.user_type === 'nonprofit' ? 'nonprofit' : 'business') as 'business' | 'nonprofit'
 
       // Check user's email preference (email_monthly_reports covers both report types)
       const prefOk = profile?.email_monthly_reports !== false
@@ -64,8 +65,8 @@ export async function POST(request: NextRequest) {
       if (!prefOk) return
 
       const template = isPro
-        ? proReportReadyEmail({ businessName })
-        : freeReportReadyEmail({ businessName })
+        ? proReportReadyEmail({ businessName: orgName, userType })
+        : freeReportReadyEmail({ businessName: orgName, userType })
 
       const result = await sendEmail({
         userId,

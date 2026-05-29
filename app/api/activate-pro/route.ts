@@ -68,13 +68,14 @@ export async function POST(request: NextRequest) {
           { data: profile },
           { data: { user: authUser } },
         ] = await Promise.all([
-          supabaseAdmin.from('profiles').select('business_name').eq('id', userId).single(),
+          supabaseAdmin.from('profiles').select('business_name, user_type').eq('id', userId).single(),
           supabaseAdmin.auth.admin.getUserById(userId),
         ])
         const toEmail = authUser?.email
         if (!toEmail) return
-        const businessName = profile?.business_name || 'Your business'
-        const template = proConfirmedEmail({ businessName })
+        const businessName = profile?.business_name || 'Your organization'
+        const userType     = (profile?.user_type === 'nonprofit' ? 'nonprofit' : 'business') as 'business' | 'nonprofit'
+        const template = proConfirmedEmail({ businessName, userType })
         await sendEmail({
           userId,
           to:      toEmail,
