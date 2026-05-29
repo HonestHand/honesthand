@@ -28,11 +28,14 @@ export interface ParsedOpportunity {
   isUrgent: boolean
   sourceAgency?: string   // extracted from nextStep (e.g. "SBA.gov", "TWC Texas")
   sourceUrl?: string      // official URL if found in nextStep
-  // ── Structured display fields (extracted from raw prose) ──────────────────
-  amountDisplay: string         // dollar amount only, no trailing prose
-  fundingHighlight: string | null  // short benefit/use-case extracted from value
-  deadlineDisplay: string       // clean timing label: "Rolling", "March 31, 2025", etc.
-  deadlineContext: string | null   // one-line timing context: "Apply anytime", "Opens quarterly"
+  // ── Structured display fields ─────────────────────────────────────────────
+  // These are CLASSIFIED from name/category/badges — never raw AI prose blobs
+  amountDisplay: string          // dollar figure only: "Up to $5,000,000"
+  fundingType: string | null     // instrument type: "SBA 7(a) Loan", "Business grant"
+  fundingStyle: string | null    // structure detail: "Non-repayable", "Reduced fees"
+  fundingHighlight: string | null // semantic benefit: "Veteran fee reductions"
+  deadlineDisplay: string        // timing label: "Rolling", "March 31, 2025"
+  deadlineContext: string | null // one-line context: "Apply anytime", "Opens quarterly"
 }
 
 export interface ActionPlanStep {
@@ -273,107 +276,160 @@ function deriveBadges(
   return badges.slice(0, 3)
 }
 
-// ─── Structured field extractors ─────────────────────────────────────────────
+// ─── Structured field classifiers ────────────────────────────────────────────
+// These derive clean UI metadata from name / category / badges / raw text.
+// They intentionally do NOT render prose — they classify and label.
 
 /**
- * Pull only the dollar amount / range out of a raw value string.
- * e.g. "Up to $5,000,000 for restaurant equipment and buildout…"
- *   → "Up to $5,000,000"
- *
- * Never truncates if the entire string IS already just an amount.
+ * Strict dollar-amount extractor.
+ * Matches the monetary figure at the start of the value string and stops there.
+ * "Up to $5,000,000 for restaurant equipment…" → "Up to $5,000,000"
+ * Never returns trailing prose.
  */
 function extractAmount(rawValue: string): string {
   if (!rawValue || rawValue === 'See program details') return rawValue || 'See program details'
 
-  // Strategy 1: cut at the first ". " that arrives within 90 chars (first sentence)
-  const sentenceEnd = rawValue.search(/\.\s/)
-  if (sentenceEnd > 4 && sentenceEnd < 90) return rawValue.slice(0, sentenceEnd).trim()
+  // 1. Try to match an explicit amount pattern at the start
+  const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?)?))/i
+  const amtMatch = rawValue.match(amountRe)
+  if (amtMatch && amtMatch[1].includes('$')) return amtMatch[1].trim()
 
-  // Strategy 2: cut at ` for ` / ` to fund ` / ` which ` / ` that ` after a dollar/percent figure
-  const cutMatch = rawValue.match(
-    /^(.{8,80}?(?:\$[\d,]+[KMBkmb]?(?:\s*[–-]\s*\$[\d,]+[KMBkmb]?)?|[\d]+\s*%|\bpercent\b)[^,]*?)\s+(?:for|to fund|to cover|in order|which|that|and (?:can|may|is)|—|–)\b/i
-  )
-  if (cutMatch) return cutMatch[1].trim()
+  // 2. Percentage-based (tax credits): "20% of qualified wages"
+  const pctMatch = rawValue.match(/^(\d+(?:\.\d+)?%(?:\s+of\s+[\w\s]{3,30})?)/i)
+  if (pctMatch) return pctMatch[1].trim()
 
-  // Strategy 3: short value — use as-is
-  if (rawValue.length <= 80) return rawValue
+  // 3. "Varies" / "Variable" / "Negotiable"
+  const varMatch = rawValue.match(/^(varies|variable|negotiable)/i)
+  if (varMatch) return varMatch[1].trim()
 
-  // Fallback: hard cut at 80 chars (last resort, but for amounts this should rarely trigger)
-  return rawValue.slice(0, 78) + '…'
+  // 4. Fallback: first sentence if short
+  const dot = rawValue.search(/\.\s/)
+  if (dot > 3 && dot < 60) return rawValue.slice(0, dot).trim()
+
+  // 5. Last resort: short as-is, longer gets hard cut
+  return rawValue.length <= 60 ? rawValue : rawValue.slice(0, 58).trim() + '…'
 }
 
 /**
- * Extract a short benefit/highlight from the value prose.
- * Looks for eligibility keywords: equipment, buildout, veteran reductions, etc.
- * Returns null if nothing concise is found.
+ * Classify the funding instrument type from the opportunity name, value text,
+ * and section category. Returns a short label — never raw prose.
  */
-function extractHighlight(rawValue: string): string | null {
-  if (!rawValue || rawValue.length < 25) return null
+function inferFundingType(name: string, rawValue: string, category: SectionCategory): string | null {
+  const c = (name + ' ' + rawValue).toLowerCase()
 
-  // Patterns that indicate a useful short benefit phrase
-  const patterns: RegExp[] = [
-    /\bfor\s+((?:restaurant|equipment|buildout|working capital|real estate|renovation|expansion|inventory|payroll)[^.,]{0,50})/i,
-    /(veteran\s+(?:fee\s+reduction|advantage|priority|discounts?)[^.,]{0,40})/i,
-    /((?:reduced|waived|no)\s+(?:origination\s+)?fees?[^.,]{0,40})/i,
-    /(women[-\s]owned[^.,]{0,40})/i,
-    /(minority[-\s]owned[^.,]{0,40})/i,
-    /((?:match(?:ing)?|no\s+match)\s+(?:required|needed|grant)[^.,]{0,30})/i,
-  ]
+  if (c.includes('7(a)') || c.includes('7a loan'))           return 'SBA 7(a) Loan'
+  if (c.includes('504') && c.includes('sba'))                return 'SBA 504 Loan'
+  if (c.includes('microloan') || c.includes('micro loan'))   return 'SBA Microloan'
+  if (c.includes('sbir') || c.includes('sttr'))              return 'Research grant (SBIR/STTR)'
+  if (c.includes('sba'))                                      return 'SBA-backed financing'
+  if (category === 'tax' || c.includes('tax credit'))        return 'Tax credit'
+  if (c.includes('tax deduction'))                           return 'Tax deduction'
+  if (c.includes('rebate'))                                  return 'Rebate program'
+  if (category === 'certification' || c.includes('certif'))  return 'Certification program'
+  if (category === 'contracting' || c.includes('set-aside')) return "Gov't contract opportunity"
+  if (c.includes('grant') && !c.includes('loan'))            return 'Business grant'
+  if (c.includes('loan'))                                    return 'Business loan'
+  if (c.includes('bond'))                                    return 'Surety bond program'
 
-  for (const p of patterns) {
-    const m = rawValue.match(p)
-    if (m) {
-      const candidate = (m[1] || m[0]).trim()
-      if (candidate.length > 6 && candidate.length < 60) return candidate
-    }
+  return null
+}
+
+/**
+ * Classify the funding structure — adds info NOT already obvious from the type.
+ * e.g. "Non-repayable", "Matching required", "Reduced guarantee fees".
+ * Returns null when there's nothing additive to say.
+ */
+function inferFundingStyle(name: string, rawValue: string, category: SectionCategory): string | null {
+  const c = (name + ' ' + rawValue).toLowerCase()
+
+  if (c.includes('non-repayable') || c.includes('does not need to be repaid')) return 'Non-repayable grant'
+  if (c.includes('forgivable'))                        return 'Potentially forgivable'
+  if (c.includes('matching') && (c.includes('grant') || c.includes('required'))) return 'Matching grant required'
+  if (c.includes('fee reduction') || c.includes('fee waiver') || c.includes('reduced fee')) return 'Reduced guarantee fees'
+  if (category === 'certification')                    return 'Unlocks set-aside contracts'
+  if (category === 'contracting')                      return 'Competitive bid process'
+  // Don't state the obvious: "Repayment required" for loans, "Reduces tax" for credits
+  return null
+}
+
+/**
+ * Derive a semantic one-line benefit/highlight from name, category, and badges.
+ * This is CLASSIFICATION, not extraction — it never reads prose.
+ */
+function deriveFundingHighlight(
+  name: string,
+  category: SectionCategory,
+  badges: Badge[],
+): string | null {
+  const n = name.toLowerCase()
+  const bl = badges.map(b => b.label.toLowerCase()).join(' ')
+  const c = n + ' ' + bl
+
+  // Veteran
+  if (c.includes('sdvosb') || c.includes('service-disabled'))   return 'Service-disabled veteran set-aside'
+  if (c.includes('veteran advantage'))                           return 'Reduced SBA guarantee fees'
+  if (c.includes('veteran') || bl.includes('veteran'))          return 'Veteran-owned business priority'
+
+  // Diversity
+  if (c.includes('wosb') || c.includes('women-owned') || c.includes('women owned')) return 'Women-owned business program'
+  if (c.includes('8(a)') || c.includes('hubzone'))              return 'Minority / HUBZone priority'
+  if (c.includes('minority'))                                    return 'Minority-owned business priority'
+
+  // Local / city
+  if (category === 'local') {
+    if (c.includes('austin'))       return 'Austin-based program'
+    if (c.includes('houston'))      return 'Houston-based program'
+    if (c.includes('dallas'))       return 'Dallas-based program'
+    if (c.includes('san antonio'))  return 'San Antonio program'
+    if (c.includes('fort worth'))   return 'Fort Worth program'
+    return 'City / county program'
   }
+
+  // Industry keywords in the name
+  if (n.includes('restaurant') || n.includes('food service')) return 'Restaurant & food service eligible'
+  if (n.includes('technology') || n.includes('tech'))        return 'Technology business eligible'
+  if (n.includes('construction'))                             return 'Construction eligible'
+  if (n.includes('healthcare') || n.includes('medical'))     return 'Healthcare eligible'
+  if (n.includes('energy') || n.includes('solar'))           return 'Clean energy eligible'
+  if (n.includes('hiring') || n.includes('workforce') || n.includes('training')) return 'Hiring & workforce program'
 
   return null
 }
 
 /**
  * Extract just the timing label from raw deadline prose.
- * e.g. "Rolling. Applications accepted year-round through SBA lenders."
- *   → "Rolling"
- * e.g. "March 31, 2025. Submissions must be received before midnight."
- *   → "March 31, 2025"
+ * "Rolling. Applications accepted year-round…" → "Rolling"
+ * "March 31, 2025. Submissions must be…"       → "March 31, 2025"
  */
 function extractDeadlineDisplay(rawDeadline: string): string {
   if (!rawDeadline) return 'Verify with agency'
   if (rawDeadline === 'Verify with agency') return 'Verify with agency'
 
   const dl = rawDeadline.toLowerCase()
-
   if (dl.startsWith('rolling') || dl.includes('open enrollment') || dl.startsWith('anytime')) return 'Rolling'
 
-  // Cut at first ". " if it arrives within 50 chars
-  const sentenceEnd = rawDeadline.search(/\.\s/)
-  if (sentenceEnd > 2 && sentenceEnd < 50) return rawDeadline.slice(0, sentenceEnd).trim()
-
-  // Cut at ". " anywhere in short strings
+  const dot = rawDeadline.search(/\.\s/)
+  if (dot > 2 && dot < 50) return rawDeadline.slice(0, dot).trim()
   if (rawDeadline.length <= 50) return rawDeadline
 
   return rawDeadline.slice(0, 48).trim() + '…'
 }
 
 /**
- * Extract a one-line timing context from raw deadline prose.
- * Returns null when nothing useful is in the text.
+ * Derive a one-line timing context from raw deadline prose.
  */
 function extractDeadlineContext(rawDeadline: string): string | null {
   if (!rawDeadline) return null
   const dl = rawDeadline.toLowerCase()
 
-  if (dl.includes('rolling') || dl.includes('anytime'))  return 'Apply anytime'
-  if (dl.includes('quarterly'))                           return 'Opens quarterly'
-  if (dl.includes('annually') || dl.includes('annual'))  return 'Renews annually'
-  if (dl.includes('typically'))                           return 'Estimated window'
-  if (dl.includes('fall 20') || dl.includes('spring 20') || dl.includes('summer 20') || dl.includes('winter 20')) {
-    const m = rawDeadline.match(/(fall|spring|summer|winter)\s+20\d\d/i)
-    if (m) return `Estimated: ${m[0]}`
-  }
-  if (dl.includes('reminder'))                            return 'Set a reminder'
-  if (dl.includes('verify'))                              return 'Confirm with agency'
+  if (dl.includes('rolling') || dl.includes('anytime'))       return 'Apply anytime'
+  if (dl.includes('quarterly'))                                return 'Opens quarterly'
+  if (dl.includes('annually') || dl.includes('annual'))       return 'Renews annually'
+  if (dl.includes('typically'))                                return 'Estimated window'
+  const seasonMatch = rawDeadline.match(/(fall|spring|summer|winter)\s+20\d\d/i)
+  if (seasonMatch)                                             return `Estimated: ${seasonMatch[0]}`
+  if (dl.includes('reminder'))                                 return 'Set a reminder'
+  if (dl.includes('verify'))                                   return 'Confirm with agency'
 
   return null
 }
@@ -427,10 +483,13 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
     const deadlineStr  = deadline || 'Verify with agency'
     const deadlineDate = parseDeadlineDate(deadlineStr)
 
-    // Structured display fields — extracted from raw prose, never raw blobs
+    // ── Structured display fields ────────────────────────────────────────────
+    // Classified from name/category/badges — never raw AI prose blobs
     const rawValue         = value || 'See program details'
     const amountDisplay    = extractAmount(rawValue)
-    const fundingHighlight = extractHighlight(rawValue)
+    const fundingType      = inferFundingType(name, rawValue, category)
+    const fundingStyle     = inferFundingStyle(name, rawValue, category)
+    const fundingHighlight = deriveFundingHighlight(name, category, badges)
     const deadlineDisplay  = extractDeadlineDisplay(deadlineStr)
     const deadlineContext  = extractDeadlineContext(deadlineStr)
 
@@ -451,6 +510,8 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
       sourceAgency: src?.agency,
       sourceUrl:    src?.url,
       amountDisplay,
+      fundingType,
+      fundingStyle,
       fundingHighlight,
       deadlineDisplay,
       deadlineContext,

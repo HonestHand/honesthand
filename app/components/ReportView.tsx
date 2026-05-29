@@ -309,20 +309,22 @@ function truncateToSentences(text: string, n: number): { preview: string; hasMor
 }
 
 /**
- * Infer a short funding-type label from badge text.
- * Returns null if no recognisable type is found.
+ * Filter action/navigation sentences out of qualification text so that
+ * "Why You Qualify" contains only eligibility reasoning.
+ * Sentences with URLs, "visit", "contact", "apply at" etc. belong in nextStep.
  */
-function inferFundingType(badges: Badge[]): string | null {
-  const labels = badges.map(b => b.label.toLowerCase())
-  if (labels.some(l => l.includes('sba')))              return 'SBA-backed financing'
-  if (labels.some(l => l.includes('grant')))             return 'Grant funding'
-  if (labels.some(l => l.includes('tax credit')))        return 'Tax credit'
-  if (labels.some(l => l.includes('tax deduction')))     return 'Tax deduction'
-  if (labels.some(l => l.includes('loan')))              return 'Loan program'
-  if (labels.some(l => l.includes('rebate')))            return 'Rebate program'
-  if (labels.some(l => l.includes('contract')))          return "Gov't contract"
-  if (labels.some(l => l.includes('certification')))     return 'Certification'
-  return null
+function filterQualSentences(text: string): string {
+  const actionStart = /^\s*(?:visit|contact|apply|register|call|email|submit|download|complete|use\s+the|go\s+to|learn\s+more|find\s+out|click)\b/i
+  const hasUrl = /https?:\/\/|\.gov\b|\.org\b|\.com\b/i
+
+  // Split on sentence boundaries
+  const sentences = text.split(/(?<=[.!?])\s+/)
+  const qualOnly = sentences.filter(s => !actionStart.test(s) && !hasUrl.test(s))
+
+  // Return up to 2 clean eligibility sentences
+  const result = qualOnly.slice(0, 2).join(' ').trim()
+  // Fallback: if filtering removed everything, return first 180 chars of original
+  return result || text.slice(0, 180).trim()
 }
 
 // ─── Opportunity card ─────────────────────────────────────────────────────────
@@ -343,18 +345,20 @@ function OpportunityCard({
   const hasValue    = opp.amountDisplay !== 'See program details'
   const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
-  // Clean raw text fields — removes markdown heading artifacts
-  const whyRaw  = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify)  : null
-  const nextRaw = opp.nextStep    ? cleanMarkdownHeading(opp.nextStep)    : null
+  // whyQualify: strip markdown → filter action sentences → truncate to 2 qual sentences
+  // nextStep:   strip markdown → truncate to 2 action sentences
+  const whyRaw      = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify) : null
+  const nextRaw     = opp.nextStep    ? cleanMarkdownHeading(opp.nextStep)   : null
+  const whyFiltered = whyRaw ? filterQualSentences(whyRaw) : null
+  const whySummary  = whyFiltered ? truncateToSentences(whyFiltered, 2) : null
+  const nextSummary = nextRaw     ? truncateToSentences(nextRaw, 2)     : null
 
-  // Truncated previews shown directly on the card
-  const whySummary  = whyRaw  ? truncateToSentences(whyRaw,  3) : null
-  const nextSummary = nextRaw ? truncateToSentences(nextRaw, 2) : null
-
-  // Show "View full guidance" only when something was actually cut
-  const hasMore = !!(whySummary?.hasMore || nextSummary?.hasMore)
-
-  const fundingType = inferFundingType(opp.badges)
+  // Show "View full guidance" when truncation or sentence-filtering removed content
+  const hasMore = !!(
+    whySummary?.hasMore ||
+    (whyRaw && whyFiltered && whyFiltered.length < whyRaw.length - 20) ||
+    nextSummary?.hasMore
+  )
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-3 last:mb-0">
@@ -397,37 +401,40 @@ function OpportunityCard({
           <div className={`grid gap-3 ${hasValue && hasDeadline ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
 
             {/* ── Funding Snapshot ──
-                Uses extracted structured fields — never raw AI prose blobs.
-                amountDisplay = dollar amount only (wraps, never truncated)
-                fundingHighlight = short benefit extracted from value text
-                fundingType = inferred from badges */}
+                All rows come from classified parser fields — zero raw prose.
+                Max 4 rows, only non-null rows render. */}
             {hasValue && (
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   Funding Snapshot
                 </div>
                 <div className="space-y-2.5">
-                  {/* Dollar amount — extracted clean, wraps naturally */}
+                  {/* Row 1: Dollar amount — wraps naturally, never truncated */}
                   <div className="flex items-start gap-2.5">
                     <span className="flex-shrink-0 leading-none mt-0.5">💰</span>
                     <span className="text-[15px] font-bold text-[#2C2C2A] leading-snug">
                       {opp.amountDisplay}
                     </span>
                   </div>
-                  {/* Funding type from badge inference */}
-                  {fundingType && (
+                  {/* Row 2: Instrument type (SBA 7(a) Loan, Business grant, Tax credit…) */}
+                  {opp.fundingType && (
                     <div className="flex items-start gap-2.5">
                       <span className="flex-shrink-0 leading-none mt-0.5">🏛</span>
-                      <span className="text-[13px] text-gray-600 leading-snug">{fundingType}</span>
+                      <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingType}</span>
                     </div>
                   )}
-                  {/* Short benefit highlight extracted from value prose */}
+                  {/* Row 3: Structure detail (Non-repayable, Reduced fees, Unlocks contracts…) */}
+                  {opp.fundingStyle && (
+                    <div className="flex items-start gap-2.5">
+                      <span className="flex-shrink-0 leading-none mt-0.5">🎁</span>
+                      <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingStyle}</span>
+                    </div>
+                  )}
+                  {/* Row 4: Semantic highlight (Veteran priority, Local program, Industry…) */}
                   {opp.fundingHighlight && (
                     <div className="flex items-start gap-2.5">
                       <span className="flex-shrink-0 leading-none mt-0.5">🎖</span>
-                      <span className="text-[13px] text-gray-600 leading-snug capitalize-first">
-                        {opp.fundingHighlight}
-                      </span>
+                      <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingHighlight}</span>
                     </div>
                   )}
                 </div>
