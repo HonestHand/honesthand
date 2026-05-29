@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { supabase } from './supabase'
 
 function FloatInput({ label, type, value, onChange, autoComplete }: {
@@ -37,6 +38,86 @@ function FloatInput({ label, type, value, onChange, autoComplete }: {
           display:'block',
         }}
       />
+    </div>
+  )
+}
+
+// ─── Password input with show/hide toggle ────────────────────────────────────
+
+function PasswordFloatInput({ label, value, onChange, autoComplete }: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  autoComplete?: string
+}) {
+  const [focused,      setFocused]      = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+
+  return (
+    <div style={{ marginBottom: '16px', position: 'relative' }}>
+      <input
+        type={showPassword ? 'text' : 'password'}
+        value={value}
+        placeholder={label}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        autoComplete={autoComplete}
+        style={{
+          width: '100%',
+          padding: '15px 46px 15px 14px',
+          borderRadius: '8px',
+          border: `1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
+          fontSize: '15px',
+          outline: 'none',
+          boxSizing: 'border-box' as const,
+          background: 'white',
+          color: '#111827',
+          WebkitTextFillColor: '#111827',
+          WebkitAppearance: 'none',
+          appearance: 'none' as const,
+          transition: 'border-color 0.15s ease',
+          display: 'block',
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => setShowPassword(s => !s)}
+        aria-label={showPassword ? 'Hide password' : 'Show password'}
+        aria-pressed={showPassword}
+        tabIndex={0}
+        style={{
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#9CA3AF',
+          transition: 'color 0.15s ease, opacity 0.15s ease',
+          borderRadius: '4px',
+          WebkitTapHighlightColor: 'transparent',
+          flexShrink: 0,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.color = '#1D9E75'
+          e.currentTarget.style.opacity = '0.85'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.color = '#9CA3AF'
+          e.currentTarget.style.opacity = '1'
+        }}
+      >
+        {showPassword
+          ? <EyeOff size={18} strokeWidth={1.75} aria-hidden="true" />
+          : <Eye    size={18} strokeWidth={1.75} aria-hidden="true" />
+        }
+      </button>
     </div>
   )
 }
@@ -198,9 +279,8 @@ export default function Home() {
           />
 
           {/* Password */}
-          <FloatInput
+          <PasswordFloatInput
             label="Password"
-            type="password"
             value={password}
             onChange={v => { setPassword(v); if (!isLogin) setShowPwRules(true) }}
             autoComplete={isLogin ? 'current-password' : 'new-password'}
