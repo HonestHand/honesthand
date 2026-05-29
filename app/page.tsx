@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 
 function FloatInput({ label, type, value, onChange, autoComplete }: {
@@ -49,6 +49,16 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resetSent, setResetSent] = useState(false)
+
+  // Auto-open signup when linked from pricing page (?signup=true)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('signup') === 'true') {
+      setIsLogin(false)
+      setShowAuth(true)
+      window.history.replaceState({}, '', '/')
+    }
+  }, [])
 
   const handleAuth = async () => {
     if (!supabase) return
@@ -105,7 +115,10 @@ export default function Home() {
     <div style={{fontFamily:'system-ui',background:'#fff',minHeight:'100vh'}}>
       <div style={{padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F3F4F6'}}>
         <div style={{fontSize:'20px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
-        <button onClick={()=>{setShowAuth(true);setIsLogin(true)}} style={{padding:'8px 16px',background:'transparent',border:'1px solid #1D9E75',borderRadius:'20px',color:'#1D9E75',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Sign In</button>
+        <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
+          <a href="/pricing" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Pricing</a>
+          <button onClick={()=>{setShowAuth(true);setIsLogin(true)}} style={{padding:'8px 16px',background:'transparent',border:'1px solid #1D9E75',borderRadius:'20px',color:'#1D9E75',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Sign In</button>
+        </div>
       </div>
       <div style={{padding:'64px 24px 48px',textAlign:'center',maxWidth:'600px',margin:'0 auto'}}>
         <div style={{fontSize:'11px',fontWeight:'600',color:'#1D9E75',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:'16px'}}>Built for Texas business owners</div>
