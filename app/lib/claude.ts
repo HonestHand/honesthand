@@ -11,6 +11,10 @@ export interface BusinessData {
   isWomanOwned?: boolean;
   isVeteranOwned?: boolean;
   specificNeeds?: string;
+  /** Free-text description of what the business specifically does */
+  businessDescription?: string;
+  /** Who the business primarily serves — improves funding prioritization */
+  customerSegments?: string[];
   isPro?: boolean;
 }
 
@@ -27,7 +31,15 @@ export function buildReportPrompt(data: BusinessData): string {
 
   const needsLine = data.specificNeeds
     ? `Current focus / planned use of funds: ${data.specificNeeds}`
-    : "No specific use stated — surface the broadest relevant opportunities";
+    : "No specific use stated — surface the broadest relevant opportunities"
+
+  const descriptionLine = data.businessDescription
+    ? `Business description: ${data.businessDescription}`
+    : null
+
+  const segmentsLine = data.customerSegments?.length
+    ? `Primary customers: ${data.customerSegments.join(', ')}`
+    : null;
 
   const scope = data.isPro
     ? `Generate a FULL PRO REPORT with a minimum of 25 distinct opportunities across all 8 required sections. Every opportunity must be real, specific to this business, and actionable.`
@@ -39,13 +51,13 @@ ${scope}
 ---
 BUSINESS PROFILE
 Business name: ${data.businessName}
-Industry / sector: ${data.industry}
+Industry / sector: ${data.industry}${descriptionLine ? `\n${descriptionLine}` : ''}
 Location: ${data.city}${data.county ? `, ${data.county} County` : ''}, Texas
 Entity type: ${data.entityType || "Not provided"}
 Number of employees: ${data.employeeCount}
 Annual revenue: ${data.annualRevenue || "Not provided"}
 Years in business: ${data.yearsInBusiness || "Not provided"}
-${ownershipLine}
+${ownershipLine}${segmentsLine ? `\n${segmentsLine}` : ''}
 ${needsLine}
 ---
 

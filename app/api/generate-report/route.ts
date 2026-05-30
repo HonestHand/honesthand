@@ -42,16 +42,20 @@ export async function POST(request: NextRequest) {
     prompt = buildNonprofitReportPrompt(nonprofitData)
   } else {
     const businessData = {
-      businessName: profile.business_name,
-      industry:     profile.industry,
-      city:         profile.city,
-      county:       profile.county        || '',
-      entityType:   profile.entity_type   || '',
-      employeeCount: profile.employee_count || 'Not provided',
-      annualRevenue: profile.revenue_range,
-      isVeteranOwned:  profile.is_veteran  === true,
-      isMinorityOwned: profile.is_minority === true,
-      isWomanOwned:    profile.is_woman    === true,
+      businessName:        profile.business_name,
+      industry:            profile.industry,
+      businessDescription: profile.business_description || undefined,
+      city:                profile.city,
+      county:              profile.county        || '',
+      entityType:          profile.entity_type   || '',
+      employeeCount:       profile.employee_count || 'Not provided',
+      annualRevenue:       profile.revenue_range,
+      isVeteranOwned:      profile.is_veteran  === true,
+      isMinorityOwned:     profile.is_minority === true,
+      isWomanOwned:        profile.is_woman    === true,
+      customerSegments:    profile.customer_segments
+                             ? (profile.customer_segments as string).split(',').filter(Boolean)
+                             : undefined,
       isPro,
     }
     console.log('[generate-report] businessData:', JSON.stringify(businessData, null, 2))

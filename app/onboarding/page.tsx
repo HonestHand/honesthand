@@ -13,8 +13,10 @@
  *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS current_programs   text;
  *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS funding_goals      text;
  *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS grant_history      text;
- *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS org_focus          text;
- *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS funding_type_needs text;
+ *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS org_focus             text;
+ *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS funding_type_needs   text;
+ *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS business_description text;
+ *   ALTER TABLE profiles ADD COLUMN IF NOT EXISTS customer_segments    text;
  */
 'use client'
 import { useState } from 'react'
@@ -88,10 +90,33 @@ const FUNDING_TYPE_OPTIONS = [
 
 // ── Business constants ─────────────────────────────────────────────────────────
 
-const INDUSTRIES    = ['Restaurant / Food & Beverage', 'Ranch / Farm / Agriculture', 'Construction / Trades', 'Retail', 'Real Estate', 'Professional Services', 'Other']
-const REVENUE_RANGES = ['Under $100k', '$100k - $250k', '$250k - $500k', '$500k - $1M', 'Over $1M']
-const ENTITY_TYPES  = ['Sole Proprietor', 'LLC', 'S-Corp', 'C-Corp', 'Partnership', 'Other']
+const INDUSTRIES      = ['Restaurant / Food & Beverage', 'Ranch / Farm / Agriculture', 'Construction / Trades', 'Retail', 'Real Estate', 'Professional Services', 'Other']
+const REVENUE_RANGES  = ['Under $100k', '$100k - $250k', '$250k - $500k', '$500k - $1M', 'Over $1M']
+const ENTITY_TYPES    = ['Sole Proprietor', 'LLC', 'S-Corp', 'C-Corp', 'Partnership', 'Other']
 const EMPLOYEE_COUNTS = ['Just me (1)', '2-5', '6-10', '11-25', '26-50', '51-100', '100+']
+
+/** Dynamic placeholder text changes based on selected industry — keeps the field conversational */
+const BUSINESS_DESCRIPTION_PLACEHOLDERS: Record<string, string> = {
+  'Restaurant / Food & Beverage': 'e.g. Tex-Mex taqueria, BBQ smokehouse, coffee shop, food truck',
+  'Ranch / Farm / Agriculture':   'e.g. Cattle ranch, pecan orchard, goat dairy, honey producer',
+  'Construction / Trades':        'e.g. Roofing company, excavation contractor, HVAC, electrical',
+  'Retail':                       'e.g. Western apparel store, hardware store, boutique gift shop',
+  'Real Estate':                  'e.g. Residential brokerage, property management, commercial leasing',
+  'Professional Services':        'e.g. CPA firm, IT consulting, marketing agency, staffing',
+  'Other':                        'e.g. Custom trailer fabrication, auto body shop, dog grooming',
+}
+
+const CUSTOMER_SEGMENT_OPTIONS = [
+  { key: 'consumers',   label: 'Consumers',              icon: '👤' },
+  { key: 'businesses',  label: 'Other Businesses',       icon: '🏢' },
+  { key: 'government',  label: 'Government',             icon: '🏛️' },
+  { key: 'nonprofits',  label: 'Nonprofits',             icon: '🤝' },
+  { key: 'agriculture', label: 'Agriculture / Ranching', icon: '🌾' },
+  { key: 'tourism',     label: 'Tourism / Hospitality',  icon: '🏨' },
+  { key: 'healthcare',  label: 'Healthcare Orgs',        icon: '🏥' },
+  { key: 'education',   label: 'Education',              icon: '📚' },
+  { key: 'mixed',       label: 'Mixed / Other',          icon: '⚡' },
+]
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -110,13 +135,15 @@ export default function Onboarding() {
     county:            '',
     user_type:         'business' as UserType,
     // business-only
-    industry:          '',
-    revenue_range:     '',
-    entity_type:       '',
-    employee_count:    '',
-    is_veteran:        false,
-    is_minority:       false,
-    is_woman:          false,
+    industry:             '',
+    revenue_range:        '',
+    entity_type:          '',
+    employee_count:       '',
+    is_veteran:           false,
+    is_minority:          false,
+    is_woman:             false,
+    business_description: '',
+    customer_segments:    [] as string[],
     // nonprofit-only
     ein:               '',
     is_501c3:          false,
@@ -141,7 +168,7 @@ export default function Onboarding() {
 
   const totalSteps = 3
 
-  const toggleArray = (field: 'org_focus' | 'funding_type_needs', val: string) => {
+  const toggleArray = (field: 'org_focus' | 'funding_type_needs' | 'customer_segments', val: string) => {
     const arr = form[field]
     setForm({ ...form, [field]: arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val] })
   }
@@ -204,14 +231,16 @@ export default function Onboarding() {
 
       if (userType === 'business') {
         Object.assign(payload, {
-          business_name:  form.business_name,
-          industry:       effectiveIndustry,
-          entity_type:    form.entity_type,
-          employee_count: form.employee_count,
-          revenue_range:  form.revenue_range,
-          is_veteran:     form.is_veteran,
-          is_minority:    form.is_minority,
-          is_woman:       form.is_woman,
+          business_name:        form.business_name,
+          industry:             effectiveIndustry,
+          entity_type:          form.entity_type,
+          employee_count:       form.employee_count,
+          revenue_range:        form.revenue_range,
+          is_veteran:           form.is_veteran,
+          is_minority:          form.is_minority,
+          is_woman:             form.is_woman,
+          business_description: form.business_description || null,
+          customer_segments:    form.customer_segments.join(',') || null,
         })
       } else {
         Object.assign(payload, {
@@ -399,6 +428,15 @@ export default function Onboarding() {
               {form.industry === 'Other' && (
                 <input style={{ ...inputStyle, borderColor: '#1D9E75' }} placeholder="Describe your industry (e.g. Auto Repair, Daycare, Landscaping)" value={industryOther} onChange={e => setIndustryOther(e.target.value)} autoFocus />
               )}
+              {/* Business description — shows once an industry is selected */}
+              {form.industry && (
+                <input
+                  style={inputStyle}
+                  placeholder={BUSINESS_DESCRIPTION_PLACEHOLDERS[form.industry] || 'What specifically does your business do?'}
+                  value={form.business_description}
+                  onChange={e => setForm({ ...form, business_description: e.target.value })}
+                />
+              )}
               <select style={selectStyle} value={form.entity_type} onChange={e => setForm({ ...form, entity_type: e.target.value })}>
                 <option value="">Select entity type</option>
                 {ENTITY_TYPES.map(e => <option key={e} value={e}>{e}</option>)}
@@ -427,6 +465,27 @@ export default function Onboarding() {
           {userType === 'business' && step === 3 && (
             <div>
               <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>Ownership & final details</div>
+
+              {/* Audience segmentation */}
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#2C2C2A', marginBottom: '4px' }}>
+                  Who do you primarily serve?
+                </div>
+                <div style={{ fontSize: '12px', color: '#9CA3AF', marginBottom: '10px' }}>
+                  Select all that apply — improves your recommendations.
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {CUSTOMER_SEGMENT_OPTIONS.map(opt =>
+                    pillTag(
+                      form.customer_segments.includes(opt.key),
+                      () => toggleArray('customer_segments', opt.key),
+                      opt.icon,
+                      opt.label,
+                    )
+                  )}
+                </div>
+              </div>
+
               {checkboxRow('Veteran-owned business?', 'Unlocks exclusive veteran programs', 'is_veteran')}
               {checkboxRow('Minority-owned business?', 'Unlocks minority business grants', 'is_minority')}
               {checkboxRow('Woman-owned business?', 'Unlocks women entrepreneur programs', 'is_woman')}

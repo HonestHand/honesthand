@@ -361,10 +361,10 @@ function OpportunityCard({
   )
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-3 last:mb-0">
+    <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-2.5 last:mb-0">
 
       {/* ── Header ── */}
-      <div className="px-4 pt-4 pb-3">
+      <div className="px-4 pt-4 pb-3.5">
         <div className="flex items-start justify-between gap-2 mb-2.5">
           <h3 className="text-[15px] font-semibold text-[#2C2C2A] leading-snug flex-1">
             {isFirst && (
@@ -408,33 +408,19 @@ function OpportunityCard({
                 <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   Funding Snapshot
                 </div>
-                <div className="space-y-2.5">
-                  {/* Row 1: Dollar amount — wraps naturally, never truncated */}
+                <div className="space-y-2">
+                  {/* Row 1: Dollar amount */}
                   <div className="flex items-start gap-2.5">
                     <span className="flex-shrink-0 leading-none mt-0.5">💰</span>
                     <span className="text-[15px] font-bold text-[#2C2C2A] leading-snug">
                       {opp.amountDisplay}
                     </span>
                   </div>
-                  {/* Row 2: Instrument type (SBA 7(a) Loan, Business grant, Tax credit…) */}
+                  {/* Row 2: Instrument type */}
                   {opp.fundingType && (
                     <div className="flex items-start gap-2.5">
                       <span className="flex-shrink-0 leading-none mt-0.5">🏛</span>
                       <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingType}</span>
-                    </div>
-                  )}
-                  {/* Row 3: Structure detail (Non-repayable, Reduced fees, Unlocks contracts…) */}
-                  {opp.fundingStyle && (
-                    <div className="flex items-start gap-2.5">
-                      <span className="flex-shrink-0 leading-none mt-0.5">🎁</span>
-                      <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingStyle}</span>
-                    </div>
-                  )}
-                  {/* Row 4: Semantic highlight (Veteran priority, Local program, Industry…) */}
-                  {opp.fundingHighlight && (
-                    <div className="flex items-start gap-2.5">
-                      <span className="flex-shrink-0 leading-none mt-0.5">🎖</span>
-                      <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingHighlight}</span>
                     </div>
                   )}
                 </div>
@@ -471,102 +457,91 @@ function OpportunityCard({
         )}
       </div>
 
-      {/* ── Why You Qualify ── */}
-      {whySummary && (
-        <>
-          <div className="border-t border-gray-50 mx-4" />
-          <div className="px-4 py-3.5">
-            <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
-              Why You Qualify
-            </div>
-            <p
-              className="text-[13px] text-gray-600 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: renderInline(whySummary.preview) }}
-            />
-          </div>
-        </>
-      )}
-
-      {/* ── Recommended Next Step ── */}
-      {nextSummary && (
-        <>
-          <div className="border-t border-gray-50 mx-4" />
-          <div className="px-4 py-3.5">
-            <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
-              Recommended Next Step
-            </div>
-            <p
-              className="text-[13px] text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: renderInline(nextSummary.preview) }}
-            />
-          </div>
-        </>
-      )}
-
-      {/* ── View Full Guidance (expandable) ──
-          Only rendered when truncation actually occurred. */}
-      {hasMore && (
-        <>
-          <div className="border-t border-gray-50 mx-4" />
-          <div className="px-4 py-3">
-            <button
-              onClick={() => setShowGuidance(v => !v)}
-              className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
-            >
-              <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
-              {showGuidance ? 'Hide full guidance' : 'View full guidance'}
-            </button>
-            {showGuidance && (
-              <div className="mt-3 space-y-4">
-                {whyRaw && whySummary?.hasMore && (
-                  <div>
-                    <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
-                      Full Qualification Detail
-                    </div>
-                    <p
-                      className="text-[13px] text-gray-600 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: renderInline(whyRaw) }}
-                    />
-                  </div>
-                )}
-                {nextRaw && nextSummary?.hasMore && (
-                  <div>
-                    <div className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest mb-1.5">
-                      Full Next Steps
-                    </div>
-                    <p
-                      className="text-[13px] text-gray-700 leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
-                    />
-                  </div>
-                )}
+      {/* ── Why You Qualify + Next Step — combined, no dividers ── */}
+      {(whySummary || nextSummary) && (
+        <div className="px-4 pt-1 pb-3 space-y-2.5">
+          {whySummary && (
+            <div>
+              <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
+                Why You Qualify
               </div>
-            )}
-          </div>
-        </>
+              <p
+                className="text-[13px] text-gray-600 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: renderInline(whySummary.preview) }}
+              />
+            </div>
+          )}
+          {nextSummary && (
+            <div>
+              <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
+                Next Step
+              </div>
+              <p
+                className="text-[13px] text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: renderInline(nextSummary.preview) }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── View Full Guidance (expandable) ── */}
+      {hasMore && (
+        <div className="px-4 pb-3">
+          <button
+            onClick={() => setShowGuidance(v => !v)}
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
+          >
+            <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
+            {showGuidance ? 'Hide details' : 'Full details'}
+          </button>
+          {showGuidance && (
+            <div className="mt-3 space-y-3">
+              {whyRaw && whySummary?.hasMore && (
+                <div>
+                  <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
+                    Full Qualification Detail
+                  </div>
+                  <p
+                    className="text-[13px] text-gray-600 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderInline(whyRaw) }}
+                  />
+                </div>
+              )}
+              {nextRaw && nextSummary?.hasMore && (
+                <div>
+                  <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
+                    Full Next Steps
+                  </div>
+                  <p
+                    className="text-[13px] text-gray-700 leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* ── Official source footer ── */}
       {opp.sourceAgency && (
-        <>
-          <div className="border-t border-gray-50 mx-4" />
-          <div className="px-4 py-2.5 flex items-center gap-2">
-            <span className="text-[10px] font-bold text-[#1D9E75] uppercase tracking-wide">✓ Official Source</span>
-            {opp.sourceUrl ? (
-              <a
-                href={opp.sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[11px] text-[#1D9E75] font-medium hover:underline flex items-center gap-0.5"
-              >
-                {opp.sourceAgency}
-                <span className="text-[10px]">↗</span>
-              </a>
-            ) : (
-              <span className="text-[11px] text-gray-500">{opp.sourceAgency}</span>
-            )}
-          </div>
-        </>
+        <div className="px-4 pb-3 pt-1 flex items-center gap-2 border-t border-gray-50">
+          <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+          {opp.sourceUrl ? (
+            <a
+              href={opp.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] text-[#1D9E75] font-medium hover:underline flex items-center gap-0.5"
+            >
+              {opp.sourceAgency}
+              <span className="text-[10px]">↗</span>
+            </a>
+          ) : (
+            <span className="text-[11px] text-gray-500">{opp.sourceAgency}</span>
+          )}
+        </div>
       )}
     </div>
   )
