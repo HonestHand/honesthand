@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     { data: profile },
     { data: { user: authUser } },
   ] = await Promise.all([
-    supabase.from('profiles').select('business_name, is_pro').eq('id', userId).single(),
+    supabase.from('profiles').select('business_name, is_pro, user_type').eq('id', userId).single(),
     supabase.auth.admin.getUserById(userId),
   ])
 
@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
   }
 
   const businessName = profile?.business_name || 'Your business'
-  const template = abandonedPaywallEmail({ businessName })
+  const userType     = (profile?.user_type === 'nonprofit' ? 'nonprofit' : 'business') as 'business' | 'nonprofit'
+  const template = abandonedPaywallEmail({ businessName, userType })
 
   const result = await sendEmail({
     userId,
