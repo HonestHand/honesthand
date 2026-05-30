@@ -6,17 +6,8 @@
  *
  * PROTECTED: requires the CRON_SECRET header to prevent public abuse.
  *
- * Usage (from terminal):
- *   curl -X POST https://yourhonesthand.com/api/test-email \
- *     -H "Authorization: Bearer <CRON_SECRET>" \
- *     -H "Content-Type: application/json" \
- *     -d '{"to":"you@example.com","type":"welcome"}'
- *
- * Or from VS Code terminal (PowerShell):
- *   $secret = "your-cron-secret"
- *   Invoke-RestMethod -Method POST -Uri "https://yourhonesthand.com/api/test-email" `
- *     -Headers @{ Authorization = "Bearer $secret"; "Content-Type" = "application/json" } `
- *     -Body '{"to":"you@example.com","type":"welcome"}'
+ * Usage (PowerShell — must use www. to avoid redirect stripping the auth header):
+ *   Invoke-RestMethod -Method POST -Uri "https://www.yourhonesthand.com/api/test-email" -Headers @{ Authorization = "Bearer YOUR_CRON_SECRET"; "Content-Type" = "application/json" } -Body '{"to":"you@example.com","type":"welcome"}'
  */
 
 import { NextRequest, NextResponse } from 'next/server'
