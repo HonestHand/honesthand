@@ -457,6 +457,40 @@ function extractDeadlineContext(rawDeadline: string): string | null {
   return null
 }
 
+// ─── Profile-summary detector ─────────────────────────────────────────────────
+
+/**
+ * Returns true when a bold line is a business/nonprofit profile context header
+ * rather than a real fundable opportunity.
+ *
+ * Claude sometimes emits a context block like:
+ *   **Veteran-Owned Western Hat Shop | Gruene, Comal County, TX**
+ *
+ * Detection signals:
+ *   1. Pipe separator " | " + Texas location suffix
+ *   2. "-Owned" ownership flag + location suffix
+ *   3. No value AND no deadline (pure context, not a program)
+ */
+function isProfileSummary(name: string, value: string, deadline: string): boolean {
+  // Pipe + Texas location: "BusinessType | City, County, TX"
+  if (
+    name.includes(' | ') &&
+    (/,\s*(TX|Texas)\s*$/.test(name) || /\bCounty\b/.test(name))
+  ) return true
+
+  // Ownership flag + location suffix
+  const hasOwnershipFlag   = /-owned\b/i.test(name)
+  const hasLocationSuffix  = /,\s*(TX|Texas)/.test(name) || /\bCounty\b/.test(name)
+  if (hasOwnershipFlag && hasLocationSuffix) return true
+
+  // No value AND no deadline AND (pipe separator OR ownership flag) → context block
+  const noValue    = !value    || value    === 'See program details'
+  const noDeadline = !deadline || deadline === 'Verify with agency'
+  if (noValue && noDeadline && (name.includes(' | ') || hasOwnershipFlag)) return true
+
+  return false
+}
+
 // ─── Opportunity parser ───────────────────────────────────────────────────────
 
 function parseOpportunities(sectionText: string, category: SectionCategory): ParsedOpportunity[] {
@@ -489,6 +523,9 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
 
     const value      = extractField(block, 'Value')      || extractField(block, 'value')
     const deadline   = extractField(block, 'Deadline')   || extractField(block, 'deadline')
+
+    // Skip profile context blocks that Claude sometimes emits as the first bold line
+    if (isProfileSummary(name, value, deadline)) continue
 
     // Strip residual ** markdown from text fields so the UI never sees bold artifacts
     const stripBold  = (s: string) => s.replace(/\*\*/g, '').trim()

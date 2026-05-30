@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
-import ReportView from '../components/ReportView'
+import ReportView, { ProfileSummary } from '../components/ReportView'
 import { trackEvent } from '../lib/analytics'
 
 // ─── Rotating loading messages ────────────────────────────────────────────────
@@ -478,6 +478,23 @@ export default function Dashboard() {
               upgrading={upgrading}
               upgradeError={upgradeError}
               userId={user?.id}
+              profile={profile ? ((): ProfileSummary => ({
+                businessName:  profile.business_name,
+                description:   profile.business_description || undefined,
+                city:          profile.city,
+                county:        profile.county        || undefined,
+                industry:      profile.industry      || undefined,
+                revenue:       profile.revenue_range || undefined,
+                entityType:    profile.entity_type   || undefined,
+                employeeCount: profile.employee_count || undefined,
+                isVeteran:     profile.is_veteran  === true,
+                isMinority:    profile.is_minority === true,
+                isWoman:       profile.is_woman    === true,
+                userType:      profile.user_type   === 'nonprofit' ? 'nonprofit' : 'business',
+                missionArea:   profile.mission_area   || undefined,
+                annualBudget:  profile.annual_budget  || undefined,
+                is501c3:       profile.is_501c3       === true,
+              }))() : undefined}
               onPaywallVisible={!isPro && user?.id ? () => handlePaywallVisible(user.id) : undefined}
             />
           )}

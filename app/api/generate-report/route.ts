@@ -127,7 +127,8 @@ FORMAT RULES:
   • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL
-- End with the 30-Day Action Plan as the final section`
+- End with the 30-Day Action Plan as the final section
+- Do NOT include a business profile summary, context block, or header at the top of any section. Never echo back the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.`
 
   const freeSystemPrompt = `You are HonestHand — a straight-talking financial partner for Texas small business owners.
 The current date is ${currentDate}. Always use accurate, current deadlines. Never reference past years or outdated program cycles.
@@ -158,7 +159,8 @@ FORMAT RULES:
   • **Value:** estimated dollar value or range
   • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
   • **Why you qualify:** one sentence on eligibility match
-  • **Next step:** exact action to take with agency name or URL`
+  • **Next step:** exact action to take with agency name or URL
+- Do NOT include a business profile summary or context block. Never echo the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.`
 
   // ── Nonprofit system prompts ────────────────────────────────────────────────
   const nonprofitProSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
@@ -216,7 +218,8 @@ FORMAT RULES:
   • **Deadline:** specific date (e.g. "LOI by: October 15, 2026"), or "Rolling — apply anytime", or "Typically opens: [month] — verify with funder" if the exact date is uncertain. Never omit this field.
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with funder name or URL
-- End with the 30-Day Grant Readiness Action Plan as the final section`
+- End with the 30-Day Grant Readiness Action Plan as the final section
+- Do NOT include an organization profile summary or context block. Never echo the org name, location, or 501(c)(3) status as a formatted bold item. Start each section directly with the first opportunity.`
 
   const nonprofitFreeSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
 The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles.
@@ -246,7 +249,8 @@ FORMAT RULES:
   • **Value:** estimated grant size or range
   • **Deadline:** specific date or cycle — never omit this field
   • **Why you qualify:** one sentence on eligibility match
-  • **Next step:** exact action to take with funder name or URL`
+  • **Next step:** exact action to take with funder name or URL
+- Do NOT include an organization profile summary or context block. Never echo the org name, location, or mission as a formatted bold item. Start each section directly with the first grant opportunity.`
 
   // ── Select the right system prompt ──────────────────────────────────────────
   const selectedSystemPrompt = isNonprofit

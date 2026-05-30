@@ -19,6 +19,92 @@ import {
   markReportViewed,
 } from '../lib/storage'
 
+// ─── Business / nonprofit profile summary card ───────────────────────────────
+
+export interface ProfileSummary {
+  businessName:    string
+  description?:   string
+  city:            string
+  county?:         string
+  industry?:       string
+  revenue?:        string
+  entityType?:     string
+  employeeCount?:  string
+  isVeteran?:      boolean
+  isMinority?:     boolean
+  isWoman?:        boolean
+  userType?:       'business' | 'nonprofit'
+  // Nonprofit
+  missionArea?:    string
+  annualBudget?:   string
+  is501c3?:        boolean
+}
+
+function BusinessProfileCard({ p }: { p: ProfileSummary }) {
+  const isNonprofit = p.userType === 'nonprofit'
+
+  const ownershipTags: string[] = []
+  if (p.isVeteran)  ownershipTags.push('Veteran-Owned')
+  if (p.isMinority) ownershipTags.push('Minority-Owned')
+  if (p.isWoman)    ownershipTags.push('Woman-Owned')
+  if (p.is501c3)    ownershipTags.push('501(c)(3)')
+
+  const metaItems: { icon: string; label: string }[] = []
+  if (p.city)          metaItems.push({ icon: '📍', label: p.county ? `${p.city}, ${p.county} Co.` : `${p.city}, TX` })
+  if (!isNonprofit && p.industry)     metaItems.push({ icon: '🏷', label: p.industry })
+  if (!isNonprofit && p.revenue)      metaItems.push({ icon: '💵', label: p.revenue })
+  if (isNonprofit  && p.missionArea)  metaItems.push({ icon: '🎯', label: p.missionArea })
+  if (isNonprofit  && p.annualBudget) metaItems.push({ icon: '💵', label: p.annualBudget })
+
+  return (
+    <div className="mb-5 px-4 py-3.5 bg-white border border-gray-100 rounded-xl">
+      {/* Label */}
+      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
+        {isNonprofit ? 'Organization Profile' : 'Your Business Profile'}
+      </div>
+
+      {/* Name + description */}
+      <div className="mb-2">
+        <div className="text-[15px] font-semibold text-[#2C2C2A] leading-snug">{p.businessName}</div>
+        {p.description && (
+          <div className="text-[13px] text-gray-500 mt-0.5 leading-snug">{p.description}</div>
+        )}
+      </div>
+
+      {/* Meta row */}
+      {metaItems.length > 0 && (
+        <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+          {metaItems.map(m => (
+            <span key={m.label} className="flex items-center gap-1 text-[12px] text-gray-500">
+              <span>{m.icon}</span>
+              <span>{m.label}</span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Ownership tags */}
+      {ownershipTags.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {ownershipTags.map(t => (
+            <span
+              key={t}
+              className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-gray-50 text-gray-500 border border-gray-200"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* Helper text */}
+      <div className="text-[11px] text-gray-400 mt-1">
+        Used to personalize your funding recommendations.
+      </div>
+    </div>
+  )
+}
+
 // ─── Badge chip ───────────────────────────────────────────────────────────────
 
 const BADGE_STYLES: Record<BadgeVariant, string> = {
@@ -853,6 +939,8 @@ interface ReportViewProps {
   upgrading: boolean
   upgradeError: string
   userId?: string
+  /** Business/nonprofit context displayed above opportunities — never styled as an opportunity card. */
+  profile?: ProfileSummary
   /** Called once when the upgrade wall becomes visible — used to schedule paywall email. */
   onPaywallVisible?: () => void
 }
@@ -865,6 +953,7 @@ export default function ReportView({
   upgrading,
   upgradeError,
   userId,
+  profile,
   onPaywallVisible,
 }: ReportViewProps) {
   const parsed = useMemo(() => parseReport(report), [report])
@@ -953,6 +1042,9 @@ export default function ReportView({
 
   return (
     <div>
+      {/* Business / nonprofit profile context — NOT an opportunity */}
+      {profile && <BusinessProfileCard p={profile} />}
+
       {/* Trust verification ribbon — shown for all users */}
       <TrustRibbon reportDate={reportDate} isNew={isNewReport} />
 
