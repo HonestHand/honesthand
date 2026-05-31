@@ -1020,12 +1020,17 @@ export function filterReportForProfile(
 
   if (isNonprofit) return report // nonprofits see everything unchanged
 
-  // FOR-PROFIT: remove any opportunity whose content contains nonprofit language
+  // FOR-PROFIT: remove opportunities whose NAME or ELIGIBILITY fields contain
+  // nonprofit language. We intentionally exclude rawText / description — many
+  // legitimate for-profit programs (SBA Microloan, USDA B&I) mention that
+  // nonprofits can *also* apply. Suppressing those would be a false positive.
+  // We only suppress when the program name or why-qualify field signals that
+  // the opportunity itself is nonprofit-only.
   const filteredSections = report.sections.map(section => {
     const filteredOpps = section.opportunities
       .filter(opp => {
-        const combined = [opp.name, opp.whyQualify, opp.nextStep, opp.rawText].join(' ')
-        return !containsNonprofitLanguage(combined)
+        const eligibilityText = [opp.name, opp.whyQualify].join(' ')
+        return !containsNonprofitLanguage(eligibilityText)
       })
       .map(opp => ({
         ...opp,
