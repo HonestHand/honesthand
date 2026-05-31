@@ -52,6 +52,15 @@ CRITICAL URL RULES — NON-NEGOTIABLE:
 - If you are not 100% certain a URL is real, write "Search: [program name] at [agency website]" instead
 - Never make up or guess URLs
 
+ENTITY TYPE ENFORCEMENT — HARD RULE:
+Read the entity type from the business profile first.
+- LLC, Sole Proprietorship, S-Corp, C-Corp, Corporation, Partnership = FOR-PROFIT
+  → NEVER include: nonprofit programs, 501(c) grants, tax-exempt programs, charitable grants, donor-funded programs
+  → These do not apply to for-profit businesses — omit entirely
+- "Why you qualify" bullets must describe only business attributes. Never describe the program itself.
+- Never split a dollar amount: "$50,000" is one value, never "$50" and "000" separately.
+- "Why you qualify" = business characteristics only. "Next step" = one clear action only. Never duplicate across fields.
+
 REQUIRED SECTIONS (cover all 8, hit 25+ total opportunities):
 1. Federal Grants & SBA Programs (5–7 opportunities)
 2. Texas State Programs (4–6 opportunities)

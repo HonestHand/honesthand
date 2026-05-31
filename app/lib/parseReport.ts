@@ -19,8 +19,8 @@ export interface ParsedOpportunity {
   valueNum: number
   deadline: string        // raw full deadline text (kept for badge/urgency logic)
   deadlineDate?: Date     // parsed Date when a specific deadline is extractable
-  whyQualify: string
-  nextStep: string
+  whyQualify: string      // raw full text — used only for Full Details
+  nextStep: string        // raw full text — used only for Full Details
   rawText: string
   badges: Badge[]
   isHighValue: boolean
@@ -29,13 +29,16 @@ export interface ParsedOpportunity {
   sourceAgency?: string   // extracted from nextStep (e.g. "SBA.gov", "TWC Texas")
   sourceUrl?: string      // official URL if found in nextStep
   // ── Structured display fields ─────────────────────────────────────────────
-  // These are CLASSIFIED from name/category/badges — never raw AI prose blobs
+  // These are CLASSIFIED/NORMALIZED — never raw AI prose blobs
   amountDisplay: string          // dollar figure only: "Up to $5,000,000"
   fundingType: string | null     // instrument type: "SBA 7(a) Loan", "Business grant"
   fundingStyle: string | null    // structure detail: "Non-repayable", "Reduced fees"
   fundingHighlight: string | null // semantic benefit: "Veteran fee reductions"
   deadlineDisplay: string        // timing label: "Rolling", "March 31, 2025"
   deadlineContext: string | null // one-line context: "Apply anytime", "Opens quarterly"
+  // ── Normalized card display fields ────────────────────────────────────────
+  whyFragments: string[]         // 1–3 clean bullet reasons, no prose, no markdown
+  nextStepClean: string          // one clean action sentence, no markdown, no duplicates
 }
 
 export interface ActionPlanStep {
@@ -282,34 +285,96 @@ function deriveBadges(
 
 /**
  * Strict dollar-amount extractor.
- * Matches the monetary figure at the start of the value string and stops there.
- * "Up to $5,000,000 for restaurant equipment…" → "Up to $5,000,000"
- * "$10,000–$25,000 (one-time, non-repayable)"  → "$10,000–$25,000"
- * Never returns trailing prose or parentheticals.
+ * Hard limit: 40 chars. Strips markdown before processing.
+ * "Up to **$500,000** for restaurant equipment…" → "Up to $500,000"
+ * "$10,000–$25,000 (one-time, non-repayable)"    → "$10,000–$25,000"
+ * "Access to sole-source federal contracts"       → "Contracting access"
+ * Never returns raw prose, markdown, or truncated explanations.
  */
-function extractAmount(rawValue: string): string {
-  if (!rawValue || rawValue === 'See program details') return rawValue || 'See program details'
+/**
+ * Strip deadline/timing language from a raw value string.
+ * The Funding Snapshot has one job — show the money. Timing belongs in the Timing section.
+ *
+ * Removes patterns like:
+ *   "— Deadline: Rolling, apply anytime"
+ *   "; typically opens fall cycle"
+ *   ", rolling deadline"
+ *   "— monitor next cycle"
+ */
+function stripDeadlineFromValue(v: string): string {
+  return v
+    // Hard separator + deadline keyword → strip from there to end
+    .replace(/[\s—–]+(?:deadline[s]?[:\s]|rolling\b|apply\s+anytime|open\s+enrollment|opens?\s+(?:fall|spring|summer|winter|late|early|mid)|closes?\b|due\s+(?:date|by)\b|annual\s+filing|(?:fall|spring|summer|winter)\s+cycle|monitor\s+next|typically\s+opens?|verify\s+(?:at|with)|next\s+cycle|application\s+(?:window|period)).*/i, '')
+    // Soft separator (semicolon, comma) + deadline keyword
+    .replace(/[;,]\s*(?:deadline[s]?[:\s]|rolling\b|apply\s+anytime|opens?\s+(?:fall|spring|summer|winter)|closes?\b|annual\s+filing|monitor\s+next|typically\s+opens?).*/i, '')
+    .trim()
+}
 
-  // 1. Try to match an explicit amount pattern at the start
-  const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:million|billion|thousand|[KMBkmb])?)?))/i
-  const amtMatch = rawValue.match(amountRe)
-  if (amtMatch && amtMatch[1].includes('$'))
-    return amtMatch[1].trim().replace(/\s*\([^)]{1,60}\)\s*$/, '').trim()
+function extractAmount(rawValue: string, programName?: string): string {
+  if (!rawValue || rawValue === 'See program details') return 'See program details'
 
-  // 2. Percentage-based (tax credits): "20% of qualified wages"
-  const pctMatch = rawValue.match(/^(\d+(?:\.\d+)?%(?:\s+of\s+[\w\s]{3,30})?)/i)
+  // 1. Strip markdown bold/links, then strip any deadline language that bled in
+  const v = stripDeadlineFromValue(
+    rawValue
+      .replace(/\*\*/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  )
+
+  // ── Allocation guard ──────────────────────────────────────────────────────
+  // Detect statewide / total-fund allocations — these are NOT per-business amounts.
+  //   "Texas Small Business Credit Initiative: $472 million" → "Varies by lender"
+  //   "$850 million total SSBCI allocation"                  → "Varies by program"
+  const guardCtx        = v + ' ' + (programName || '')
+  const largeDollar     = parseDollarMax(v)
+  const allocationWord  = /\b(?:total\s+(?:program|state|statewide|fund(?:ing)?|allocation)|statewide|ssbci|credit\s+initiative|initiative\s+(?:fund|allocation)|program\s+(?:pool|fund|size)|allocated\s+(?:to|for)|appropriated)\b/i.test(guardCtx)
+  const lenderFundName  = /\b(?:credit\s+initiative|ssbci|revolving\s+(?:loan\s+)?fund|loan\s+(?:guarantee\s+)?fund|capital\s+access)\b/i.test(programName || '')
+
+  if (largeDollar >= 10_000_000 && (allocationWord || lenderFundName)) {
+    const isLoanBased = /\b(?:loan|credit|lend|bank|borrow|financing)\b/i.test(guardCtx)
+    return isLoanBased ? 'Varies by lender' : 'Varies by program'
+  }
+
+  // 2. Dollar amount at/near start (stops before explanation prose)
+  const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?))/i
+  const amtMatch = v.match(amountRe)
+  if (amtMatch?.[1].includes('$')) {
+    // Strip trailing parentheticals and qualifiers, then hard-cap at 40
+    const amt = amtMatch[1].trim().replace(/\s*\([^)]{1,60}\)\s*$/, '').trim()
+    if (amt.length <= 40) return amt
+    const shorter = amt.replace(/\s+(?:per\s+\w+|annually|yearly|monthly|in\s+\w+).*$/i, '').trim()
+    return shorter.length <= 40 ? shorter : shorter.slice(0, 38).replace(/\s+\S+$/, '') + '…'
+  }
+
+  // 2. Dollar amount anywhere in the string (e.g. after "Fee-waived; loans up to $5M")
+  const anyDollar = v.match(/\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?/i)
+  if (anyDollar) {
+    const amt = anyDollar[0].trim()
+    return amt.length <= 40 ? amt : amt.slice(0, 38).replace(/\s+\S+$/, '') + '…'
+  }
+
+  // 3. Percentage (tax credits): "20% of qualified wages"
+  const pctMatch = v.match(/^(\d+(?:\.\d+)?%(?:\s+of\s+[\w\s]{3,20})?)/i)
   if (pctMatch) return pctMatch[1].trim()
 
-  // 3. "Varies" / "Variable" / "Negotiable"
-  const varMatch = rawValue.match(/^(varies|variable|negotiable)/i)
+  // 4. Varies / Variable / Negotiable
+  const varMatch = v.match(/^(varies|variable|negotiable)/i)
   if (varMatch) return varMatch[1].trim()
 
-  // 4. Fallback: first sentence if short
-  const dot = rawValue.search(/\.\s/)
-  if (dot > 3 && dot < 60) return rawValue.slice(0, dot).trim()
+  // 5. Semantic labels for non-monetary programs (no truncation, always concise)
+  if (/sole-source|set-aside|contract(?:ing)?/i.test(v))                     return 'Contracting access'
+  if (/certif/i.test(v))                                                      return 'Certification benefit'
+  if (/technical\s+assistance|free\s+(?:training|help|mentor)/i.test(v))     return 'Free assistance'
+  if (/fee\s*(?:waiv|reduc|exempt)/i.test(v))                                return 'Fee reduction'
+  if (/priority\s+(?:access|consideration)/i.test(v))                        return 'Priority access'
+  if (/no\s+(?:direct\s+)?(?:cash\s+)?grant/i.test(v))                       return 'Non-monetary benefit'
 
-  // 5. Last resort: short as-is, longer gets hard cut
-  return rawValue.length <= 60 ? rawValue : rawValue.slice(0, 58).trim() + '…'
+  // 6. Short enough as-is
+  if (v.length <= 40) return v
+
+  // 7. Hard cap — word-boundary truncate at 38 chars
+  return v.slice(0, 38).replace(/\s+\S+$/, '') + '…'
 }
 
 /**
@@ -457,6 +522,298 @@ function extractDeadlineContext(rawDeadline: string): string | null {
   return null
 }
 
+// ─── Normalized card display helpers ─────────────────────────────────────────
+// These run at parse time and produce clean UI text — never called in the renderer.
+
+/**
+ * Strip markdown formatting for plain-text card display.
+ *   [text](url)  → "text"   (URL discarded — agency link shown separately via sourceAgency)
+ *   **bold**     → "bold"
+ *   bare URLs    → ""       (removed entirely)
+ *   .gov domains → ""       (removed — shown via sourceAgency chip)
+ *   heading-style bold prefix (e.g. "**Why you qualify:**") → removed
+ */
+function stripMarkdownText(text: string): string {
+  return text
+    .replace(/^\*\*\s*(?:why you qualify|next step|recommended next step|action|overview|summary)[:\s]*\*\*\s*/i, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')        // [text](url) → text
+    .replace(/\*\*/g, '')                             // **bold** → bold
+    .replace(/https?:\/\/\S+/g, '')                  // bare https URLs
+    .replace(/\b[\w-]+(?:\.[\w-]+)*\.gov\b/gi, '')   // bare .gov domains
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+/**
+ * True when a sentence is an action/navigation directive — belongs in nextStep, not whyQualify.
+ * Catches "Next step:", "Use the SBA…", "Search for…", URL-bearing sentences, etc.
+ */
+function isActionSentence(s: string): boolean {
+  const t = s.trim()
+  return (
+    // Starts with an action verb or "Next step(s):"
+    /^(?:next\s*steps?\s*[:.—]?|visit|contact|apply|register|call|email|submit|download|complete|use(?:\s+the|\s+your|\s+a)?\s|go\s+to|learn\s+more|find\s+out|click|check(?:\s+the)?\s|access|log\s+in|sign\s+up|get\s+started|search(?:\s+for)?\s|prepare|gather|request|obtain|review\s+the|verify\s+at|confirm\s+(?:with|at)|schedule|attend|meet\s+with|fill\s+out|register\s+(?:at|with|on)|ask\s+your)\b/i.test(t) ||
+    // Contains a bare URL or .gov domain
+    /https?:\/\/|\b[\w-]+(?:\.[\w-]+)*\.gov\b/i.test(t) ||
+    // Contains "next step" anywhere
+    /\bnext\s*steps?\b/i.test(t)
+  )
+}
+
+/** Capitalize first letter of a string. */
+function cap(s: string): string {
+  if (!s) return s
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+/**
+ * Word-boundary cut to maxLen chars — never adds an ellipsis.
+ * Strips the last partial word so the result is always a clean whole word.
+ */
+function wordCut(s: string, maxLen: number): string {
+  if (s.length <= maxLen) return s
+  return s.slice(0, maxLen).replace(/\s+\S*$/, '').trim()
+}
+
+/**
+ * Strip trailing geographic/bureaucratic filler from a qualifier phrase.
+ * Keeps revenue, employee count, and sector info — removes location boilerplate.
+ *   "veteran-owned LLC in Texas"           → "veteran-owned LLC"
+ *   "minority-owned as defined by the SBA" → "minority-owned"
+ */
+function stripTrailingFiller(s: string): string {
+  return s
+    .replace(/[\s,]+(?:operating|based|located)\s+in\s+[\w\s,.]+$/i, '')
+    .replace(/[\s,]+in\s+(?:the\s+)?(?:U\.S\.?A?\.?|United\s+States|Texas|TX)\s*$/i, '')
+    .replace(/[\s,]+as\s+defined\s+by\b.+$/i, '')
+    .replace(/[\s,]+(?:per|under)\s+(?:the\s+)?(?:SBA|IRS|federal)\s+.+$/i, '')
+    .trim()
+}
+
+/** Business entity nouns — used to locate the "main noun" of a qualifier phrase. */
+const BUSINESS_NOUN_PAT = /\b(LLC|L\.L\.C\.|businesses|business|companies|company|startup|start-up|firm|shop|nonprofit|non-profit|organization|retailer|entity|venture|enterprise|co-op|cooperative)\b/i
+
+function findBusinessNoun(s: string): { noun: string; idx: number } | null {
+  const m = s.match(BUSINESS_NOUN_PAT)
+  if (!m || m.index === undefined) return null
+  return { noun: m[0], idx: m.index }
+}
+
+/**
+ * Expand one qualification phrase into 1–3 clean bullet fragments.
+ *
+ * Handles:
+ * - Comma/and lists: "minority-owned, veteran-owned LLC" → 2 bullets
+ * - Chained hyphenated descriptors: "veteran-owned single-person LLC" → 2 bullets
+ * - Lone descriptors: "minority-owned" → appends "business"
+ * - Hard max 40 chars per fragment — NO ellipses, word-boundary cut only
+ */
+function expandQualPhrase(phrase: string): string[] {
+  const core = stripTrailingFiller(phrase.trim().replace(/\.$/, ''))
+  if (!core || core.length < 3) return []
+
+  // Split on commas and "and"
+  const rawSegments = core
+    .split(/,\s*(?:and\s+)?|\s+and\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length >= 3)
+
+  if (rawSegments.length === 0) return []
+
+  // Shared business noun — inherited by segments that have none
+  let sharedNoun: string | null = null
+  for (const seg of rawSegments) {
+    const n = findBusinessNoun(seg)
+    if (n) { sharedNoun = n.noun; break }
+  }
+
+  const results: string[] = []
+
+  function addBullet(s: string): void {
+    if (results.length >= 3) return
+    const f = wordCut(cap(s.trim()), 40)
+    if (f.length >= 3 && !results.includes(f)) results.push(f)
+  }
+
+  function processWithNoun(seg: string, noun: { noun: string; idx: number }): void {
+    const beforeNoun = seg.slice(0, noun.idx).trim()
+    // Detect two or more chained hyphenated descriptors before the noun
+    const hyphenated = [...beforeNoun.matchAll(/\b[\w]+-[\w]+\b/g)].map(m => m[0])
+    if (hyphenated.length >= 2) {
+      // Each descriptor + noun → its own bullet
+      for (const h of hyphenated) addBullet(`${h} ${noun.noun}`)
+    } else {
+      // Keep phrase through to the noun end (drops after-noun filler)
+      addBullet(seg.slice(0, noun.idx + noun.noun.length).trim())
+    }
+  }
+
+  for (const seg of rawSegments) {
+    if (results.length >= 3) break
+    const segNoun = findBusinessNoun(seg)
+
+    if (segNoun) {
+      processWithNoun(seg, segNoun)
+    } else {
+      // Attach shared noun or "business" for ownership-signal words
+      const attached = sharedNoun
+        ? `${seg} ${sharedNoun}`
+        : /\b(?:owned|operated|led|managed)\b/i.test(seg)
+          ? `${seg} business`
+          : seg
+      const attachedNoun = findBusinessNoun(attached)
+      if (attachedNoun) {
+        processWithNoun(attached, attachedNoun)
+      } else {
+        addBullet(seg)
+      }
+    }
+  }
+
+  // Final fallback
+  if (results.length === 0) addBullet(core)
+
+  return results
+}
+
+/**
+ * Convert raw whyQualify text into 1–3 concise qualification bullet fragments.
+ *
+ * Rules:
+ * - Strip markdown and embedded "Next step:" blocks before splitting
+ * - Filter action/navigation sentences
+ * - Remove preamble prefixes ("You are a", "As a", etc.)
+ * - Expand compound phrases: commas, "and", chained hyphenated descriptors
+ * - Hard max 40 chars per fragment — NO ellipses, NO truncation indicator
+ */
+function toWhyFragments(rawWhy: string): string[] {
+  if (!rawWhy) return []
+
+  const cleaned = stripMarkdownText(rawWhy)
+  if (!cleaned) return []
+
+  // Remove embedded "Next step:" tail
+  const noNextStep = cleaned
+    .replace(/\bnext\s*steps?\s*[:.—].*/is, '')
+    .trim()
+
+  if (!noNextStep) return []
+
+  // Split on sentence boundaries
+  const sentences = noNextStep
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+
+  const fragments: string[] = []
+
+  function addFromSentence(s: string): void {
+    if (fragments.length >= 3) return
+    if (isActionSentence(s)) return
+
+    const core = s
+      .replace(/^You(?:'re| are) (?:a|an) /i, '')
+      .replace(/^You(?:'re| are) /i, '')
+      .replace(/^Your (?:business|organization|company|nonprofit) (?:is|has|operates|qualifies|meets)\b/i, '')
+      .replace(/^This (?:business|organization|company|nonprofit) (?:is|has|operates|qualifies|meets)\b/i, '')
+      .replace(/^As (?:a|an) /i, '')
+      .replace(/^(?:being|having) (?:a|an) /i, '')
+      .replace(/\.$/, '')
+      .trim()
+
+    if (core.length < 3) return
+
+    for (const f of expandQualPhrase(core)) {
+      if (fragments.length >= 3) break
+      if (!fragments.includes(f)) fragments.push(f)
+    }
+  }
+
+  for (const s of sentences) {
+    if (fragments.length >= 3) break
+    addFromSentence(s)
+  }
+
+  // Fallback: first sentence chunk as one phrase
+  if (fragments.length === 0) {
+    const fallback = noNextStep.split(/[.!?]/)[0]?.trim() || ''
+    const core = fallback
+      .replace(/^You(?:'re| are) (?:a|an) /i, '')
+      .replace(/^You(?:'re| are) /i, '')
+      .trim()
+    if (core.length >= 3) {
+      for (const f of expandQualPhrase(core)) {
+        if (fragments.length >= 3) break
+        if (f.length >= 3) fragments.push(f)
+      }
+    }
+  }
+
+  return fragments
+}
+
+/**
+ * Extract one clean, validated action sentence from raw nextStep text.
+ *
+ * Hard rules (universal generation spec):
+ *   - One action only — never combine multiple steps
+ *   - 70 characters maximum
+ *   - https:// URLs → root domain only (e.g., sba.gov — never /path/to/page)
+ *   - No semicolons, no slash-path URLs, no "search for" instructions
+ *   - No chained actions joined by "then" or em-dash
+ *   - Word-boundary cut — never truncated with `…`
+ */
+function cleanNextStep(rawNext: string): string {
+  if (!rawNext) return ''
+
+  // Strip "**Next step:**" / "**Recommended next step:**" heading prefix
+  let s = rawNext
+    .replace(/^\*\*\s*(?:next step|recommended next step|action)[:\s—]*\*\*\s*/i, '')
+    .trim()
+
+  // [label](url) → label text (label is more descriptive; source shown via chip)
+  s = s.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+
+  // Strip markdown bold/italic
+  s = s.replace(/\*\*/g, '').replace(/\*/g, '')
+
+  // https:// URLs → root domain only (strip scheme + path + query)
+  s = s.replace(/https?:\/\/([\w.-]+)(?:\/\S*)?/g, (_, host) => host.replace(/^www\./, ''))
+
+  // Bare domains with slash-paths → strip path, keep root domain
+  //   "sba.gov/funding-programs/loans" → "sba.gov"
+  s = s.replace(/\b([\w-]+(?:\.[\w-]+)*\.(?:gov|org|com|net|edu))(\/[^\s,;.!?]+)/g, '$1')
+
+  // Strip orphaned slash-paths (no domain prefix, e.g. "/funding-programs/apply")
+  s = s.replace(/\s\/[\w/-]+/g, '')
+
+  // Cut at semicolons — never two actions in one step
+  s = s.replace(/\s*;.*/g, '')
+
+  // Cut at em/en-dash when it introduces a second imperative action
+  s = s.replace(/\s[—–]\s+(?:then|and|register|search|apply|visit|contact|submit|sign|find|get|use|go|download|click|check|complete|call|email|prepare|gather|review)\b.*/i, '')
+
+  // Cut secondary actions joined by "then" / "and then"
+  s = s.replace(/[,]?\s+(?:and\s+)?then\b.*/i, '')
+
+  // Discard "Search for…" / "Look up…" instructions entirely — cannot be salvaged
+  if (/^\s*(?:search(?:\s+for)?|look\s+up)\b/i.test(s)) return ''
+
+  // Strip mid-sentence search instructions
+  s = s.replace(/[,;—]\s*(?:search(?:\s+for)?|look\s+up)\b.*/i, '')
+
+  // Collapse whitespace
+  s = s.replace(/\s{2,}/g, ' ').trim()
+  if (!s) return ''
+
+  // First sentence only
+  const m = s.match(/^(.+?[.!?])(?:\s|$)/)
+  const result = (m ? m[1] : s).trim()
+
+  // 70-char hard limit — word-boundary cut, never adds `…`
+  return wordCut(result, 70)
+}
+
 // ─── Profile-summary detector ─────────────────────────────────────────────────
 
 /**
@@ -544,14 +901,22 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
     const deadlineDate = parseDeadlineDate(deadlineStr)
 
     // ── Structured display fields ────────────────────────────────────────────
-    // Classified from name/category/badges — never raw AI prose blobs
-    const rawValue         = value || 'See program details'
-    const amountDisplay    = extractAmount(rawValue)
+    // Strip markdown from value BEFORE any classifier sees it — prevents **$500K**
+    const rawValue = ((value || '')
+      .replace(/\*\*/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .trim()) || 'See program details'
+
+    const amountDisplay    = extractAmount(rawValue, name)
     const fundingType      = inferFundingType(name, rawValue, category)
     const fundingStyle     = inferFundingStyle(name, rawValue, category)
     const fundingHighlight = deriveFundingHighlight(name, category, badges)
     const deadlineDisplay  = extractDeadlineDisplay(deadlineStr)
     const deadlineContext  = extractDeadlineContext(deadlineStr)
+
+    // ── Normalized card display fields ───────────────────────────────────────
+    const whyFragments  = toWhyFragments(whyQualify)
+    const nextStepClean = cleanNextStep(nextStep)
 
     opportunities.push({
       id: `${category}-${i}-${name.slice(0, 16).replace(/\W/g, '-')}`,
@@ -575,6 +940,8 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
       fundingHighlight,
       deadlineDisplay,
       deadlineContext,
+      whyFragments,
+      nextStepClean,
     })
   }
 
@@ -619,6 +986,65 @@ function parseActionPlanSteps(text: string): ActionPlanStep[] {
   }
 
   return steps
+}
+
+// ─── Nonprofit language filter ───────────────────────────────────────────────
+
+const NONPROFIT_BLOCKLIST = [
+  'nonprofit', 'non-profit', '501(c)', '501c3', '501c ',
+  'tax-exempt', 'charitable organization', 'not-for-profit',
+  'donor-funded', 'foundation-supported',
+]
+
+function containsNonprofitLanguage(text: string): boolean {
+  const lower = text.toLowerCase()
+  return NONPROFIT_BLOCKLIST.some(term => lower.includes(term))
+}
+
+/**
+ * Post-parse filter: removes nonprofit-only opportunities from FOR-PROFIT profiles.
+ * Also strips nonprofit-language fragments from whyFragments.
+ * Safe to call on nonprofit profiles — returns report unchanged.
+ */
+export function filterReportForProfile(
+  report: ParsedReport,
+  opts: { userType?: string; is501c3?: boolean; entityType?: string } | null | undefined,
+): ParsedReport {
+  if (!opts) return report
+
+  const isNonprofit =
+    opts.is501c3 === true ||
+    opts.userType === 'nonprofit' ||
+    (opts.entityType || '').toLowerCase().includes('nonprofit') ||
+    (opts.entityType || '').toLowerCase().includes('non-profit')
+
+  if (isNonprofit) return report // nonprofits see everything unchanged
+
+  // FOR-PROFIT: remove any opportunity whose content contains nonprofit language
+  const filteredSections = report.sections.map(section => {
+    const filteredOpps = section.opportunities
+      .filter(opp => {
+        const combined = [opp.name, opp.whyQualify, opp.nextStep, opp.rawText].join(' ')
+        return !containsNonprofitLanguage(combined)
+      })
+      .map(opp => ({
+        ...opp,
+        whyFragments: opp.whyFragments.filter(f => !containsNonprofitLanguage(f)),
+      }))
+    return { ...section, opportunities: filteredOpps }
+  })
+
+  const allOpps = filteredSections
+    .filter(s => !s.isActionPlan)
+    .flatMap(s => s.opportunities)
+
+  return {
+    sections: filteredSections,
+    totalOpportunities: allOpps.length,
+    highValueCount:     allOpps.filter(o => o.isHighValue).length,
+    urgentCount:        allOpps.filter(o => o.isUrgent && !o.isRolling).length,
+    rollingCount:       allOpps.filter(o => o.isRolling).length,
+  }
 }
 
 // ─── Main parser ──────────────────────────────────────────────────────────────

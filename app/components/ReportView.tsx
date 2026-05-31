@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   parseReport,
+  filterReportForProfile,
   ParsedReport,
   ParsedSection,
   ParsedOpportunity,
@@ -308,6 +309,7 @@ function TrustRibbon({ reportDate, isNew }: { reportDate: string | null; isNew?:
 
 function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
   const now = new Date()
+  const [expandedId, setExpandedId] = useState<string | null>(null)
 
   const upcoming = useMemo(() => {
     return sections
@@ -326,23 +328,109 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
       <div className="flex items-center gap-2 mb-2.5">
         <span className="text-sm">⏰</span>
         <span className="text-xs font-bold text-amber-800 uppercase tracking-wide">Upcoming Deadlines</span>
+        <span className="text-[10px] text-amber-600 font-medium ml-auto">Tap to expand</span>
       </div>
-      <div className="space-y-2.5">
+
+      <div className="space-y-1.5">
         {upcoming.map(opp => {
-          const daysLeft = Math.ceil((opp.deadlineDate!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-          const isUrgent = daysLeft <= 30
+          const daysLeft   = Math.ceil((opp.deadlineDate!.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          const isUrgent   = daysLeft <= 30
+          const isExpanded = expandedId === opp.id
+          // First why-fragment is the clearest per-business qualifier signal
+          const urgencyNote = opp.whyFragments[0] || opp.deadlineContext || 'Review requirements'
 
           return (
-            <div key={opp.id} className="flex items-center justify-between gap-3">
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-amber-900 truncate">{opp.name}</div>
-                <div className="text-[11px] text-amber-700 mt-0.5">{opp.deadline}</div>
-              </div>
-              <div className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-lg ${
-                isUrgent ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-amber-100 text-amber-700 border border-amber-200'
-              }`}>
-                {daysLeft}d left
-              </div>
+            <div
+              key={opp.id}
+              className={`rounded-lg border overflow-hidden transition-colors duration-150 ${
+                isExpanded ? 'border-amber-300 bg-white' : 'border-amber-100 bg-white/60'
+              }`}
+            >
+              {/* ── Collapsed row (always visible) ── */}
+              <button
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+                onClick={() => setExpandedId(isExpanded ? null : opp.id)}
+                aria-expanded={isExpanded}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-[13px] font-semibold text-amber-900 leading-snug truncate">
+                    {opp.name}
+                  </div>
+                  <div className="text-[11px] text-amber-700 mt-0.5 truncate">{urgencyNote}</div>
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                    isUrgent
+                      ? 'bg-red-100 text-red-700 border border-red-200'
+                      : 'bg-amber-100 text-amber-700 border border-amber-200'
+                  }`}>
+                    {daysLeft}d left
+                  </span>
+                  <span className={`text-[10px] text-amber-400 transition-transform duration-150 ${isExpanded ? 'rotate-180' : ''}`}>
+                    ▼
+                  </span>
+                </div>
+              </button>
+
+              {/* ── Expanded detail ── */}
+              {isExpanded && (
+                <div className="px-3 pb-3 pt-1 border-t border-amber-100 space-y-2">
+                  {/* Deadline display */}
+                  <div className="text-[11px] text-amber-700 font-medium">
+                    📅 {opp.deadlineDisplay}
+                    {opp.deadlineContext && opp.deadlineContext !== 'Set a reminder' && (
+                      <span className="ml-1.5 text-amber-600">— {opp.deadlineContext}</span>
+                    )}
+                  </div>
+
+                  {/* Why you qualify */}
+                  {opp.whyFragments.length > 0 && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
+                        Why You Qualify
+                      </div>
+                      <ul className="space-y-0.5">
+                        {opp.whyFragments.map((f, i) => (
+                          <li key={i} className="flex items-start gap-1.5 text-[12px] text-gray-600 leading-snug">
+                            <span className="flex-shrink-0 text-[#1D9E75] font-bold leading-none mt-0.5">✓</span>
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommended next step */}
+                  {opp.nextStepClean && (
+                    <div>
+                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
+                        Next Step
+                      </div>
+                      <p className="text-[12px] text-gray-700 leading-relaxed">{opp.nextStepClean}</p>
+                    </div>
+                  )}
+
+                  {/* Official source link */}
+                  {opp.sourceAgency && (
+                    <div className="flex items-center gap-1.5 pt-0.5">
+                      <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+                      {opp.sourceUrl ? (
+                        <a
+                          href={opp.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-[#1D9E75] font-medium hover:underline flex items-center gap-0.5"
+                        >
+                          {opp.sourceAgency}
+                          <span className="text-[10px]">↗</span>
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-gray-500">{opp.sourceAgency}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )
         })}
@@ -351,69 +439,9 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
   )
 }
 
-// ─── Opportunity card helpers ─────────────────────────────────────────────────
-
-/**
- * Strip bold-markdown heading prefixes that Claude sometimes emits inside
- * field values, e.g. "**Why you qualify:** You are a…" → "You are a…"
- */
-function cleanMarkdownHeading(text: string): string {
-  return text
-    .replace(/^\*\*\s*(why you qualify|next step|recommended next step|action|overview|summary)[:\s]*\*\*\s*/i, '')
-    .replace(/^\*\*[^*]{1,50}\*\*[:\s]+/, '')  // any short bold prefix
-    .replace(/^#+\s+/, '')                       // markdown ATX headings
-    .trim()
-}
-
-/**
- * Return the first `n` sentences of `text` plus whether anything was cut.
- * Sentence boundary = . ! ? followed by a space (avoids cutting "$350,000.").
- */
-function truncateToSentences(text: string, n: number): { preview: string; hasMore: boolean } {
-  const clean = cleanMarkdownHeading(text)
-  // Short text — nothing to truncate
-  if (clean.length < 100) return { preview: clean, hasMore: false }
-
-  let sentenceCount = 0
-  let cutIndex = -1
-
-  for (let i = 0; i < clean.length - 1; i++) {
-    if ('.!?'.includes(clean[i]) && clean[i + 1] === ' ') {
-      sentenceCount++
-      if (sentenceCount === n) {
-        cutIndex = i + 1
-        break
-      }
-    }
-  }
-
-  if (cutIndex === -1) return { preview: clean, hasMore: false }
-  return {
-    preview: clean.slice(0, cutIndex).trim(),
-    hasMore: cutIndex < clean.length - 5,
-  }
-}
-
-/**
- * Filter action/navigation sentences out of qualification text so that
- * "Why You Qualify" contains only eligibility reasoning.
- * Sentences with URLs, "visit", "contact", "apply at" etc. belong in nextStep.
- */
-function filterQualSentences(text: string): string {
-  const actionStart = /^\s*(?:visit|contact|apply|register|call|email|submit|download|complete|use\s+the|go\s+to|learn\s+more|find\s+out|click)\b/i
-  const hasUrl = /https?:\/\/|\.gov\b|\.org\b|\.com\b/i
-
-  // Split on sentence boundaries
-  const sentences = text.split(/(?<=[.!?])\s+/)
-  const qualOnly = sentences.filter(s => !actionStart.test(s) && !hasUrl.test(s))
-
-  // Return up to 2 clean eligibility sentences
-  const result = qualOnly.slice(0, 2).join(' ').trim()
-  // Fallback: if filtering removed everything, return first 180 chars of original
-  return result || text.slice(0, 180).trim()
-}
-
 // ─── Opportunity card ─────────────────────────────────────────────────────────
+// whyFragments and nextStepClean are pre-normalized at parse time — no runtime
+// text processing is needed here. See app/lib/parseReport.ts for the helpers.
 
 function OpportunityCard({
   opp,
@@ -431,19 +459,14 @@ function OpportunityCard({
   const hasValue    = opp.amountDisplay !== 'See program details'
   const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
-  // whyQualify: strip markdown → filter action sentences → truncate to 2 qual sentences
-  // nextStep:   strip markdown → truncate to 2 action sentences
-  const whyRaw      = opp.whyQualify ? cleanMarkdownHeading(opp.whyQualify) : null
-  const nextRaw     = opp.nextStep    ? cleanMarkdownHeading(opp.nextStep)   : null
-  const whyFiltered = whyRaw ? filterQualSentences(whyRaw) : null
-  const whySummary  = whyFiltered ? truncateToSentences(whyFiltered, 1) : null
-  const nextSummary = nextRaw     ? truncateToSentences(nextRaw, 1)     : null
+  // Raw full-text fields — used only inside the expandable "Full details" section
+  const whyRaw  = opp.whyQualify || null
+  const nextRaw = opp.nextStep    || null
 
-  // Show "View full guidance" when truncation or sentence-filtering removed content
+  // Show "Full details" whenever there is substantive raw content beyond the card fragments
   const hasMore = !!(
-    whySummary?.hasMore ||
-    (whyRaw && whyFiltered && whyFiltered.length < whyRaw.length - 20) ||
-    nextSummary?.hasMore
+    (whyRaw  && whyRaw.trim().length  > 60) ||
+    (nextRaw && nextRaw.trim().length > 80)
   )
 
   return (
@@ -520,7 +543,7 @@ function OpportunityCard({
               <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'}`}>
                 <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   <span>{opp.isRolling ? '🟢' : '📅'}</span>
-                  <span>{opp.isRolling ? 'Timing' : 'Deadline'}</span>
+                  <span>{opp.isRolling ? 'Rolling Application' : 'Deadline'}</span>
                 </div>
                 <div className="space-y-1.5">
                   <div className={`text-[18px] font-bold leading-tight ${
@@ -544,34 +567,37 @@ function OpportunityCard({
       </div>
 
       {/* ── Why You Qualify + Next Step — combined, no dividers ── */}
-      {(whySummary || nextSummary) && (
+      {(opp.whyFragments.length > 0 || opp.nextStepClean) && (
         <div className="px-4 pt-1 pb-3 space-y-2.5">
-          {whySummary && (
+          {opp.whyFragments.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
+              <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
                 Why You Qualify
               </div>
-              <p
-                className="text-[13px] text-gray-600 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: renderInline(whySummary.preview) }}
-              />
+              <ul className="space-y-1">
+                {opp.whyFragments.map((frag, i) => (
+                  <li key={i} className="flex items-start gap-1.5 text-[13px] text-gray-600 leading-snug">
+                    <span className="flex-shrink-0 text-[#1D9E75] font-bold leading-none mt-[2px]">✓</span>
+                    <span>{frag}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
-          {nextSummary && (
+          {opp.nextStepClean && (
             <div>
               <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                 Next Step
               </div>
-              <p
-                className="text-[13px] text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: renderInline(nextSummary.preview) }}
-              />
+              <p className="text-[13px] text-gray-700 leading-relaxed">
+                {opp.nextStepClean}
+              </p>
             </div>
           )}
         </div>
       )}
 
-      {/* ── View Full Guidance (expandable) ── */}
+      {/* ── Full details (expandable) ── */}
       {hasMore && (
         <div className="px-4 pb-3">
           <button
@@ -583,7 +609,7 @@ function OpportunityCard({
           </button>
           {showGuidance && (
             <div className="mt-3 space-y-3">
-              {whyRaw && whySummary?.hasMore && (
+              {whyRaw && (
                 <div>
                   <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
                     Full Qualification Detail
@@ -594,7 +620,7 @@ function OpportunityCard({
                   />
                 </div>
               )}
-              {nextRaw && nextSummary?.hasMore && (
+              {nextRaw && (
                 <div>
                   <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                     Full Next Steps
@@ -956,7 +982,14 @@ export default function ReportView({
   profile,
   onPaywallVisible,
 }: ReportViewProps) {
-  const parsed = useMemo(() => parseReport(report), [report])
+  const parsed = useMemo(() => {
+    const raw = parseReport(report)
+    return filterReportForProfile(raw, profile ? {
+      userType:   profile.userType,
+      is501c3:    profile.is501c3,
+      entityType: profile.entityType,
+    } : null)
+  }, [report, profile])
 
   // ── Save / bookmark state ──────────────────────────────────────────────────
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())
