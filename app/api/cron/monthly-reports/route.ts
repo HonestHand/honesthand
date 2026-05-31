@@ -104,7 +104,8 @@ FORMAT RULES:
   • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL
-- End with the 30-Day Action Plan as the final section`
+- End with the 30-Day Action Plan as the final section
+- Do NOT include "Not Applicable" entries. If a program does not apply, omit it entirely. Only include programs this business can actually pursue.`
 
   const nonprofitSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
 The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles. Never reference past years or outdated grant cycles.

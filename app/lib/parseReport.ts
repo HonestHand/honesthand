@@ -878,6 +878,11 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
     const name = lines[start].replace(/\*\*/g, '').trim()
     if (!name) continue
 
+    // Skip "Not Applicable" entries — Claude sometimes includes programs it has
+    // already ruled out as context. These must never render as opportunity cards
+    // or count toward opportunity totals.
+    if (/not applicable|does not apply|not eligible|n\/a —/i.test(name)) continue
+
     const value      = extractField(block, 'Value')      || extractField(block, 'value')
     const deadline   = extractField(block, 'Deadline')   || extractField(block, 'deadline')
 

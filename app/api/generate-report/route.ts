@@ -155,7 +155,8 @@ FORMAT RULES:
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL
 - End with the 30-Day Action Plan as the final section
-- Do NOT include a business profile summary, context block, or header at the top of any section. Never echo back the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.`
+- Do NOT include a business profile summary, context block, or header at the top of any section. Never echo back the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.
+- Do NOT include "Not Applicable" entries. If a program does not apply to this business, omit it entirely — do not list it with a "Not Applicable" label or explanation. The report should contain only programs this business can actually pursue.`
 
   const freeSystemPrompt = `You are HonestHand — a straight-talking financial partner for Texas small business owners.
 The current date is ${currentDate}. Always use accurate, current deadlines. Never reference past years or outdated program cycles.
