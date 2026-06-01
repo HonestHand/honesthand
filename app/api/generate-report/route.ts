@@ -337,16 +337,10 @@ FORMAT RULES:
   }
 
   // ── Retry-aware Anthropic stream ─────────────────────────────────────────────
-  const MAX_ATTEMPTS   = 3
-  const RETRY_DELAYS   = [0, 2000, 8000]  // ms: immediate, 2 s, 8 s
-
-  const anthropicParams = {
-    model:     'claude-sonnet-4-6',
-    max_tokens: isPro ? 16000 : 2048,
-    tools:     [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: isPro ? 8 : 3 }],
-    system:    selectedSystemPrompt,
-    messages:  [{ role: 'user' as const, content: prompt }],
-  }
+  const MAX_ATTEMPTS = 3
+  const RETRY_DELAYS = [0, 2000, 8000]  // ms: immediate, 2 s, 8 s
+  const maxTokens    = isPro ? 16000 : 2048
+  const maxSearches  = isPro ? 8 : 3
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -365,7 +359,13 @@ FORMAT RULES:
         }
 
         try {
-          const anthropicStream = await client.messages.stream(anthropicParams)
+          const anthropicStream = await client.messages.stream({
+            model:      'claude-sonnet-4-6',
+            max_tokens: maxTokens,
+            tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
+            system:     selectedSystemPrompt,
+            messages:   [{ role: 'user' as const, content: prompt }],
+          })
           for await (const chunk of anthropicStream) {
             if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
