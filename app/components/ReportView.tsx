@@ -596,8 +596,8 @@ function OpportunityCard({
             {hasDeadline && (
               <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'}`}>
                 <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                  <span>{opp.isRolling ? '🟢' : '📅'}</span>
-                  <span>{opp.isRolling ? 'Rolling Application' : 'Deadline'}</span>
+                  <span>{opp.isRolling ? '🟢' : '🗓️'}</span>
+                  <span>Deadline</span>
                 </div>
                 <div className="space-y-1.5">
                   <div className={`text-[18px] font-bold leading-tight ${
