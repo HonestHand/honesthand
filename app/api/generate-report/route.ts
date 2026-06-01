@@ -152,10 +152,18 @@ FORMAT RULES:
 - Use **bold** for program names and dollar amounts
 - Use bullet points for eligibility requirements
 - Every opportunity MUST include all four of these fields:
-  • **Value:** estimated dollar value or range
-  • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
-  • **Why you qualify:** one sentence on eligibility match
-  • **Next step:** exact action to take with agency name or URL
+  • **Value:** dollar amount + instrument type only. One line. No deadline text. No caveats.
+    CORRECT: "$25,000 grant" | "Up to $9,600 per qualifying new hire" | "Up to $500,000 loan"
+  • **Deadline:** timing/date ONLY. Must contain a date, rolling status, or cycle timing — NOTHING ELSE.
+    CORRECT: "Apply by: September 30, 2026" | "Rolling — apply anytime" | "Typically opens: September — verify at sba.gov"
+    NEVER put action instructions in Deadline: "File Form 8850 within 28 days" belongs in Next step, NOT Deadline.
+    If no specific deadline is known: write "Rolling — apply anytime" or "Typically opens: [season/month] — verify at [agency]"
+  • **Why you qualify:** 1–2 short bullet phrases, each = one business attribute. NO sentences.
+    CORRECT: "- Veteran-owned LLC\n  - Rural Texas location" | "- Under $100k revenue\n  - Texas-based business"
+    WRONG: "You qualify because you are a veteran-owned LLC operating in rural Texas..."
+  • **Next step:** ONE action sentence, max 120 chars.
+    CORRECT: "Contact TWC at (512) 463-2222." | "File IRS Form 8850 with TWC within 28 days of hire."
+    NEVER chain multiple steps or repeat qualification context.
 - End with the 30-Day Action Plan as the final section
 - Do NOT include a business profile summary, context block, or header at the top of any section. Never echo back the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.
 - Do NOT include "Not Applicable" entries. If a program does not apply to this business, omit it entirely — do not list it with a "Not Applicable" label or explanation. The report should contain only programs this business can actually pursue.

@@ -481,6 +481,41 @@ function OpportunityCard({
 
   const hasMore = !!(actionStepsText && actionStepsText.length > 60)
 
+  // ── Empty-shell fallback ──────────────────────────────────────────────────
+  // When ALL structured fields are empty (AI didn't follow the 4-field format),
+  // render the raw block text instead of showing just a title + badge shell.
+  const isEmptyShell = !hasValue && !hasDeadline && opp.whyFragments.length === 0 && !opp.nextStepClean
+  if (isEmptyShell && opp.rawText) {
+    return (
+      <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0 px-4 pt-4 pb-3" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="text-[15px] font-semibold text-[#2C2C2A] leading-snug flex-1">{opp.name}</h3>
+          {onToggleSave && (
+            <button onClick={e => { e.stopPropagation(); onToggleSave(opp.id) }}
+              className={`flex-shrink-0 text-xl -m-1 p-2 rounded-lg transition-all duration-150 active:scale-95 ${isSaved ? 'text-amber-400' : 'text-gray-200 hover:text-amber-300'}`}
+              aria-label={isSaved ? 'Remove from saved' : 'Save opportunity'}>
+              {isSaved ? '★' : '☆'}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5 mb-3">
+          {opp.badges.map((b, i) => <BadgeChip key={i} badge={b} />)}
+        </div>
+        <div className="text-[13px] text-gray-700 leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(opp.rawText) }} />
+        {opp.sourceAgency && (
+          <div className="mt-3 pt-2 border-t border-gray-50 flex items-center gap-2">
+            <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+            {opp.sourceUrl
+              ? <a href={opp.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#1D9E75] font-medium hover:underline">{opp.sourceAgency} ↗</a>
+              : <span className="text-[11px] text-gray-500">{opp.sourceAgency}</span>
+            }
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
 

@@ -485,38 +485,69 @@ function toTitleCase(str: string): string {
   return str.replace(/\b\w/g, c => c.toUpperCase())
 }
 
+// ── Deadline contamination guards ────────────────────────────────────────────
+
+/** Action verbs that indicate the "Deadline" field actually contains a Next Step */
+const DEADLINE_ACTION_PREFIX = /^(?:file|submit|contact|register|call|visit|use\s+the|go\s+to|email|complete|discuss|review|prepare|gather|request|obtain|check\s+(?:with|the)|ask\s+your|find\s+(?:a|an|the)|search|apply\s+for|fill\s+out|get\s+started|schedule|attend|meet\s+with|obtain|locate)\b/i
+
+/** Text that suggests real deadline/timing content */
+const HAS_TIMING_SIGNAL = /\b(?:rolling|anytime|year.?round|open\s+enrollment|january|february|march|april|may|june|july|august|september|october|november|december|20\d{2}|\d{1,2}\/\d{1,2}\/\d{2,4}|quarterly|annually|annual|cycle|deadline|opens?|closes?|due\s+(?:date|by)|apply\s+by|apply\s+before|spring|summer|fall|winter|ongoing|continuous|first\s+of\s+the|each\s+(?:year|month)|every\s+(?:year|quarter))\b/i
+
 /**
  * Extract just the timing label from raw deadline prose.
+ * Strips markdown artifacts and rejects action-instruction contamination.
+ *
  * "Rolling. Applications accepted year-round…"      → "Rolling"
  * "March 31, 2025. Submissions must be…"            → "March 31, 2025"
  * "Typically opens in late 2026 — monitor…"         → "Opens Late 2026"
- * "Next cycle anticipated late 2026 — monitor…"     → "Late 2026"
- * "Expected Fall 2026"                              → "Fall 2026"
+ * "File IRS Form 8850 within 28 days"               → "Verify with agency" (action, not deadline)
+ * "Submit your application by October 1, 2026"      → "October 1, 2026" (has date)
  */
 function extractDeadlineDisplay(rawDeadline: string): string {
   if (!rawDeadline) return 'Verify with agency'
   if (rawDeadline === 'Verify with agency') return 'Verify with agency'
 
-  const dl = rawDeadline.toLowerCase()
+  // ── Step 1: Strip ALL markdown before any logic runs ──────────────────────
+  const cleaned = rawDeadline
+    .replace(/\*\*/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+
+  if (!cleaned) return 'Verify with agency'
+
+  const dl = cleaned.toLowerCase()
+
+  // ── Step 2: Rolling / open enrollment ─────────────────────────────────────
   if (dl.startsWith('rolling') || dl.includes('open enrollment') || dl.startsWith('anytime')) return 'Rolling'
 
+  // ── Step 3: Contamination guard ───────────────────────────────────────────
+  // If the field starts with an action verb AND has no timing signal, it's a
+  // next-step instruction that was mistakenly placed in the Deadline field.
+  if (DEADLINE_ACTION_PREFIX.test(cleaned) && !HAS_TIMING_SIGNAL.test(cleaned)) {
+    return 'Verify with agency'
+  }
+
+  // ── Step 4: Extract timing from prose ─────────────────────────────────────
   // "Typically opens [in] [period]" → "Opens [Period]"
-  const typM = rawDeadline.match(/typically\s+opens?\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  const typM = cleaned.match(/typically\s+opens?\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
   if (typM) return `Opens ${toTitleCase(typM[1])}`
 
-  // "[anticipated|expected] [period]" — may be prefixed with "next cycle" etc.
-  const antM = rawDeadline.match(/(?:anticipated|expected)\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  // "[anticipated|expected] [period]"
+  const antM = cleaned.match(/(?:anticipated|expected)\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
   if (antM) return toTitleCase(antM[1])
 
-  // Standalone season + year anywhere: "Fall 2026", "Late 2026"
-  const seasonM = rawDeadline.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
+  // Standalone season + year: "Fall 2026", "Late 2026"
+  const seasonM = cleaned.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
   if (seasonM) return toTitleCase(seasonM[1])
 
-  const dot = rawDeadline.search(/\.\s/)
-  if (dot > 2 && dot < 80) return rawDeadline.slice(0, dot).trim()
-  if (rawDeadline.length <= 90) return rawDeadline
+  // Cut at first sentence boundary within reasonable length
+  const dot = cleaned.search(/\.\s/)
+  if (dot > 2 && dot < 80) return cleaned.slice(0, dot).trim()
+  if (cleaned.length <= 90) return cleaned
 
-  return rawDeadline.slice(0, 88).trim() + '…'
+  return cleaned.slice(0, 88).trim() + '…'
 }
 
 /**
@@ -910,15 +941,24 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
     const whyQualify = stripBold(extractField(block, 'Why you qualify') || extractField(block, 'Why You Qualify'))
     const nextStep   = stripBold(extractField(block, 'Next step')  || extractField(block, 'Next Step'))
 
+    // Strip markdown from deadline before any processing — prevents ** artifacts
+    // and ensures contamination guards in extractDeadlineDisplay see clean text
+    const deadlineClean = (deadline || '')
+      .replace(/\*\*/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+
     const valueNum    = parseDollarMax(value)
-    const dl          = deadline.toLowerCase()
+    const dl          = deadlineClean.toLowerCase()
     const isRolling   = dl.includes('rolling') || dl.includes('anytime') || dl.includes('open enrollment')
     const isHighValue = valueNum >= 10_000
-    const isUrgent    = !!deadline && !isRolling && !dl.includes('verify') && !dl.includes('typically') && deadline !== ''
+    const isUrgent    = !!deadlineClean && !isRolling && !dl.includes('verify') && !dl.includes('typically') && deadlineClean !== ''
 
-    const badges       = deriveBadges(name, value, deadline, block, category)
+    const badges       = deriveBadges(name, value, deadlineClean, block, category)
     const src          = extractSource(nextStep)
-    const deadlineStr  = deadline || 'Verify with agency'
+    const deadlineStr  = deadlineClean || 'Verify with agency'
     const deadlineDate = parseDeadlineDate(deadlineStr)
 
     // ── Structured display fields ────────────────────────────────────────────

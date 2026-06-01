@@ -101,7 +101,7 @@ FORMAT RULES:
 - Use bullet points for eligibility requirements
 - Every opportunity MUST include all four of these fields:
   • **Value:** estimated dollar value or range
-  • **Deadline:** specific date (e.g. "Apply by: September 30, 2026"), or "Rolling — apply anytime" for open programs, or "Typically opens: [month] — verify at [agency]" if the exact date is uncertain. Never omit this field.
+  • **Deadline:** timing/date ONLY — a specific date, "Rolling — apply anytime", or "Typically opens: [season] — verify at [agency]". NEVER put action instructions, form numbers, or contact info in the Deadline field. Those belong in Next step.
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL
 - End with the 30-Day Action Plan as the final section
