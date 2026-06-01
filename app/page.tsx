@@ -412,7 +412,26 @@ export default function Home() {
           ))}
         </div>
       </div>
-      <div style={{padding:'24px',background:'#F9FAFB',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6'}}>
+      <div style={{background:'#F9FAFB',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'40px 24px'}}>
+        <div style={{maxWidth:'520px',margin:'0 auto'}}>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',marginBottom:'6px',textAlign:'center'}}>Most business owners don't have time for this</div>
+          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>And that's exactly why opportunities get missed.</div>
+          <div style={{display:'flex',flexDirection:'column' as const,gap:'12px',marginBottom:'28px'}}>
+            {[
+              {title:'Endless searching',body:'Funding opportunities are scattered across government websites, PDFs, grant portals, lender programs, and outdated directories.'},
+              {title:'Missed deadlines',body:'Programs open and close constantly — many without clear announcements or reminders.'},
+              {title:'Information overload',body:"Most owners don't know which incentives actually apply to their business and which ones waste their time."},
+            ].map((card, i) => (
+              <div key={i} style={{background:'white',border:'1px solid #E5E7EB',borderRadius:'12px',padding:'16px 18px'}}>
+                <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',marginBottom:'5px'}}>{card.title}</div>
+                <div style={{fontSize:'13px',color:'#6B7280',lineHeight:'1.6'}}>{card.body}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{textAlign:'center',fontSize:'15px',fontWeight:'600',color:'#1D9E75'}}>HonestHand organizes and monitors it for you.</div>
+        </div>
+      </div>
+      <div style={{padding:'24px',background:'#F9FAFB',borderBottom:'1px solid #F3F4F6'}}>
         {[
           {icon:'🏛️',label:'Official .gov sources only',sub:'Every opportunity links to a verified government agency'},
           {icon:'🔍',label:'Verified before every report',sub:'We check current program status so you\'re not reading outdated information'},
@@ -439,21 +458,52 @@ export default function Home() {
           </div>
         ))}
       </div>
-      <div style={{background:'#F9FAFB',padding:'48px 24px'}}>
-        <div style={{fontSize:'22px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'8px'}}>Real wins from Texas businesses</div>
-        <div style={{fontSize:'14px',color:'#6B7280',textAlign:'center',marginBottom:'24px'}}>Join thousands of owners who found money they didn't know existed</div>
-        {[{biz:'Mesa Bites LLC',industry:'Restaurant',city:'Dallas',amount:'$12,400',program:'Texas Restaurant Revitalization Fund'},{biz:'Cimarron Ranch',industry:'Agriculture',city:'Sutton County',amount:'$67,000',program:'USDA EQIP Program'},{biz:'Lone Star Electric',industry:'Construction',city:'San Antonio',amount:'$8,500',program:'Texas Enterprise Fund'}].map((win,i)=>(
-          <div key={i} style={{background:'white',borderRadius:'12px',padding:'16px',marginBottom:'12px',border:'1px solid #E5E7EB'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'8px'}}>
-              <div>
-                <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A'}}>{win.biz}</div>
-                <div style={{fontSize:'12px',color:'#6B7280'}}>{win.industry} · {win.city}</div>
+      <div style={{background:'#F9FAFB',padding:'40px 24px',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6'}}>
+        <div style={{maxWidth:'520px',margin:'0 auto'}}>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'6px'}}>What's included in your report</div>
+          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>One organized report covering every relevant category.</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
+            {[
+              'Verified grants and funding programs',
+              'Tax credits and incentives',
+              'Eligibility explanations',
+              'Current deadlines and rolling applications',
+              'Recommended next steps',
+              'Quick-apply opportunities',
+              'Federal, Texas, county, and city programs',
+              'Monthly updated monitoring',
+            ].map((item, i) => (
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'white',border:'1px solid #E5E7EB',borderRadius:'10px',padding:'12px 14px'}}>
+                <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'13px',flexShrink:0,marginTop:'1px'}}>✓</span>
+                <span style={{fontSize:'13px',color:'#374151',lineHeight:'1.4'}}>{item}</span>
               </div>
-              <div style={{fontSize:'18px',fontWeight:'700',color:'#1D9E75'}}>{win.amount}</div>
-            </div>
-            <div style={{fontSize:'12px',color:'#6B7280',background:'#F3F4F6',padding:'6px 10px',borderRadius:'6px'}}>{win.program}</div>
+            ))}
           </div>
-        ))}
+        </div>
+      </div>
+      <div style={{background:'white',padding:'48px 24px',borderTop:'1px solid #F3F4F6'}}>
+        <div style={{maxWidth:'520px',margin:'0 auto'}}>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'6px'}}>Examples of monitored opportunities</div>
+          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>A sample of programs HonestHand tracks for Texas businesses</div>
+          {[
+            {program:'SBA 7(a) Loan Program',category:'Federal · SBA',desc:'Working capital and equipment financing for small businesses up to $5 million.'},
+            {program:'USDA Rural Development Business Programs',category:'Federal · USDA',desc:'Loans and grants for businesses in rural Texas communities.'},
+            {program:'Texas Skills Development Fund',category:'Texas State · TWC',desc:'Workforce training grants for businesses hiring or upskilling employees.'},
+            {program:'Work Opportunity Tax Credit (WOTC)',category:'Federal · IRS',desc:'Tax credits for hiring from targeted groups including veterans and long-term unemployed.'},
+            {program:'Texas Capital Access Program',category:'Texas State · Governor\'s Office',desc:'Loan support for businesses that face barriers to conventional lending.'},
+          ].map((item, i) => (
+            <div key={i} style={{borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', padding:'16px 0'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'8px',marginBottom:'4px'}}>
+                <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',flex:1}}>{item.program}</div>
+              </div>
+              <div style={{fontSize:'11px',fontWeight:'600',color:'#1D9E75',textTransform:'uppercase' as const,letterSpacing:'0.05em',marginBottom:'4px'}}>{item.category}</div>
+              <div style={{fontSize:'13px',color:'#6B7280',lineHeight:'1.5'}}>{item.desc}</div>
+            </div>
+          ))}
+          <div style={{marginTop:'16px',textAlign:'center',fontSize:'13px',color:'#9CA3AF'}}>
+            Your report includes programs specific to your industry, location, entity type, and ownership status.
+          </div>
+        </div>
       </div>
       <div style={{padding:'48px 24px',textAlign:'center'}}>
         <div style={{fontSize:'24px',fontWeight:'700',color:'#2C2C2A',marginBottom:'8px'}}>Get your funding report in under 24 hours.</div>
