@@ -5,6 +5,18 @@ import { supabase } from '../supabase'
 import ReportView, { ProfileSummary } from '../components/ReportView'
 import { trackEvent } from '../lib/analytics'
 
+// ─── Report phase state machine ───────────────────────────────────────────────
+// Single source of truth for all report generation states.
+// Only ONE phase is active at any time — no overlapping banners.
+type ReportPhase =
+  | 'idle'         // No generation in progress; showing cached report or nothing
+  | 'generating'   // Fetch initiated, waiting for first SSE byte
+  | 'searching'    // Actively streaming (web searches + text generation)
+  | 'retrying'     // Transient failure, auto-retrying — keep cached report visible
+  | 'in_progress'  // Server-side job already running for this user
+  | 'success'      // Generation complete
+  | 'failed'       // Terminal failure — show error + cached report if available
+
 // ─── Rotating loading messages ────────────────────────────────────────────────
 
 const LOADING_MESSAGES_BUSINESS = [
@@ -91,20 +103,24 @@ export default function Dashboard() {
   const [profile,      setProfile]      = useState<any>(null)
   const [report,       setReport]       = useState('')
   const [reportDate,   setReportDate]   = useState<string | null>(null)
-  const [generating,   setGenerating]   = useState(false)
-  const [searching,    setSearching]    = useState(false)
   const [loading,      setLoading]      = useState(true)
   const [user,         setUser]         = useState<any>(null)
   const [isPro,        setIsPro]        = useState(false)
   const [upgrading,    setUpgrading]    = useState(false)
   const [upgradeError, setUpgradeError] = useState('')
-  const [generateError,    setGenerateError]    = useState('')   // safe user-facing message only
-  const [generateErrorCode, setGenerateErrorCode] = useState('')
-  const [refreshConfirm,   setRefreshConfirm]   = useState(false)
+  const [refreshConfirm, setRefreshConfirm] = useState(false)
   const [emailUnverified,  setEmailUnverified]  = useState(false)
   const [resendingVerify,  setResendingVerify]  = useState(false)
   const [verifyResentOk,   setVerifyResentOk]   = useState(false)
   const paywallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Single canonical report phase — no mixed state possible ──────────────
+  const [reportPhase,   setReportPhase]   = useState<ReportPhase>('idle')
+  const [phaseMessage,  setPhaseMessage]  = useState('')
+
+  // Derived convenience flags — always consistent with reportPhase
+  const isActive  = reportPhase === 'generating' || reportPhase === 'searching' || reportPhase === 'retrying'
+  const isSearching = reportPhase === 'searching'
 
   useEffect(() => { loadData() }, [])
 
@@ -188,14 +204,16 @@ export default function Dashboard() {
 
   const generateReport = async (p: any, userId?: string, isRefresh = false) => {
     const uid = userId || user?.id
-    setGenerating(true)
-    setSearching(false)
-    setGenerateError('')
-    setGenerateErrorCode('')
+
+    // ── ATOMIC: transition to generating, clear ALL previous state ───────────
+    // This is the ONLY place state is written at generation start.
+    // No old error, retry notice, or phase can survive into the new cycle.
+    setReportPhase('generating')
+    setPhaseMessage('')
     setRefreshConfirm(false)
 
-    // On first-time generation there is no cached report to preserve.
-    // On refresh, keep the existing report visible until the new one is ready.
+    // First-time: clear the report so the loading screen shows.
+    // Refresh: keep cached report visible beneath the loading state.
     if (!isRefresh) {
       setReport('')
       setReportDate(null)
@@ -212,7 +230,9 @@ export default function Dashboard() {
       let buffer     = ''
       let fullReport = ''
       let hadError   = false
-      setGenerating(false)
+
+      // Transition to 'searching' the moment the stream opens — never idle during read
+      setReportPhase('searching')
 
       while (true) {
         const { done, value } = await reader.read()
@@ -224,47 +244,62 @@ export default function Dashboard() {
           if (!line.startsWith('data: ')) continue
           try {
             const parsed = JSON.parse(line.slice(6))
-            if (parsed.status === 'searching') setSearching(true)
-            if (parsed.status === 'retrying') {
-              setSearching(false)
-              // Keep existing report visible; show a non-alarming notice
-              setGenerateError('Verifying current program data — this may take a moment longer than usual.')
+
+            // ── Phase transitions — one at a time, never overlapping ──────────
+            if (parsed.status === 'searching') {
+              setReportPhase('searching')
+              setPhaseMessage('')
             }
+
+            if (parsed.status === 'retrying') {
+              // Auto-retry: show retrying phase. Cached report stays visible.
+              setReportPhase('retrying')
+              setPhaseMessage('Verifying current program data — this may take a moment longer.')
+            }
+
             if (parsed.text) {
-              setSearching(false)
-              setGenerateError('')  // clear any retrying notice once text arrives
+              // Text arriving means retry succeeded — back to active streaming
+              setReportPhase('searching')
+              setPhaseMessage('')
               fullReport += parsed.text
               setReport(prev => prev + parsed.text)
             }
+
             if (parsed.error) {
-              // NEVER display raw provider errors — only the pre-sanitized safe message
+              // Terminal error: choose the right failed phase
               hadError = true
-              setSearching(false)
-              setGenerateError(parsed.error)
-              setGenerateErrorCode(parsed.errorCode ?? '')
-              // Do NOT touch report state — keep cached report visible
+              const code = parsed.errorCode ?? ''
+              if (code === 'REPORT_IN_PROGRESS') {
+                setReportPhase('in_progress')
+              } else {
+                setReportPhase('failed')
+              }
+              setPhaseMessage(parsed.error)
             }
           } catch { /* ignore SSE parse errors */ }
         }
       }
 
-      // Persist if we got a complete new report
-      if (fullReport && uid && !hadError) {
-        try {
-          await fetch('/api/save-report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: uid, content: fullReport }),
-          })
-          setReportDate(new Date().toISOString())
-        } catch (e) {
-          console.error('[save-report] failed:', e)
+      // Stream ended without a terminal error event → success
+      if (!hadError) {
+        setReportPhase('success')
+        if (fullReport && uid) {
+          try {
+            await fetch('/api/save-report', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ userId: uid, content: fullReport }),
+            })
+            setReportDate(new Date().toISOString())
+          } catch (e) {
+            console.error('[save-report] failed:', e)
+          }
         }
       }
-    } catch (e: any) {
-      // Network / fetch-level failures — never expose raw message
-      setGenerateError('We\'re having trouble reaching the report service. Please try again in a moment.')
-      setGenerating(false)
+    } catch {
+      // Network / fetch-level failure
+      setReportPhase('failed')
+      setPhaseMessage("We're having trouble reaching the report service. Please try again in a moment.")
     }
   }
 
@@ -343,7 +378,6 @@ export default function Dashboard() {
     )
   }
 
-  const isActive    = generating || searching
   const isNonprofit = profile?.user_type === 'nonprofit'
 
   return (
@@ -486,94 +520,114 @@ export default function Dashboard() {
             {isNonprofit ? 'Nonprofit Funding Opportunities' : 'Your Opportunity Report'}
           </div>
 
-          {/* Generating / searching state */}
-          {isActive && <LoadingState searching={searching} isNonprofit={isNonprofit} />}
+          {/* ── Report area — SINGLE phase-driven renderer, states are mutually exclusive ── */}
+          {(() => {
+            const profileSummary: ProfileSummary | undefined = profile ? {
+              businessName:  profile.business_name,
+              description:   profile.business_description || undefined,
+              city:          profile.city,
+              county:        profile.county        || undefined,
+              industry:      profile.industry      || undefined,
+              revenue:       profile.revenue_range || undefined,
+              entityType:    profile.entity_type   || undefined,
+              employeeCount: profile.employee_count || undefined,
+              isVeteran:     profile.is_veteran  === true,
+              isMinority:    profile.is_minority === true,
+              isWoman:       profile.is_woman    === true,
+              userType:      profile.user_type   === 'nonprofit' ? 'nonprofit' : 'business',
+              missionArea:   profile.mission_area   || undefined,
+              annualBudget:  profile.annual_budget  || undefined,
+              is501c3:       profile.is_501c3       === true,
+            } : undefined
 
-          {/* ── Generation error banner — safe message only, never raw API errors ── */}
-          {!isActive && generateError && (
-            <div style={{
-              marginBottom: report ? '16px' : '0',
-              padding: '12px 16px',
-              background: generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT'
-                ? '#F0FDF4' : '#FFF7ED',
-              border: `1px solid ${generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT'
-                ? '#BBF7D0' : '#FED7AA'}`,
-              borderRadius: '10px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '10px',
-            }}>
-              <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>
-                {generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT' ? '🔄' : '⏳'}
-              </span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.5' }}>
-                  {generateError}
-                </div>
-                {report && (
-                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
-                    Showing your most recent report below.
+            const reportView = report ? (
+              <ReportView
+                report={report}
+                isPro={isPro}
+                reportDate={reportDate}
+                onUpgrade={handleUpgrade}
+                upgrading={upgrading}
+                upgradeError={upgradeError}
+                userId={user?.id}
+                profile={profileSummary}
+                onPaywallVisible={!isPro && user?.id ? () => handlePaywallVisible(user.id) : undefined}
+              />
+            ) : null
+
+            // ── Phase: GENERATING — fetch initiated, no stream yet ───────────
+            if (reportPhase === 'generating') {
+              return <LoadingState searching={false} isNonprofit={isNonprofit} />
+            }
+
+            // ── Phase: SEARCHING — streaming active ──────────────────────────
+            if (reportPhase === 'searching') {
+              return <LoadingState searching={true} isNonprofit={isNonprofit} />
+            }
+
+            // ── Phase: RETRYING — auto-retry, cached report stays visible ────
+            if (reportPhase === 'retrying') {
+              return (
+                <>
+                  <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>🔄</span>
+                    <span style={{ fontSize: '13px', color: '#065F46' }}>{phaseMessage}</span>
                   </div>
-                )}
-              </div>
-            </div>
-          )}
+                  {reportView}
+                </>
+              )
+            }
 
-          {/* Report content */}
-          {!isActive && report && (
-            <ReportView
-              report={report}
-              isPro={isPro}
-              reportDate={reportDate}
-              onUpgrade={handleUpgrade}
-              upgrading={upgrading}
-              upgradeError={upgradeError}
-              userId={user?.id}
-              profile={profile ? ((): ProfileSummary => ({
-                businessName:  profile.business_name,
-                description:   profile.business_description || undefined,
-                city:          profile.city,
-                county:        profile.county        || undefined,
-                industry:      profile.industry      || undefined,
-                revenue:       profile.revenue_range || undefined,
-                entityType:    profile.entity_type   || undefined,
-                employeeCount: profile.employee_count || undefined,
-                isVeteran:     profile.is_veteran  === true,
-                isMinority:    profile.is_minority === true,
-                isWoman:       profile.is_woman    === true,
-                userType:      profile.user_type   === 'nonprofit' ? 'nonprofit' : 'business',
-                missionArea:   profile.mission_area   || undefined,
-                annualBudget:  profile.annual_budget  || undefined,
-                is501c3:       profile.is_501c3       === true,
-              }))() : undefined}
-              onPaywallVisible={!isPro && user?.id ? () => handlePaywallVisible(user.id) : undefined}
-            />
-          )}
+            // ── Phase: IN_PROGRESS — server job already running ───────────────
+            if (reportPhase === 'in_progress') {
+              return (
+                <>
+                  <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>🔄</span>
+                    <span style={{ fontSize: '13px', color: '#065F46' }}>{phaseMessage || "We're checking for the latest funding opportunities now."}</span>
+                  </div>
+                  {reportView}
+                </>
+              )
+            }
 
-          {/* Empty / error state — no cached report and generation failed or hasn't run */}
-          {!isActive && !report && (
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ fontSize: '32px', marginBottom: '12px' }}>
-                {generateError ? '⏳' : '📋'}
+            // ── Phase: FAILED — terminal error ───────────────────────────────
+            if (reportPhase === 'failed') {
+              return (
+                <>
+                  <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ fontSize: '14px', flexShrink: 0 }}>⏳</span>
+                    <div>
+                      <div style={{ fontSize: '13px', color: '#374151' }}>{phaseMessage}</div>
+                      {report && <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '3px' }}>Showing your most recent report below.</div>}
+                    </div>
+                  </div>
+                  {reportView || (
+                    <div style={{ textAlign: 'center', padding: '32px 0' }}>
+                      <button onClick={() => profile && generateReport(profile)}
+                        style={{ padding: '8px 18px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+                </>
+              )
+            }
+
+            // ── Phase: SUCCESS / IDLE — show report or first-time empty ──────
+            if (reportView) return reportView
+
+            // Truly empty — no report yet and idle (shouldn't normally reach here)
+            return (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
+                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '16px' }}>Your report is being prepared.</div>
+                <button onClick={() => profile && generateReport(profile)}
+                  style={{ padding: '8px 16px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  Generate Report
+                </button>
               </div>
-              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '4px', fontWeight: '500' }}>
-                {generateError
-                  ? "We're having trouble preparing your report right now."
-                  : 'Your report is being prepared.'}
-              </div>
-              <div style={{ fontSize: '13px', color: '#9CA3AF', marginBottom: '16px' }}>
-                {generateError
-                  ? "We've been notified and will retry shortly. You can also try again now."
-                  : 'This usually takes about a minute.'}
-              </div>
-              <button
-                onClick={() => profile && generateReport(profile)}
-                style={{ padding: '8px 16px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}
-              >
-                Generate Report
-              </button>
-            </div>
-          )}
+            )
+          })()}
         </div>
 
       </div>
