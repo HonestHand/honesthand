@@ -378,13 +378,13 @@ export default function Home() {
           <button onClick={()=>{setShowAuth(true);setIsLogin(true)}} style={{padding:'8px 16px',background:'transparent',border:'1px solid #1D9E75',borderRadius:'20px',color:'#1D9E75',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Sign In</button>
         </div>
       </div>
-      <div style={{padding:'64px 24px 48px',textAlign:'center',maxWidth:'600px',margin:'0 auto'}}>
-        <div style={{fontSize:'11px',fontWeight:'600',color:'#1D9E75',letterSpacing:'0.08em',textTransform:'uppercase',marginBottom:'16px'}}>Built for Texas business owners</div>
-        <div style={{fontSize:'36px',fontWeight:'700',color:'#2C2C2A',lineHeight:'1.2',marginBottom:'12px',letterSpacing:'-0.5px'}}>Stop searching dozens of websites for funding your business already qualifies for.</div>
-        <div style={{fontSize:'28px',fontWeight:'700',color:'#1D9E75',marginBottom:'20px'}}>HonestHand organizes it for you.</div>
-        <div style={{fontSize:'16px',color:'#6B7280',lineHeight:'1.7',marginBottom:'32px'}}>Grants, tax credits, and government incentives are scattered across hundreds of federal, state, and local programs. HonestHand matches your business to verified opportunities and delivers a clear, organized report — updated every month as programs change.</div>
-        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'12px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
-        <div style={{fontSize:'12px',color:'#1D9E75'}}>Free report · No credit card · Results in 24 hours</div>
+      <div style={{padding:'64px 24px 48px',textAlign:'center',maxWidth:'560px',margin:'0 auto'}}>
+        <div style={{fontSize:'34px',fontWeight:'700',color:'#2C2C2A',lineHeight:'1.2',marginBottom:'12px',letterSpacing:'-0.5px'}}>Stop searching dozens of websites for funding your business already qualifies for.</div>
+        <div style={{fontSize:'26px',fontWeight:'700',color:'#1D9E75',marginBottom:'20px'}}>HonestHand organizes it for you.</div>
+        <div style={{fontSize:'15px',color:'#6B7280',lineHeight:'1.7',marginBottom:'28px'}}>Grants, tax credits, and incentives are scattered across dozens of federal, state, and local websites. HonestHand organizes verified opportunities into one clear monthly report — updated as programs and deadlines change.</div>
+        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'16px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
+        <div style={{fontSize:'13px',color:'#9CA3AF',lineHeight:'1.7',marginBottom:'12px',maxWidth:'380px',margin:'0 auto 12px'}}>Stop wasting hours jumping between websites trying to track grants, incentives, and deadlines. HonestHand organizes and monitors it for you.</div>
+        <div style={{fontSize:'12px',color:'#1D9E75',marginTop:'10px'}}>Free report · No credit card · Results in 24 hours</div>
       </div>
       <div style={{borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'32px 24px'}}>
         {[{num:'$31,000',label:'Average missed per Texas business per year'},{num:'2 min',label:'To complete your free intake form'},{num:'$49/mo',label:'Full report + monthly monitoring'}].map((stat,i)=>(
@@ -394,21 +394,20 @@ export default function Home() {
           </div>
         ))}
       </div>
-      <div style={{padding:'32px 24px',maxWidth:'560px',margin:'0 auto',textAlign:'center'}}>
-        <div style={{fontSize:'16px',fontWeight:'600',color:'#2C2C2A',marginBottom:'10px'}}>Funding programs change constantly. Most business owners never find out.</div>
-        <div style={{fontSize:'14px',color:'#6B7280',lineHeight:'1.8',marginBottom:'20px'}}>
-          Grant deadlines shift. New incentives open. Tax credit eligibility changes with legislation. Most owners miss these updates because tracking them takes time they don't have.
-        </div>
-        <div style={{display:'flex',flexDirection:'column' as const,gap:'10px',textAlign:'left',marginBottom:'8px'}}>
+      <div style={{padding:'40px 24px',maxWidth:'520px',margin:'0 auto'}}>
+        <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',marginBottom:'6px',textAlign:'center'}}>Why businesses stay subscribed</div>
+        <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>Funding intelligence isn't a one-time search. It's ongoing.</div>
+        <div style={{display:'flex',flexDirection:'column' as const,gap:'12px'}}>
           {[
-            {icon:'📋', text:'One organized report instead of dozens of government websites'},
-            {icon:'🔄', text:'Updated reports delivered on the 1st of each month'},
-            {icon:'⏰', text:'Deadline tracking so opportunities don\'t quietly close on you'},
-            {icon:'📍', text:'Federal, state, and local programs — all in one place'},
-          ].map((item, i) => (
+            'Programs open and close every month',
+            'Deadlines shift — often without announcement',
+            'Funding amounts and eligibility rules change',
+            'New federal, state, and local incentives appear regularly',
+            'Reports refresh on the 1st of every month',
+          ].map((text, i) => (
             <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
-              <span style={{fontSize:'15px',flexShrink:0,marginTop:'1px'}}>{item.icon}</span>
-              <span style={{fontSize:'14px',color:'#374151',lineHeight:'1.6'}}>{item.text}</span>
+              <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'14px',flexShrink:0,marginTop:'2px'}}>✓</span>
+              <span style={{fontSize:'14px',color:'#374151',lineHeight:'1.5'}}>{text}</span>
             </div>
           ))}
         </div>
