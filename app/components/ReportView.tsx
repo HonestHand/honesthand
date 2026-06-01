@@ -353,10 +353,10 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
                 aria-expanded={isExpanded}
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-[13px] font-semibold text-amber-900 leading-snug truncate">
+                  <div className="text-[13px] font-semibold text-amber-900 leading-snug break-words">
                     {opp.name}
                   </div>
-                  <div className="text-[11px] text-amber-700 mt-0.5 truncate">{urgencyNote}</div>
+                  <div className="text-[11px] text-amber-700 mt-0.5 break-words">{urgencyNote}</div>
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
@@ -459,18 +459,15 @@ function OpportunityCard({
   const hasValue    = opp.amountDisplay !== 'See program details'
   const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
-  // Raw full-text fields — used only inside the expandable "Full details" section
-  const whyRaw  = opp.whyQualify || null
-  const nextRaw = opp.nextStep    || null
+  // Full next-step text — only shown in expanded "Action Steps" section
+  // whyQualify is intentionally excluded: whyFragments already surfaces the key bullets
+  const nextRaw = opp.nextStep || null
 
-  // Show "Full details" whenever there is substantive raw content beyond the card fragments
-  const hasMore = !!(
-    (whyRaw  && whyRaw.trim().length  > 60) ||
-    (nextRaw && nextRaw.trim().length > 80)
-  )
+  // Only show "Action Steps" when nextRaw has real content beyond the card's nextStepClean
+  const hasMore = !!(nextRaw && nextRaw.trim().length > 100)
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-sm overflow-hidden mb-2.5 last:mb-0">
+    <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
 
       {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3.5">
@@ -589,7 +586,7 @@ function OpportunityCard({
               <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                 Next Step
               </div>
-              <p className="text-[13px] text-gray-700 leading-relaxed">
+              <p className="text-[13px] text-gray-700 leading-relaxed break-words" style={{overflowWrap:'break-word'}}>
                 {opp.nextStepClean}
               </p>
             </div>
@@ -597,40 +594,23 @@ function OpportunityCard({
         </div>
       )}
 
-      {/* ── Full details (expandable) ── */}
-      {hasMore && (
+      {/* ── Action Steps (expandable) — only shows when nextRaw adds value beyond card ── */}
+      {hasMore && nextRaw && (
         <div className="px-4 pb-3">
           <button
             onClick={() => setShowGuidance(v => !v)}
             className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
           >
             <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
-            {showGuidance ? 'Hide details' : 'Full details'}
+            {showGuidance ? 'Hide steps' : 'Full action steps'}
           </button>
           {showGuidance && (
-            <div className="mt-3 space-y-3">
-              {whyRaw && (
-                <div>
-                  <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
-                    Full Qualification Detail
-                  </div>
-                  <p
-                    className="text-[13px] text-gray-600 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: renderInline(whyRaw) }}
-                  />
-                </div>
-              )}
-              {nextRaw && (
-                <div>
-                  <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
-                    Full Next Steps
-                  </div>
-                  <p
-                    className="text-[13px] text-gray-700 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
-                  />
-                </div>
-              )}
+            <div className="mt-2">
+              <p
+                className="text-[13px] text-gray-700 leading-relaxed break-words"
+                style={{overflowWrap:'break-word'}}
+                dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
+              />
             </div>
           )}
         </div>

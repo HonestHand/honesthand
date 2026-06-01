@@ -105,7 +105,11 @@ FORMAT RULES:
   • **Why you qualify:** one sentence on eligibility match
   • **Next step:** exact action to take with agency name or URL
 - End with the 30-Day Action Plan as the final section
-- Do NOT include "Not Applicable" entries. If a program does not apply, omit it entirely. Only include programs this business can actually pursue.`
+- Do NOT include "Not Applicable" entries. If a program does not apply, omit it entirely. Only include programs this business can actually pursue.
+- **Why you qualify:** max 2 short bullets, one business attribute each. No explanatory sentences.
+- **Value:** amount only, one line. No deadline text.
+- **Next step:** one clear action. No chaining with "and then."
+- **Why you qualify and Next step must not repeat each other.**`
 
   const nonprofitSystemPrompt = `You are HonestHand — a straight-talking funding partner for Texas nonprofits and community organizations.
 The current date is ${currentDate}. Always use accurate, current deadlines and grant cycles. Never reference past years or outdated grant cycles.

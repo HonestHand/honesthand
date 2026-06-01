@@ -340,18 +340,18 @@ function extractAmount(rawValue: string, programName?: string): string {
   const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?))/i
   const amtMatch = v.match(amountRe)
   if (amtMatch?.[1].includes('$')) {
-    // Strip trailing parentheticals and qualifiers, then hard-cap at 40
+    // Strip trailing parentheticals and qualifiers, then hard-cap at 70
     const amt = amtMatch[1].trim().replace(/\s*\([^)]{1,60}\)\s*$/, '').trim()
-    if (amt.length <= 40) return amt
+    if (amt.length <= 70) return amt
     const shorter = amt.replace(/\s+(?:per\s+\w+|annually|yearly|monthly|in\s+\w+).*$/i, '').trim()
-    return shorter.length <= 40 ? shorter : shorter.slice(0, 38).replace(/\s+\S+$/, '') + '…'
+    return shorter.length <= 70 ? shorter : shorter.slice(0, 68).replace(/\s+\S+$/, '') + '…'
   }
 
   // 2. Dollar amount anywhere in the string (e.g. after "Fee-waived; loans up to $5M")
   const anyDollar = v.match(/\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?/i)
   if (anyDollar) {
     const amt = anyDollar[0].trim()
-    return amt.length <= 40 ? amt : amt.slice(0, 38).replace(/\s+\S+$/, '') + '…'
+    return amt.length <= 70 ? amt : amt.slice(0, 68).replace(/\s+\S+$/, '') + '…'
   }
 
   // 3. Percentage (tax credits): "20% of qualified wages"
@@ -371,10 +371,10 @@ function extractAmount(rawValue: string, programName?: string): string {
   if (/no\s+(?:direct\s+)?(?:cash\s+)?grant/i.test(v))                       return 'Non-monetary benefit'
 
   // 6. Short enough as-is
-  if (v.length <= 40) return v
+  if (v.length <= 70) return v
 
-  // 7. Hard cap — word-boundary truncate at 38 chars
-  return v.slice(0, 38).replace(/\s+\S+$/, '') + '…'
+  // 7. Hard cap — word-boundary truncate at 68 chars
+  return v.slice(0, 68).replace(/\s+\S+$/, '') + '…'
 }
 
 /**
@@ -497,10 +497,10 @@ function extractDeadlineDisplay(rawDeadline: string): string {
   if (seasonM) return toTitleCase(seasonM[1])
 
   const dot = rawDeadline.search(/\.\s/)
-  if (dot > 2 && dot < 50) return rawDeadline.slice(0, dot).trim()
-  if (rawDeadline.length <= 50) return rawDeadline
+  if (dot > 2 && dot < 80) return rawDeadline.slice(0, dot).trim()
+  if (rawDeadline.length <= 90) return rawDeadline
 
-  return rawDeadline.slice(0, 48).trim() + '…'
+  return rawDeadline.slice(0, 88).trim() + '…'
 }
 
 /**
@@ -631,7 +631,7 @@ function expandQualPhrase(phrase: string): string[] {
 
   function addBullet(s: string): void {
     if (results.length >= 3) return
-    const f = wordCut(cap(s.trim()), 40)
+    const f = wordCut(cap(s.trim()), 60)
     if (f.length >= 3 && !results.includes(f)) results.push(f)
   }
 
@@ -810,8 +810,8 @@ function cleanNextStep(rawNext: string): string {
   const m = s.match(/^(.+?[.!?])(?:\s|$)/)
   const result = (m ? m[1] : s).trim()
 
-  // 70-char hard limit — word-boundary cut, never adds `…`
-  return wordCut(result, 70)
+  // 140-char hard limit — word-boundary cut, never adds `…`
+  return wordCut(result, 140)
 }
 
 // ─── Profile-summary detector ─────────────────────────────────────────────────
