@@ -1,6 +1,8 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { createClient } from '@supabase/supabase-js'
 import { buildReportPrompt, buildNonprofitReportPrompt, NonprofitData } from '../../lib/claude'
+import { classifyError, sendAdminAlert, FLOW_MESSAGES } from '../../lib/reportErrors'
 
 export const maxDuration = 300
 
@@ -291,38 +293,173 @@ FORMAT RULES:
     ? (isPro ? nonprofitProSystemPrompt : nonprofitFreeSystemPrompt)
     : (isPro ? proSystemPrompt : freeSystemPrompt)
 
+  // ── Supabase admin client (for rate limiting + job tracking) ─────────────────
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+  const userId       = profile.id as string | undefined
+  const businessName = (profile.business_name ?? profile.orgName ?? '') as string
+
+  // ── Rate limit: one active job per user at a time ────────────────────────────
+  if (userId) {
+    const { data: activeJob } = await supabaseAdmin
+      .from('report_generation_jobs')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('status', 'processing')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (activeJob) {
+      const msg = FLOW_MESSAGES['REPORT_IN_PROGRESS']
+      return new Response(
+        `data: ${JSON.stringify({ error: msg, errorCode: 'REPORT_IN_PROGRESS' })}\n\ndata: ${JSON.stringify({ done: true })}\n\n`,
+        { headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' } }
+      )
+    }
+  }
+
+  // ── Create job record (fire-and-forget — do not block stream start) ──────────
+  let jobId: string | undefined
+  if (userId) {
+    supabaseAdmin
+      .from('report_generation_jobs')
+      .insert({ user_id: userId, status: 'processing', provider: 'anthropic', attempt_count: 1 })
+      .select('id')
+      .single()
+      .then(({ data }) => { if (data) jobId = data.id })
+      .catch(() => { /* job tracking is non-critical */ })
+  }
+
+  // ── Retry-aware Anthropic stream ─────────────────────────────────────────────
+  const MAX_ATTEMPTS   = 3
+  const RETRY_DELAYS   = [0, 2000, 8000]  // ms: immediate, 2 s, 8 s
+
+  const anthropicParams = {
+    model:     'claude-sonnet-4-6',
+    max_tokens: isPro ? 16000 : 2048,
+    tools:     [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: isPro ? 8 : 3 }],
+    system:    selectedSystemPrompt,
+    messages:  [{ role: 'user' as const, content: prompt }],
+  }
+
   const stream = new ReadableStream({
     async start(controller) {
-      // Send heartbeat immediately so the client's fetch() resolves before web searches start
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'searching' })}\n\n`))
-      try {
-        const anthropicStream = await client.messages.stream({
-          model: 'claude-sonnet-4-6',
-          max_tokens: isPro ? 16000 : 2048,
-          tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: isPro ? 8 : 3 }],
-          system: selectedSystemPrompt,
-          messages: [{ role: 'user', content: prompt }],
-        })
 
-        for await (const chunk of anthropicStream) {
-          if (
-            chunk.type === 'content_block_delta' &&
-            chunk.delta.type === 'text_delta'
-          ) {
-            const data = JSON.stringify({ text: chunk.delta.text })
-            controller.enqueue(encoder.encode(`data: ${data}\n\n`))
-          }
+      let lastError: unknown
+      let attemptCount = 0
+
+      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        attemptCount = attempt + 1
+
+        if (attempt > 0) {
+          await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]))
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'retrying' })}\n\n`))
+          console.log(`[generate-report] Retry attempt ${attemptCount} for user ${userId}`)
         }
 
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
-        controller.close()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error'
-        controller.enqueue(
-          encoder.encode(`data: ${JSON.stringify({ error: message })}\n\n`)
-        )
-        controller.close()
+        try {
+          const anthropicStream = await client.messages.stream(anthropicParams)
+          for await (const chunk of anthropicStream) {
+            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
+            }
+          }
+
+          // ── Success ────────────────────────────────────────────────────────
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+          controller.close()
+
+          // Update job to completed (non-blocking)
+          if (userId) {
+            supabaseAdmin.from('report_generation_jobs')
+              .update({ status: 'completed', completed_at: new Date().toISOString(), attempt_count: attemptCount })
+              .eq('user_id', userId).eq('status', 'processing')
+              .catch(() => {})
+          }
+          return
+
+        } catch (error) {
+          lastError = error
+          const classified = classifyError(error)
+
+          console.error(
+            `[generate-report] Attempt ${attemptCount}/${MAX_ATTEMPTS} failed`,
+            `code=${classified.code} user=${userId}`,
+            classified.rawMessage.slice(0, 200)
+          )
+
+          // Non-retryable errors — fail immediately
+          if (!classified.retryable) {
+            // Admin alert for billing / auth failures
+            if (classified.shouldAlert) {
+              sendAdminAlert({
+                code:         classified.code,
+                rawError:     classified.rawMessage,
+                userId:       userId,
+                businessName: businessName,
+                attemptCount: attemptCount,
+              }).catch(() => {})
+            }
+
+            // Update job to failed (non-blocking)
+            if (userId) {
+              supabaseAdmin.from('report_generation_jobs')
+                .update({
+                  status:              'failed',
+                  failed_at:           new Date().toISOString(),
+                  attempt_count:       attemptCount,
+                  error_code:          classified.code,
+                  sanitized_error:     classified.userMessage,
+                  raw_error_internal:  classified.rawMessage.slice(0, 1000),
+                })
+                .eq('user_id', userId).eq('status', 'processing')
+                .catch(() => {})
+            }
+
+            // Send safe message to client — NEVER the raw error
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+            controller.close()
+            return
+          }
+
+          // Retryable — loop continues
+        }
       }
+
+      // ── All retries exhausted ───────────────────────────────────────────────
+      const classified = classifyError(lastError)
+
+      // Admin alert after exhausting retries on retryable errors
+      sendAdminAlert({
+        code:         classified.code,
+        rawError:     classified.rawMessage,
+        userId:       userId,
+        businessName: businessName,
+        attemptCount: attemptCount,
+      }).catch(() => {})
+
+      if (userId) {
+        supabaseAdmin.from('report_generation_jobs')
+          .update({
+            status:             'failed',
+            failed_at:          new Date().toISOString(),
+            attempt_count:      attemptCount,
+            error_code:         classified.code,
+            sanitized_error:    classified.userMessage,
+            raw_error_internal: classified.rawMessage.slice(0, 1000),
+          })
+          .eq('user_id', userId).eq('status', 'processing')
+          .catch(() => {})
+      }
+
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+      controller.close()
     },
   })
 

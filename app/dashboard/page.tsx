@@ -98,6 +98,8 @@ export default function Dashboard() {
   const [isPro,        setIsPro]        = useState(false)
   const [upgrading,    setUpgrading]    = useState(false)
   const [upgradeError, setUpgradeError] = useState('')
+  const [generateError,    setGenerateError]    = useState('')   // safe user-facing message only
+  const [generateErrorCode, setGenerateErrorCode] = useState('')
   const [refreshConfirm,   setRefreshConfirm]   = useState(false)
   const [emailUnverified,  setEmailUnverified]  = useState(false)
   const [resendingVerify,  setResendingVerify]  = useState(false)
@@ -184,13 +186,20 @@ export default function Dashboard() {
     }
   }
 
-  const generateReport = async (p: any, userId?: string) => {
+  const generateReport = async (p: any, userId?: string, isRefresh = false) => {
     const uid = userId || user?.id
     setGenerating(true)
     setSearching(false)
-    setReport('')
-    setReportDate(null)
+    setGenerateError('')
+    setGenerateErrorCode('')
     setRefreshConfirm(false)
+
+    // On first-time generation there is no cached report to preserve.
+    // On refresh, keep the existing report visible until the new one is ready.
+    if (!isRefresh) {
+      setReport('')
+      setReportDate(null)
+    }
 
     try {
       const res = await fetch('/api/generate-report', {
@@ -200,8 +209,9 @@ export default function Dashboard() {
       })
       const reader  = res.body!.getReader()
       const decoder = new TextDecoder()
-      let buffer    = ''
+      let buffer     = ''
       let fullReport = ''
+      let hadError   = false
       setGenerating(false)
 
       while (true) {
@@ -215,21 +225,31 @@ export default function Dashboard() {
           try {
             const parsed = JSON.parse(line.slice(6))
             if (parsed.status === 'searching') setSearching(true)
+            if (parsed.status === 'retrying') {
+              setSearching(false)
+              // Keep existing report visible; show a non-alarming notice
+              setGenerateError('Verifying current program data — this may take a moment longer than usual.')
+            }
             if (parsed.text) {
               setSearching(false)
+              setGenerateError('')  // clear any retrying notice once text arrives
               fullReport += parsed.text
               setReport(prev => prev + parsed.text)
             }
             if (parsed.error) {
+              // NEVER display raw provider errors — only the pre-sanitized safe message
+              hadError = true
               setSearching(false)
-              setReport('Error: ' + parsed.error)
+              setGenerateError(parsed.error)
+              setGenerateErrorCode(parsed.errorCode ?? '')
+              // Do NOT touch report state — keep cached report visible
             }
-          } catch { /* ignore parse errors in SSE stream */ }
+          } catch { /* ignore SSE parse errors */ }
         }
       }
 
-      // Persist completed report
-      if (fullReport && uid) {
+      // Persist if we got a complete new report
+      if (fullReport && uid && !hadError) {
         try {
           await fetch('/api/save-report', {
             method: 'POST',
@@ -242,14 +262,15 @@ export default function Dashboard() {
         }
       }
     } catch (e: any) {
-      setReport('Error: ' + (e?.message || 'Unknown error occurred'))
+      // Network / fetch-level failures — never expose raw message
+      setGenerateError('We\'re having trouble reaching the report service. Please try again in a moment.')
       setGenerating(false)
     }
   }
 
   const handleRefreshRequest = () => {
     if (refreshConfirm) {
-      generateReport(profile)
+      generateReport(profile, undefined, true)  // isRefresh=true → preserve cached report
     } else {
       setRefreshConfirm(true)
       setTimeout(() => setRefreshConfirm(false), 5000)
@@ -468,6 +489,36 @@ export default function Dashboard() {
           {/* Generating / searching state */}
           {isActive && <LoadingState searching={searching} isNonprofit={isNonprofit} />}
 
+          {/* ── Generation error banner — safe message only, never raw API errors ── */}
+          {!isActive && generateError && (
+            <div style={{
+              marginBottom: report ? '16px' : '0',
+              padding: '12px 16px',
+              background: generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT'
+                ? '#F0FDF4' : '#FFF7ED',
+              border: `1px solid ${generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT'
+                ? '#BBF7D0' : '#FED7AA'}`,
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '10px',
+            }}>
+              <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>
+                {generateErrorCode === 'REPORT_IN_PROGRESS' || generateErrorCode === 'TOO_RECENT' ? '🔄' : '⏳'}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '13px', color: '#374151', lineHeight: '1.5' }}>
+                  {generateError}
+                </div>
+                {report && (
+                  <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '4px' }}>
+                    Showing your most recent report below.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Report content */}
           {!isActive && report && (
             <ReportView
@@ -499,11 +550,21 @@ export default function Dashboard() {
             />
           )}
 
-          {/* Empty / error state */}
+          {/* Empty / error state — no cached report and generation failed or hasn't run */}
           {!isActive && !report && (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '12px' }}>
-                Unable to load report.
+              <div style={{ fontSize: '32px', marginBottom: '12px' }}>
+                {generateError ? '⏳' : '📋'}
+              </div>
+              <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '4px', fontWeight: '500' }}>
+                {generateError
+                  ? "We're having trouble preparing your report right now."
+                  : 'Your report is being prepared.'}
+              </div>
+              <div style={{ fontSize: '13px', color: '#9CA3AF', marginBottom: '16px' }}>
+                {generateError
+                  ? "We've been notified and will retry shortly. You can also try again now."
+                  : 'This usually takes about a minute.'}
               </div>
               <button
                 onClick={() => profile && generateReport(profile)}
