@@ -459,12 +459,27 @@ function OpportunityCard({
   const hasValue    = opp.amountDisplay !== 'See program details'
   const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
-  // Full next-step text — only shown in expanded "Action Steps" section
-  // whyQualify is intentionally excluded: whyFragments already surfaces the key bullets
-  const nextRaw = opp.nextStep || null
+  // ── Deduplicated action steps ─────────────────────────────────────────────
+  // Strip the first sentence from nextRaw when it duplicates the card's nextStepClean.
+  // This prevents "Full action steps" from restating what the card already shows.
+  const actionStepsText = (() => {
+    const raw = opp.nextStep
+    if (!raw || !opp.nextStepClean) return raw || null
+    const sentences = raw.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean)
+    if (sentences.length <= 1) return null  // single sentence = same as card
+    // Jaccard-style word overlap between first raw sentence and nextStepClean
+    const words = (s: string) => new Set(
+      s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3)
+    )
+    const first = words(sentences[0])
+    const clean = words(opp.nextStepClean)
+    const overlap = [...first].filter(w => clean.has(w)).length
+    const similarity = overlap / Math.max(first.size, clean.size, 1)
+    const rest = sentences.slice(similarity > 0.35 ? 1 : 0).join(' ').trim()
+    return rest || null
+  })()
 
-  // Only show "Action Steps" when nextRaw has real content beyond the card's nextStepClean
-  const hasMore = !!(nextRaw && nextRaw.trim().length > 100)
+  const hasMore = !!(actionStepsText && actionStepsText.length > 60)
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
@@ -518,7 +533,7 @@ function OpportunityCard({
                   {/* Row 1: Dollar amount */}
                   <div className="flex items-start gap-2.5">
                     <span className="flex-shrink-0 leading-none mt-0.5">💰</span>
-                    <span className="text-[15px] font-bold text-[#2C2C2A] leading-snug">
+                    <span className="text-[14px] font-bold text-[#2C2C2A] leading-snug break-words" style={{overflowWrap:'break-word'}}>
                       {opp.amountDisplay}
                     </span>
                   </div>
@@ -527,6 +542,13 @@ function OpportunityCard({
                     <div className="flex items-start gap-2.5">
                       <span className="flex-shrink-0 leading-none mt-0.5">🏛</span>
                       <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingType}</span>
+                    </div>
+                  )}
+                  {/* Row 3: Funding structure detail (non-repayable, matching, etc.) */}
+                  {opp.fundingStyle && (
+                    <div className="flex items-start gap-2.5">
+                      <span className="flex-shrink-0 leading-none mt-0.5 text-[#1D9E75] font-bold text-[11px]">✦</span>
+                      <span className="text-[12px] text-[#1D9E75] font-medium leading-snug">{opp.fundingStyle}</span>
                     </div>
                   )}
                 </div>
@@ -595,21 +617,22 @@ function OpportunityCard({
       )}
 
       {/* ── Action Steps (expandable) — only shows when nextRaw adds value beyond card ── */}
-      {hasMore && nextRaw && (
+      {/* ── More steps (expandable) — deduped; only shown when there's new content ── */}
+      {hasMore && actionStepsText && (
         <div className="px-4 pb-3">
           <button
             onClick={() => setShowGuidance(v => !v)}
             className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
           >
             <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
-            {showGuidance ? 'Hide steps' : 'Full action steps'}
+            {showGuidance ? 'Hide' : 'More steps'}
           </button>
           {showGuidance && (
-            <div className="mt-2">
+            <div className="mt-2 pt-2 border-t border-gray-50">
               <p
                 className="text-[13px] text-gray-700 leading-relaxed break-words"
                 style={{overflowWrap:'break-word'}}
-                dangerouslySetInnerHTML={{ __html: renderInline(nextRaw) }}
+                dangerouslySetInnerHTML={{ __html: renderInline(actionStepsText) }}
               />
             </div>
           )}

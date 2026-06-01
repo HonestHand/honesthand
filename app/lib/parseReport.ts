@@ -384,19 +384,35 @@ function extractAmount(rawValue: string, programName?: string): string {
 function inferFundingType(name: string, rawValue: string, category: SectionCategory): string | null {
   const c = (name + ' ' + rawValue).toLowerCase()
 
-  if (c.includes('7(a)') || c.includes('7a loan'))           return 'SBA 7(a) Loan'
-  if (c.includes('504') && c.includes('sba'))                return 'SBA 504 Loan'
-  if (c.includes('microloan') || c.includes('micro loan'))   return 'SBA Microloan'
-  if (c.includes('sbir') || c.includes('sttr'))              return 'Research grant (SBIR/STTR)'
-  if (c.includes('sba'))                                      return 'SBA-backed financing'
-  if (category === 'tax' || c.includes('tax credit'))        return 'Tax credit'
-  if (c.includes('tax deduction'))                           return 'Tax deduction'
-  if (c.includes('rebate'))                                  return 'Rebate program'
-  if (category === 'certification' || c.includes('certif'))  return 'Certification program'
-  if (category === 'contracting' || c.includes('set-aside')) return "Gov't contract opportunity"
-  if (c.includes('grant') && !c.includes('loan'))            return 'Business grant'
-  if (c.includes('loan'))                                    return 'Business loan'
-  if (c.includes('bond'))                                    return 'Surety bond program'
+  // SBA loan products — most specific first
+  if (c.includes('7(a)') || c.includes('7a loan'))             return 'SBA 7(a) Loan'
+  if (c.includes('504') && c.includes('sba'))                  return 'SBA 504 Loan'
+  if (c.includes('microloan') || c.includes('micro loan'))     return 'SBA Microloan'
+  if (c.includes('sbir') || c.includes('sttr'))                return 'Research grant (SBIR/STTR)'
+  if (c.includes('sba'))                                        return 'SBA-backed financing'
+
+  // Tax credits — specific before generic
+  if (c.includes('section 179') || c.includes('sec. 179'))     return 'Section 179 deduction'
+  if (c.includes('bonus depreciation'))                        return 'Bonus depreciation'
+  if (c.includes('work opportunity') || c.includes('wotc'))    return 'WOTC hiring credit'
+  if (c.includes('employee retention') || /\bertc\b|\berc\b/.test(c)) return 'Employee retention credit'
+  if (c.includes('r&d') || c.includes('research and dev'))     return 'R&D tax credit'
+  if ((c.includes('childcare') || c.includes('child care')) && c.includes('credit')) return 'Childcare tax credit'
+  if ((c.includes('energy') || c.includes('solar') || c.includes('efficiency')) && c.includes('credit')) return 'Energy tax credit'
+  if (c.includes('veteran') && (c.includes('hire') || c.includes('hiring'))) return 'Veteran hiring credit'
+  if (c.includes('franchise tax') || (c.includes('texas') && c.includes('franchise'))) return 'Texas franchise tax'
+  if (c.includes('home office') || c.includes('schedule c'))   return 'Business use deduction'
+  if (c.includes('self-employ') && c.includes('health'))       return 'Self-employed health deduction'
+  if (c.includes('self-employ') && c.includes('tax'))          return 'SE tax deduction'
+  if (category === 'tax' && c.includes('deduction'))           return 'Tax deduction'
+  if (category === 'tax' || c.includes('tax credit'))          return 'Tax credit'
+
+  if (c.includes('rebate'))                                    return 'Rebate program'
+  if (category === 'certification' || c.includes('certif'))    return 'Certification program'
+  if (category === 'contracting' || c.includes('set-aside'))   return "Gov't contract opportunity"
+  if (c.includes('grant') && !c.includes('loan'))              return 'Business grant'
+  if (c.includes('loan'))                                      return 'Business loan'
+  if (c.includes('bond'))                                      return 'Surety bond program'
 
   return null
 }
