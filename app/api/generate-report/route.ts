@@ -431,6 +431,32 @@ FORMAT RULES:
     } catch { /* finalize failure is non-critical */ }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ⚠️  TEST-ONLY: Forced failure simulation
+  //
+  // TODO: This block must NEVER be committed with FORCE_REPORT_FAILURE=true in
+  //       production env vars. It is a local/preview-only testing aid.
+  //
+  // Activate by setting in .env.local (local) or a Vercel preview environment:
+  //   FORCE_REPORT_FAILURE=true
+  //
+  // Safety: The flag is ignored when VERCEL_ENV=production or NODE_ENV=production.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const FORCE_FAILURE_ENABLED =
+    process.env.FORCE_REPORT_FAILURE === 'true' &&
+    process.env.VERCEL_ENV    !== 'production'  &&
+    process.env.NODE_ENV      !== 'production'
+
+  if (FORCE_FAILURE_ENABLED) {
+    // Log prominently so it's impossible to miss in server logs
+    console.warn(
+      '\n⚠️  [TEST MODE] ─────────────────────────────────────────────────────────\n' +
+      '   FORCE_REPORT_FAILURE=true — intentional failure simulation is ACTIVE.\n' +
+      '   All report generation will fail. Disable before deploying to production.\n' +
+      '─────────────────────────────────────────────────────────────────────────────\n'
+    )
+  }
+
   // ── Retry-aware Anthropic stream ─────────────────────────────────────────────
   const MAX_ATTEMPTS = 3
   const RETRY_DELAYS = [0, 2000, 8000]  // ms: immediate, 2 s, 8 s
@@ -455,6 +481,15 @@ FORMAT RULES:
           }
 
           try {
+            // ── TEST-ONLY: Throw a retryable overload error if flag is set ──
+            // Goes through the same classifyError → retry → finalize path as a
+            // real provider failure. No billing alerts. No special casing.
+            // TODO: Remove this block when the testing system is no longer needed.
+            if (FORCE_FAILURE_ENABLED) {
+              console.warn(`[TEST MODE] Simulating PROVIDER_OVERLOAD on attempt ${attemptCount}/${MAX_ATTEMPTS}`)
+              throw new Error(`Service overloaded — test simulation (attempt ${attemptCount})`)
+            }
+
             const anthropicStream = await client.messages.stream({
               model:      'claude-sonnet-4-6',
               max_tokens: maxTokens,
