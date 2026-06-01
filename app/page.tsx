@@ -383,11 +383,17 @@ export default function Home() {
         <div style={{fontSize:'26px',fontWeight:'700',color:'#1D9E75',marginBottom:'20px'}}>HonestHand organizes it for you.</div>
         <div style={{fontSize:'15px',color:'#6B7280',lineHeight:'1.7',marginBottom:'28px'}}>Grants, tax credits, and incentives are scattered across dozens of federal, state, and local websites. HonestHand organizes verified opportunities into one clear monthly report — updated as programs and deadlines change.</div>
         <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'16px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
-        <div style={{fontSize:'13px',color:'#9CA3AF',lineHeight:'1.7',marginBottom:'12px',maxWidth:'380px',margin:'0 auto 12px'}}>Stop wasting hours jumping between websites trying to track grants, incentives, and deadlines. HonestHand organizes and monitors it for you.</div>
-        <div style={{fontSize:'12px',color:'#1D9E75',marginTop:'10px'}}>Free report · No credit card · Results in 24 hours</div>
+        <div style={{display:'flex',flexWrap:'wrap' as const,justifyContent:'center',gap:'14px',marginBottom:'14px'}}>
+          {['Verified government sources only','Trusted by Texas business owners'].map((t,i)=>(
+            <span key={i} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'12px',color:'#6B7280'}}>
+              <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'13px'}}>✔</span>{t}
+            </span>
+          ))}
+        </div>
+        <div style={{fontSize:'12px',color:'#1D9E75'}}>Free report · No credit card · Results in 24 hours</div>
       </div>
       <div style={{borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'32px 24px'}}>
-        {[{num:'$31,000',label:'Average missed per Texas business per year'},{num:'2 min',label:'To complete your free intake form'},{num:'$49/mo',label:'Full report + monthly monitoring'}].map((stat,i)=>(
+        {[{num:'$31,000',label:'Estimated annual incentives many Texas businesses never claim'},{num:'2 min',label:'To complete your free intake form'},{num:'$49/mo',label:'Monthly monitoring, updated reports, and deadline tracking'}].map((stat,i)=>(
           <div key={i} style={{textAlign:'center',marginBottom:i<2?'24px':'0'}}>
             <div style={{fontSize:'28px',fontWeight:'700',color:'#1D9E75'}}>{stat.num}</div>
             <div style={{fontSize:'13px',color:'#6B7280',marginTop:'4px'}}>{stat.label}</div>
