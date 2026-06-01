@@ -300,15 +300,47 @@ FORMAT RULES:
   )
   const userId       = profile.id as string | undefined
   const businessName = (profile.business_name ?? profile.orgName ?? '') as string
+  const STALE_THRESHOLD_MS = 10 * 60 * 1000  // 10 minutes
 
-  // ── Rate limit: one active job per user at a time ────────────────────────────
   if (userId) {
+    const staleThreshold = new Date(Date.now() - STALE_THRESHOLD_MS).toISOString()
+
+    // ── Step 1: Auto-recover stale jobs (stuck > 10 min) ─────────────────────
+    try {
+      const { data: staleJobs } = await supabaseAdmin
+        .from('report_generation_jobs')
+        .update({
+          status:             'failed',
+          failed_at:          new Date().toISOString(),
+          error_code:         'STALE_JOB_TIMEOUT',
+          sanitized_error:    'Job timed out without completing.',
+        })
+        .in('status', ['processing', 'queued', 'retrying'])
+        .eq('user_id', userId)
+        .lt('started_at', staleThreshold)
+        .select('id')
+
+      if (staleJobs && staleJobs.length > 0) {
+        console.warn(`[generate-report] Recovered ${staleJobs.length} stale job(s) for user ${userId}`)
+        void sendAdminAlert({
+          code:         'STALE_JOB_TIMEOUT' as const,
+          rawError:     `${staleJobs.length} stale job(s) auto-recovered for user ${userId}`,
+          userId,
+          businessName,
+          attemptCount: 0,
+        })
+      }
+    } catch (e) {
+      console.error('[generate-report] Stale job cleanup failed (non-critical):', e)
+    }
+
+    // ── Step 2: Block only if a FRESH active job exists (<10 min old) ────────
     const { data: activeJob } = await supabaseAdmin
       .from('report_generation_jobs')
       .select('id')
       .eq('user_id', userId)
-      .eq('status', 'processing')
-      .order('created_at', { ascending: false })
+      .in('status', ['processing', 'queued', 'retrying'])
+      .gte('started_at', staleThreshold)
       .limit(1)
       .maybeSingle()
 
@@ -321,19 +353,40 @@ FORMAT RULES:
     }
   }
 
-  // ── Create job record (fire-and-forget — do not block stream start) ──────────
-  let jobId: string | undefined
+  // ── Create job record (awaited so ID is available for finally cleanup) ───────
+  let currentJobId: string | undefined
   if (userId) {
-    ;(async () => {
-      try {
-        const { data } = await supabaseAdmin
-          .from('report_generation_jobs')
-          .insert({ user_id: userId, status: 'processing', provider: 'anthropic', attempt_count: 1 })
-          .select('id')
-          .single()
-        if (data) jobId = data.id
-      } catch { /* job tracking is non-critical */ }
-    })()
+    try {
+      const { data } = await supabaseAdmin
+        .from('report_generation_jobs')
+        .insert({ user_id: userId, status: 'processing', provider: 'anthropic', attempt_count: 1 })
+        .select('id')
+        .single()
+      currentJobId = data?.id
+    } catch { /* job tracking is non-critical */ }
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  let jobFinalized = false
+
+  const finalizeJob = async (
+    status: 'completed' | 'failed',
+    extra: Record<string, unknown> = {}
+  ): Promise<void> => {
+    if (jobFinalized) return
+    jobFinalized = true
+    if (!currentJobId) return
+    try {
+      const ts = new Date().toISOString()
+      await supabaseAdmin
+        .from('report_generation_jobs')
+        .update({
+          status,
+          ...(status === 'completed' ? { completed_at: ts } : { failed_at: ts }),
+          ...extra,
+        })
+        .eq('id', currentJobId)
+    } catch { /* finalize failure is non-critical */ }
   }
 
   // ── Retry-aware Anthropic stream ─────────────────────────────────────────────
@@ -349,85 +402,87 @@ FORMAT RULES:
       let lastError: unknown
       let attemptCount = 0
 
-      for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        attemptCount = attempt + 1
+      try {
+        for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+          attemptCount = attempt + 1
 
-        if (attempt > 0) {
-          await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]))
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'retrying' })}\n\n`))
-          console.log(`[generate-report] Retry attempt ${attemptCount} for user ${userId}`)
-        }
-
-        try {
-          const anthropicStream = await client.messages.stream({
-            model:      'claude-sonnet-4-6',
-            max_tokens: maxTokens,
-            tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
-            system:     selectedSystemPrompt,
-            messages:   [{ role: 'user' as const, content: prompt }],
-          })
-          for await (const chunk of anthropicStream) {
-            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
-            }
+          if (attempt > 0) {
+            await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt]))
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ status: 'retrying' })}\n\n`))
+            console.log(`[generate-report] Retry attempt ${attemptCount} for user ${userId}`)
           }
 
-          // ── Success ────────────────────────────────────────────────────────
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
-          controller.close()
-
-          // Update job to completed (non-blocking)
-          if (userId) {
-            ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'completed', completed_at: new Date().toISOString(), attempt_count: attemptCount }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
-          }
-          return
-
-        } catch (error) {
-          lastError = error
-          const classified = classifyError(error)
-
-          console.error(
-            `[generate-report] Attempt ${attemptCount}/${MAX_ATTEMPTS} failed`,
-            `code=${classified.code} user=${userId}`,
-            classified.rawMessage.slice(0, 200)
-          )
-
-          // Non-retryable errors — fail immediately
-          if (!classified.retryable) {
-            // Admin alert for billing / auth failures
-            if (classified.shouldAlert) {
-              void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
+          try {
+            const anthropicStream = await client.messages.stream({
+              model:      'claude-sonnet-4-6',
+              max_tokens: maxTokens,
+              tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
+              system:     selectedSystemPrompt,
+              messages:   [{ role: 'user' as const, content: prompt }],
+            })
+            for await (const chunk of anthropicStream) {
+              if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
+              }
             }
 
-            // Update job to failed (non-blocking)
-            if (userId) {
-              ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'failed', failed_at: new Date().toISOString(), attempt_count: attemptCount, error_code: classified.code, sanitized_error: classified.userMessage, raw_error_internal: classified.rawMessage.slice(0, 1000) }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
-            }
-
-            // Send safe message to client — NEVER the raw error
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
+            // ── Success ──────────────────────────────────────────────────────
+            await finalizeJob('completed', { attempt_count: attemptCount })
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
             controller.close()
             return
+
+          } catch (error) {
+            lastError = error
+            const classified = classifyError(error)
+
+            console.error(
+              `[generate-report] Attempt ${attemptCount}/${MAX_ATTEMPTS} failed`,
+              `code=${classified.code} user=${userId}`,
+              classified.rawMessage.slice(0, 200)
+            )
+
+            // Non-retryable (billing, auth) — mark failed immediately, no retry
+            if (!classified.retryable) {
+              if (classified.shouldAlert) {
+                void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
+              }
+              await finalizeJob('failed', {
+                attempt_count:      attemptCount,
+                error_code:         classified.code,
+                sanitized_error:    classified.userMessage,
+                raw_error_internal: classified.rawMessage.slice(0, 1000),
+              })
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+              controller.close()
+              return
+            }
+            // Retryable — loop continues
           }
-
-          // Retryable — loop continues
         }
+
+        // ── All retries exhausted ─────────────────────────────────────────────
+        const classified = classifyError(lastError)
+        void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
+        await finalizeJob('failed', {
+          attempt_count:      attemptCount,
+          error_code:         classified.code,
+          sanitized_error:    classified.userMessage,
+          raw_error_internal: classified.rawMessage.slice(0, 1000),
+        })
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+        controller.close()
+
+      } finally {
+        // ── Safety net: ensure no job is ever left in processing ─────────────
+        // finalizeJob() is idempotent — if already finalized this is a no-op
+        await finalizeJob('failed', {
+          error_code:      'STALE_JOB_TIMEOUT',
+          sanitized_error: 'Job ended without explicit completion.',
+        })
       }
-
-      // ── All retries exhausted ───────────────────────────────────────────────
-      const classified = classifyError(lastError)
-
-      // Admin alert after exhausting retries on retryable errors
-      void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
-
-      if (userId) {
-        ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'failed', failed_at: new Date().toISOString(), attempt_count: attemptCount, error_code: classified.code, sanitized_error: classified.userMessage, raw_error_internal: classified.rawMessage.slice(0, 1000) }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
-      }
-
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
-      controller.close()
     },
   })
 

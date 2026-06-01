@@ -8,6 +8,7 @@ export type ErrorCode =
   | 'PROVIDER_TIMEOUT'
   | 'PROVIDER_AUTH'
   | 'PROVIDER_OVERLOAD'
+  | 'STALE_JOB_TIMEOUT'
   | 'REPORT_IN_PROGRESS'
   | 'TOO_RECENT'
   | 'UNKNOWN'
@@ -84,8 +85,9 @@ export function classifyError(error: unknown): SanitizedError {
 // ─── Safe user message for special flow codes ─────────────────────────────────
 
 export const FLOW_MESSAGES: Record<string, string> = {
-  REPORT_IN_PROGRESS: "Your report is already being refreshed. Check back in a few minutes.",
+  REPORT_IN_PROGRESS: "We're checking for the latest funding opportunities now.",
   TOO_RECENT:         "Your report was recently updated. Showing your current report.",
+  STALE_JOB_TIMEOUT:  "We're having trouble preparing your report. Please try again.",
 }
 
 // ─── Admin alert ──────────────────────────────────────────────────────────────
