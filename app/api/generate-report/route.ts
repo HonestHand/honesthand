@@ -324,13 +324,16 @@ FORMAT RULES:
   // ── Create job record (fire-and-forget — do not block stream start) ──────────
   let jobId: string | undefined
   if (userId) {
-    supabaseAdmin
-      .from('report_generation_jobs')
-      .insert({ user_id: userId, status: 'processing', provider: 'anthropic', attempt_count: 1 })
-      .select('id')
-      .single()
-      .then(({ data }) => { if (data) jobId = data.id })
-      .catch(() => { /* job tracking is non-critical */ })
+    ;(async () => {
+      try {
+        const { data } = await supabaseAdmin
+          .from('report_generation_jobs')
+          .insert({ user_id: userId, status: 'processing', provider: 'anthropic', attempt_count: 1 })
+          .select('id')
+          .single()
+        if (data) jobId = data.id
+      } catch { /* job tracking is non-critical */ }
+    })()
   }
 
   // ── Retry-aware Anthropic stream ─────────────────────────────────────────────
@@ -375,10 +378,7 @@ FORMAT RULES:
 
           // Update job to completed (non-blocking)
           if (userId) {
-            supabaseAdmin.from('report_generation_jobs')
-              .update({ status: 'completed', completed_at: new Date().toISOString(), attempt_count: attemptCount })
-              .eq('user_id', userId).eq('status', 'processing')
-              .catch(() => {})
+            ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'completed', completed_at: new Date().toISOString(), attempt_count: attemptCount }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
           }
           return
 
@@ -396,28 +396,12 @@ FORMAT RULES:
           if (!classified.retryable) {
             // Admin alert for billing / auth failures
             if (classified.shouldAlert) {
-              sendAdminAlert({
-                code:         classified.code,
-                rawError:     classified.rawMessage,
-                userId:       userId,
-                businessName: businessName,
-                attemptCount: attemptCount,
-              }).catch(() => {})
+              void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
             }
 
             // Update job to failed (non-blocking)
             if (userId) {
-              supabaseAdmin.from('report_generation_jobs')
-                .update({
-                  status:              'failed',
-                  failed_at:           new Date().toISOString(),
-                  attempt_count:       attemptCount,
-                  error_code:          classified.code,
-                  sanitized_error:     classified.userMessage,
-                  raw_error_internal:  classified.rawMessage.slice(0, 1000),
-                })
-                .eq('user_id', userId).eq('status', 'processing')
-                .catch(() => {})
+              ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'failed', failed_at: new Date().toISOString(), attempt_count: attemptCount, error_code: classified.code, sanitized_error: classified.userMessage, raw_error_internal: classified.rawMessage.slice(0, 1000) }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
             }
 
             // Send safe message to client — NEVER the raw error
@@ -435,26 +419,10 @@ FORMAT RULES:
       const classified = classifyError(lastError)
 
       // Admin alert after exhausting retries on retryable errors
-      sendAdminAlert({
-        code:         classified.code,
-        rawError:     classified.rawMessage,
-        userId:       userId,
-        businessName: businessName,
-        attemptCount: attemptCount,
-      }).catch(() => {})
+      void sendAdminAlert({ code: classified.code, rawError: classified.rawMessage, userId, businessName, attemptCount })
 
       if (userId) {
-        supabaseAdmin.from('report_generation_jobs')
-          .update({
-            status:             'failed',
-            failed_at:          new Date().toISOString(),
-            attempt_count:      attemptCount,
-            error_code:         classified.code,
-            sanitized_error:    classified.userMessage,
-            raw_error_internal: classified.rawMessage.slice(0, 1000),
-          })
-          .eq('user_id', userId).eq('status', 'processing')
-          .catch(() => {})
+        ;(async () => { try { await supabaseAdmin.from('report_generation_jobs').update({ status: 'failed', failed_at: new Date().toISOString(), attempt_count: attemptCount, error_code: classified.code, sanitized_error: classified.userMessage, raw_error_internal: classified.rawMessage.slice(0, 1000) }).eq('user_id', userId!).eq('status', 'processing') } catch {} })()
       }
 
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: classified.userMessage, errorCode: classified.code })}\n\n`))
