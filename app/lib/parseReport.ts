@@ -189,7 +189,18 @@ function parseJsonResponse(raw: string): JsonOpportunity[] {
     } catch { /* fall through */ }
   }
 
-  // Both attempts failed — throw structured error
+  // Attempt 3: recover partial array — find last complete object, close the array
+  const lastBrace = raw.lastIndexOf('}')
+  if (lastBrace > 0) {
+    const sliced    = raw.substring(0, lastBrace + 1)
+    const candidate = (sliced.trimStart().startsWith('[') ? sliced : '[' + sliced) + ']'
+    try {
+      const parsed = JSON.parse(candidate)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    } catch { /* fall through */ }
+  }
+
+  // All three attempts failed — throw structured error
   throw { error: 'PARSE_FAILURE', raw }
 }
 
