@@ -1033,14 +1033,33 @@ export default function ReportView({
   profile,
   onPaywallVisible,
 }: ReportViewProps) {
+  const [parseError, setParseError] = useState<string | null>(null)
+
   const parsed = useMemo(() => {
-    const raw = parseReport(report)
-    return filterReportForProfile(raw, profile ? {
-      userType:   profile.userType,
-      is501c3:    profile.is501c3,
-      entityType: profile.entityType,
-    } : null)
+    try {
+      const raw = parseReport(report)
+      setParseError(null)
+      return filterReportForProfile(raw, profile ? {
+        userType:   profile.userType,
+        is501c3:    profile.is501c3,
+        entityType: profile.entityType,
+      } : null)
+    } catch {
+      setParseError('Report format error — please regenerate your report.')
+      return null
+    }
   }, [report, profile])
+
+  if (parseError || !parsed) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-5 text-center">
+        <div className="text-[15px] font-semibold text-red-700 mb-2">⚠️ {parseError ?? 'Report format error — please regenerate your report.'}</div>
+        <div className="text-[13px] text-red-500">
+          Your report data is in an older format. Refreshing will generate a clean updated report.
+        </div>
+      </div>
+    )
+  }
 
   // ── Save / bookmark state ──────────────────────────────────────────────────
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set())

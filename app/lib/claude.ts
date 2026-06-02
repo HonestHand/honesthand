@@ -90,6 +90,7 @@ ${data.isPro ? `REQUIRED SECTIONS FOR PRO REPORT:
 
 ---
 Be honest about uncertainty. If a program might not apply, say so. If eligibility is borderline, flag it. The goal is real intelligence they can act on — not a feel-good list.
+Return your response as a valid JSON array only with no text before or after the array and no markdown and no explanation and the first character of your response must be an opening bracket and the last character must be a closing bracket.
 `;
 }
 
@@ -176,6 +177,7 @@ ${data.isPro ? proSections : freeSections}
 
 ---
 Be honest about uncertainty. If a program requires 501(c)(3) status and this org doesn't have it yet, say so and suggest fiscal sponsorship as a near-term path. Flag any opportunities where a small or new organization faces heightened competition — don't oversell. The goal is actionable intelligence, not a feel-good list.
+Return your response as a valid JSON array only with no text before or after the array and no markdown and no explanation and the first character of your response must be an opening bracket and the last character must be a closing bracket.
 `
 }
 
