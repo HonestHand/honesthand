@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   const { error } = await supabaseAdmin
     .from('reports')
     .upsert(
-      { user_id: userId, content, generated_at: generatedAt },
+      { user_id: userId, report_text: content, created_at: generatedAt },
       { onConflict: 'user_id' }
     )
 

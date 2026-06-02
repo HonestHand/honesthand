@@ -180,12 +180,12 @@ export default function Dashboard() {
     // ── Load stored report ──
     const { data: storedReport } = await supabase
       .from('reports')
-      .select('content, generated_at')
+      .select('report_text, created_at')
       .eq('user_id', session.user.id)
       .single()
 
-    if (storedReport?.content) {
-      const sectionCount = (storedReport.content.match(/^## /gm) || []).length
+    if (storedReport?.report_text) {
+      const sectionCount = (storedReport.report_text.match(/^## /gm) || []).length
       const isProReport  = sectionCount >= MIN_PRO_SECTION_COUNT
 
       if (proStatus && !isProReport) {
@@ -193,8 +193,8 @@ export default function Dashboard() {
         generateReport(profileData, session.user.id)
       } else {
         // Show cached report immediately — no API call
-        setReport(storedReport.content)
-        setReportDate(storedReport.generated_at ?? null)
+        setReport(storedReport.report_text)
+        setReportDate(storedReport.created_at ?? null)
       }
     } else {
       // No stored report — generate for the first time

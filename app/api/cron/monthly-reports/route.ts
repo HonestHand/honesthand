@@ -206,7 +206,7 @@ FORMAT RULES:
       if (!textBlock || textBlock.type !== 'text') throw new Error('No text in response')
 
       await supabase.from('reports').upsert(
-        { user_id: profile.id, content: textBlock.text, generated_at: new Date().toISOString() },
+        { user_id: profile.id, report_text: textBlock.text, created_at: new Date().toISOString() },
         { onConflict: 'user_id' }
       )
 
