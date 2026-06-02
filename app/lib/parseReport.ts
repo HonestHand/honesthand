@@ -189,15 +189,19 @@ function parseJsonResponse(raw: string): JsonOpportunity[] {
     } catch { /* fall through */ }
   }
 
-  // Attempt 3: recover partial array — find last complete object, close the array
-  const lastBrace = raw.lastIndexOf('}')
-  if (lastBrace > 0) {
-    const sliced    = raw.substring(0, lastBrace + 1)
+  // Attempt 3: recover partial array — walk backward through every } until JSON.parse succeeds.
+  // A single lastIndexOf is insufficient because the last } may close a nested sub-object
+  // inside an incomplete top-level object (e.g. a truncated qualification_detail field).
+  // Walking backward guarantees we find the last COMPLETE top-level object.
+  let pos = raw.lastIndexOf('}')
+  while (pos > 0) {
+    const sliced    = raw.substring(0, pos + 1)
     const candidate = (sliced.trimStart().startsWith('[') ? sliced : '[' + sliced) + ']'
     try {
       const parsed = JSON.parse(candidate)
       if (Array.isArray(parsed) && parsed.length > 0) return parsed
-    } catch { /* fall through */ }
+    } catch { /* try the previous } */ }
+    pos = raw.lastIndexOf('}', pos - 1)
   }
 
   // All three attempts failed — throw structured error
