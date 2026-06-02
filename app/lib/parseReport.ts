@@ -559,11 +559,13 @@ function extractDeadlineDisplay(rawDeadline: string): string {
   const seasonM = work.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
   if (seasonM) return toTitleCase(seasonM[1])
 
+  // Cut at first sentence boundary when it's short and clean
   const dot = work.search(/\.\s/)
   if (dot > 2 && dot < 80) return work.slice(0, dot).trim()
-  if (work.length <= 90)   return work
 
-  return work.slice(0, 88).trim() + '…'
+  // No hard truncation — let the card grow vertically rather than hide information.
+  // The card container has no fixed height so this is always safe.
+  return work
 }
 
 /**
@@ -880,8 +882,9 @@ function cleanNextStep(rawNext: string): string {
   const m = s.match(/^(.+?[.!?])(?:\s|$)/)
   const result = (m ? m[1] : s).trim()
 
-  // 140-char hard limit — word-boundary cut, never adds `…`
-  return wordCut(result, 140)
+  // No hard character truncation — let the card grow. The 140 limit was
+  // cutting legitimate single-action instructions that happen to be verbose.
+  return result
 }
 
 // ─── Profile-summary detector ─────────────────────────────────────────────────
