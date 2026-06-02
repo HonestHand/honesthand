@@ -520,17 +520,24 @@ function extractDeadlineDisplay(rawDeadline: string): string {
   const dl = cleaned.toLowerCase()
 
   // ── Step 2: Strip cross-field bleed BEFORE any length check or truncation ──
-  // Claude occasionally writes the deadline field as one long sentence that
-  // flows into "Why you qualify:" or "Next step:" content.
-  // Strip everything from those markers onward so only the timing survives.
-  const noBleed = cleaned
-    .replace(/[\s\-—–]+\**why\s+you\s+qualify\**[:\s].*/i, '')
-    .replace(/[\s\-—–]+\**next\s+step[s]?\**[:\s].*/i, '')
-    .replace(/[\s\-—–]+\**value\**[:\s].*/i, '')
-    .replace(/\s*\bwhy\s+you\s+qualify\b.*/i, '')
-    .replace(/\s*\bnext\s+step[s]?\s*[:\-—].*/i, '')
-    .trim()
-  const work = noBleed || cleaned   // fall back to original if strip empties it
+  // Claude occasionally runs the deadline field into "Why you qualify:" or
+  // "Next step:" text. Use indexOf (not regex) to guarantee the cut regardless
+  // of Unicode dash variants or asterisk formatting.
+  const BLEED_MARKERS = [
+    'why you qualify',
+    'next step:',
+    'next steps:',
+    '- why you',
+    '— why you',
+    '– why you',
+  ]
+  let cutAt = cleaned.length
+  const lc = cleaned.toLowerCase()
+  for (const marker of BLEED_MARKERS) {
+    const idx = lc.indexOf(marker)
+    if (idx > 4 && idx < cutAt) cutAt = idx
+  }
+  const work = cleaned.slice(0, cutAt).replace(/[\s\-—–]+$/, '').trim() || cleaned
 
   const workLower = work.toLowerCase()
 

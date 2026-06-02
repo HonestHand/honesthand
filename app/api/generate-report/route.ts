@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+﻿import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 import { buildReportPrompt, buildNonprofitReportPrompt, NonprofitData } from '../../lib/claude'
@@ -83,7 +83,7 @@ Search before writing each section so your data is current, not from training da
 CRITICAL URL RULES — NON-NEGOTIABLE:
 - Only link to these verified root domains: sba.gov, grants.gov, sam.gov, irs.gov, twc.texas.gov, gov.texas.gov, tvc.texas.gov, rd.usda.gov, texaswideopenforbusiness.com, treasury.gov, dol.gov, energy.gov
 - NEVER construct specific page paths — only root domains or well-known top-level paths like sba.gov/funding-programs
-- If you are not 100% certain a URL is real, write "Search: [program name] at [agency website]" instead
+- If you are not 100% certain a specific URL path is correct, write only the root domain (e.g. "sba.gov" or "irs.gov") — never a made-up path. The root domain is always safe and becomes a direct clickable link for the customer
 - Never make up or guess URLs — a broken link is worse than no link
 
 ENTITY TYPE ENFORCEMENT — HARD RULE:
@@ -161,9 +161,9 @@ FORMAT RULES:
   • **Why you qualify:** 1–2 short bullet phrases, each = one business attribute. NO sentences.
     CORRECT: "- Veteran-owned LLC\n  - Rural Texas location" | "- Under $100k revenue\n  - Texas-based business"
     WRONG: "You qualify because you are a veteran-owned LLC operating in rural Texas..."
-  • **Next step:** ONE action sentence, max 120 chars.
-    CORRECT: "Contact TWC at (512) 463-2222." | "File IRS Form 8850 with TWC within 28 days of hire."
-    NEVER chain multiple steps or repeat qualification context.
+  • **Next step:** ONE action sentence, max 120 chars. Write the direct domain — NEVER "Search '...' at domain."
+    CORRECT: "Visit sba.gov to find a local microlender." | "File IRS Form 8850 at twc.texas.gov within 28 days." | "Contact TWC at (512) 463-2222."
+    NEVER: "Search 'program name' at sba.gov" — just write the domain directly; it becomes a clickable link.
 - End with the 30-Day Action Plan as the final section
 - Do NOT include a business profile summary, context block, or header at the top of any section. Never echo back the business name, location, or ownership flags as a formatted bold item. Start each section directly with the first opportunity.
 - Do NOT include "Not Applicable" entries. If a program does not apply to this business, omit it entirely — do not list it with a "Not Applicable" label or explanation. The report should contain only programs this business can actually pursue.
@@ -209,7 +209,7 @@ USE YOUR WEB SEARCH TOOL to confirm each program is currently active and open as
 
 CRITICAL URL RULES — NON-NEGOTIABLE:
 - Only link to these verified root domains: sba.gov, grants.gov, sam.gov, irs.gov, twc.texas.gov, gov.texas.gov, tvc.texas.gov, rd.usda.gov, texaswideopenforbusiness.com, treasury.gov, dol.gov, energy.gov
-- If you are not 100% certain a URL is real, write "Search: [program name] at [agency website]" instead
+- If you are not 100% certain a specific URL path is correct, write only the root domain (e.g. "sba.gov" or "irs.gov") — never a made-up path. The root domain is always safe and becomes a direct clickable link for the customer
 - Never make up or guess URLs
 
 ENTITY TYPE ENFORCEMENT — HARD RULE:
@@ -259,7 +259,7 @@ CRITICAL URL RULES — NON-NEGOTIABLE:
 - Only link to these verified root domains: grants.gov, sam.gov, hhs.gov, hrsa.gov, justice.gov, hud.gov, ed.gov, usda.gov, arts.gov, acl.gov, acf.hhs.gov, fema.gov, dol.gov, hhs.texas.gov, tpwd.texas.gov, tda.texas.gov, gov.texas.gov, txcourts.gov
 - For foundation websites, only link to root domains you are 100% certain exist (e.g., kresge.org, gatesfoundation.org, houstondowment.org, cftexas.org)
 - NEVER construct specific page paths — only root domains or well-known top-level paths like grants.gov/search-grants
-- If you are not 100% certain a URL is real, write "Search: [program name] at [foundation/agency name]" instead
+- If you are not 100% certain a specific URL path is correct, write only the root domain (e.g. "grants.gov" or "hhs.gov") — never a made-up path. The root domain becomes a direct clickable link
 - Never make up or guess URLs — a broken link is worse than no link
 
 REQUIRED SECTIONS (cover all 8, hit 25+ total opportunities):
@@ -310,7 +310,7 @@ USE YOUR WEB SEARCH TOOL to confirm each program is currently active and accepti
 CRITICAL URL RULES — NON-NEGOTIABLE:
 - Only link to these verified root domains: grants.gov, sam.gov, hhs.gov, arts.gov, hhs.texas.gov, gov.texas.gov
 - For foundations, only link to root domains you are 100% certain exist
-- If you are not 100% certain a URL is real, write "Search: [program name] at [agency/foundation]" instead
+- If you are not 100% certain a specific URL path is correct, write only the root domain (e.g. "grants.gov" or "hhs.gov") — never a made-up path. The root domain is always safe and becomes a direct clickable link
 - Never make up or guess URLs
 
 LANGUAGE RULES — NON-NEGOTIABLE:
@@ -571,3 +571,4 @@ FORMAT RULES:
     },
   })
 }
+

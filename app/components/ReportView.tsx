@@ -460,15 +460,18 @@ function OpportunityCard({
   const hasValue    = opp.amountDisplay !== 'See program details'
   const hasDeadline = opp.deadlineDisplay !== 'Verify with agency'
 
-  // ── Deduplicated action steps ─────────────────────────────────────────────
-  // Strip the first sentence from nextRaw when it duplicates the card's nextStepClean.
-  // This prevents "Full action steps" from restating what the card already shows.
+  // ── Deduplicated + sanitized action steps ────────────────────────────────
+  // 1. Strip the first sentence if it duplicates the card's nextStepClean.
+  // 2. Convert "Search 'X' at domain.gov..." → "Visit domain.gov" so customers
+  //    get a direct clickable link rather than a search instruction.
   const actionStepsText = (() => {
     const raw = opp.nextStep
     if (!raw || !opp.nextStepClean) return raw || null
+
     const sentences = raw.split(/(?<=[.!?])\s+/).map(s => s.trim()).filter(Boolean)
-    if (sentences.length <= 1) return null  // single sentence = same as card
-    // Jaccard-style word overlap between first raw sentence and nextStepClean
+    if (sentences.length <= 1) return null
+
+    // Deduplication: skip first sentence if it closely matches nextStepClean
     const words = (s: string) => new Set(
       s.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3)
     )
@@ -476,7 +479,16 @@ function OpportunityCard({
     const clean = words(opp.nextStepClean)
     const overlap = [...first].filter(w => clean.has(w)).length
     const similarity = overlap / Math.max(first.size, clean.size, 1)
-    const rest = sentences.slice(similarity > 0.35 ? 1 : 0).join(' ').trim()
+    let rest = sentences.slice(similarity > 0.35 ? 1 : 0).join(' ').trim()
+
+    // Convert "Search '...' at domain.gov ..." → "Visit domain.gov"
+    // These were generated as instructions but customers need direct links.
+    rest = rest
+      .replace(/search\s+["']?[^"'\n]{1,60}["']?\s+at\s+([\w.-]+\.gov)\b[^.!?\n]*/gi, 'Visit $1')
+      .replace(/search\s+for\s+["']?[^"'\n]{1,60}["']?\s+at\s+([\w.-]+\.(?:gov|org))\b[^.!?\n]*/gi, 'Visit $1')
+      .replace(/go\s+to\s+["']?[^"'\n]{1,60}["']?\s+at\s+([\w.-]+\.gov)\b[^.!?\n]*/gi, 'Visit $1')
+      .trim()
+
     return rest || null
   })()
 
