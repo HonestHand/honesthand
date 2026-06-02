@@ -514,8 +514,9 @@ function OpportunityCard({
         <div className="flex flex-wrap gap-1.5 mb-3">
           {opp.badges.map((b, i) => <BadgeChip key={i} badge={b} />)}
         </div>
-        <div className="text-[13px] text-gray-700 leading-relaxed"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(opp.rawText) }} />
+        <p className="text-[13px] text-gray-500 leading-relaxed italic">
+          This opportunity could not be fully parsed. Please regenerate your report for complete details.
+        </p>
         {opp.sourceAgency && (
           <div className="mt-3 pt-2 border-t border-gray-50 flex items-center gap-2">
             <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>

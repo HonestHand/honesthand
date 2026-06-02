@@ -75,7 +75,8 @@ export function renderMarkdown(text: string): string {
 
 // ─── Inline-only renderer (bold + safe links) for card fields ─────────────────
 export function renderInline(text: string): string {
-  return text
+  let input = text.replace(/<[^>]*>/g, '')
+  return input
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     // Markdown links [label](url) — safe URLs become clickable
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
