@@ -360,6 +360,7 @@ Return your response as a valid JSON array only with no text before or after the
             const anthropicStream = await client.messages.stream({
               model:      'claude-sonnet-4-6',
               max_tokens: maxTokens,
+              betas:      ['output-128k-2025-02-19'],
               tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
               system:     selectedSystemPrompt,
               messages:   [{ role: 'user' as const, content: prompt }],
