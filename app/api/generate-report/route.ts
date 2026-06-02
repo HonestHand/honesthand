@@ -357,14 +357,16 @@ Return your response as a valid JSON array only with no text before or after the
               throw new Error(`Service overloaded — test simulation (attempt ${attemptCount})`)
             }
 
-            const anthropicStream = await client.messages.stream({
-              model:      'claude-sonnet-4-6',
-              max_tokens: maxTokens,
-              betas:      ['output-128k-2025-02-19'],
-              tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
-              system:     selectedSystemPrompt,
-              messages:   [{ role: 'user' as const, content: prompt }],
-            })
+            const anthropicStream = await client.messages.stream(
+              {
+                model:      'claude-sonnet-4-6',
+                max_tokens: maxTokens,
+                tools:      [{ type: 'web_search_20250305' as const, name: 'web_search', max_uses: maxSearches }],
+                system:     selectedSystemPrompt,
+                messages:   [{ role: 'user' as const, content: prompt }],
+              },
+              { headers: { 'anthropic-beta': 'output-128k-2025-02-19' } }
+            )
             for await (const chunk of anthropicStream) {
               if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
