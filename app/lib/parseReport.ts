@@ -340,18 +340,16 @@ function extractAmount(rawValue: string, programName?: string): string {
   const amountRe = /^((?:up\s+to\s+|at\s+least\s+|as\s+much\s+as\s+|from\s+|approximately\s+|max(?:imum)?\s+of\s+)?(?:\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*[+])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?))/i
   const amtMatch = v.match(amountRe)
   if (amtMatch?.[1].includes('$')) {
-    // Strip trailing parentheticals and qualifiers, then hard-cap at 70
+    // Strip trailing parentheticals — no hard truncation on dollar amounts
     const amt = amtMatch[1].trim().replace(/\s*\([^)]{1,60}\)\s*$/, '').trim()
-    if (amt.length <= 70) return amt
     const shorter = amt.replace(/\s+(?:per\s+\w+|annually|yearly|monthly|in\s+\w+).*$/i, '').trim()
-    return shorter.length <= 70 ? shorter : shorter.slice(0, 68).replace(/\s+\S+$/, '') + '…'
+    return shorter.length > 0 ? shorter : amt
   }
 
   // 2. Dollar amount anywhere in the string (e.g. after "Fee-waived; loans up to $5M")
   const anyDollar = v.match(/\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?(?:\s*(?:–|-|to)\s*\$[\d,]+(?:\.\d+)?\s*(?:billion|million|thousand|[KMBkmb])?)?/i)
   if (anyDollar) {
-    const amt = anyDollar[0].trim()
-    return amt.length <= 70 ? amt : amt.slice(0, 68).replace(/\s+\S+$/, '') + '…'
+    return anyDollar[0].trim()
   }
 
   // 3. Percentage (tax credits): "20% of qualified wages"
@@ -370,11 +368,9 @@ function extractAmount(rawValue: string, programName?: string): string {
   if (/priority\s+(?:access|consideration)/i.test(v))                        return 'Priority access'
   if (/no\s+(?:direct\s+)?(?:cash\s+)?grant/i.test(v))                       return 'Non-monetary benefit'
 
-  // 6. Short enough as-is
-  if (v.length <= 70) return v
-
-  // 7. Hard cap — word-boundary truncate at 68 chars
-  return v.slice(0, 68).replace(/\s+\S+$/, '') + '…'
+  // 6 & 7. Return as-is — no hard truncation on value text.
+  // The card container grows vertically; hiding information is worse than a tall card.
+  return v
 }
 
 /**
