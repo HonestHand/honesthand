@@ -77,9 +77,19 @@ export function renderMarkdown(text: string): string {
 export function renderInline(text: string): string {
   return text
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Markdown links [label](url) — safe URLs become clickable
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
       isSafeUrl(url)
         ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;font-weight:500;text-decoration:underline">${label}</a>`
         : `${label} (${url})`
     )
+    // Plain-text .gov domain names → clickable links
+    // Matches "sba.gov", "twc.texas.gov", "irs.gov/form8850" etc.
+    // Only auto-links domains that pass the safe-domain check.
+    .replace(/\b((?:[\w-]+\.)*[\w-]+\.gov(?:\/[\w./?=#%-]*)?)\b/g, (domain) => {
+      const rootUrl = `https://${domain.split('/')[0]}`
+      return isSafeUrl(rootUrl)
+        ? `<a href="https://${domain}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;font-weight:500;text-decoration:underline">${domain}</a>`
+        : domain
+    })
 }

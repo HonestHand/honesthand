@@ -519,35 +519,44 @@ function extractDeadlineDisplay(rawDeadline: string): string {
 
   const dl = cleaned.toLowerCase()
 
-  // ── Step 2: Rolling / open enrollment ─────────────────────────────────────
-  if (dl.startsWith('rolling') || dl.includes('open enrollment') || dl.startsWith('anytime')) return 'Rolling'
+  // ── Step 2: Strip cross-field bleed BEFORE any length check or truncation ──
+  // Claude occasionally writes the deadline field as one long sentence that
+  // flows into "Why you qualify:" or "Next step:" content.
+  // Strip everything from those markers onward so only the timing survives.
+  const noBleed = cleaned
+    .replace(/[\s\-—–]+\**why\s+you\s+qualify\**[:\s].*/i, '')
+    .replace(/[\s\-—–]+\**next\s+step[s]?\**[:\s].*/i, '')
+    .replace(/[\s\-—–]+\**value\**[:\s].*/i, '')
+    .replace(/\s*\bwhy\s+you\s+qualify\b.*/i, '')
+    .replace(/\s*\bnext\s+step[s]?\s*[:\-—].*/i, '')
+    .trim()
+  const work = noBleed || cleaned   // fall back to original if strip empties it
 
-  // ── Step 3: Contamination guard ───────────────────────────────────────────
-  // If the field starts with an action verb AND has no timing signal, it's a
-  // next-step instruction that was mistakenly placed in the Deadline field.
-  if (DEADLINE_ACTION_PREFIX.test(cleaned) && !HAS_TIMING_SIGNAL.test(cleaned)) {
+  const workLower = work.toLowerCase()
+
+  // ── Step 3: Rolling / open enrollment ─────────────────────────────────────
+  if (workLower.startsWith('rolling') || workLower.includes('open enrollment') || workLower.startsWith('anytime')) return 'Rolling'
+
+  // ── Step 4: Contamination guard (use de-contaminated `work`) ────────────
+  if (DEADLINE_ACTION_PREFIX.test(work) && !HAS_TIMING_SIGNAL.test(work)) {
     return 'Verify with agency'
   }
 
-  // ── Step 4: Extract timing from prose ─────────────────────────────────────
-  // "Typically opens [in] [period]" → "Opens [Period]"
-  const typM = cleaned.match(/typically\s+opens?\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  // ── Step 5: Extract timing from prose (always use `work`, never raw `cleaned`) ──
+  const typM = work.match(/typically\s+opens?\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
   if (typM) return `Opens ${toTitleCase(typM[1])}`
 
-  // "[anticipated|expected] [period]"
-  const antM = cleaned.match(/(?:anticipated|expected)\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
+  const antM = work.match(/(?:anticipated|expected)\s+(?:in\s+)?((?:(?:early|mid|late)\s+)?\d{4}|(?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)(?:\s+\d{4})?)/i)
   if (antM) return toTitleCase(antM[1])
 
-  // Standalone season + year: "Fall 2026", "Late 2026"
-  const seasonM = cleaned.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
+  const seasonM = work.match(/((?:early|mid|late)\s+\d{4}|(?:fall|spring|summer|winter)\s+\d{4})/i)
   if (seasonM) return toTitleCase(seasonM[1])
 
-  // Cut at first sentence boundary within reasonable length
-  const dot = cleaned.search(/\.\s/)
-  if (dot > 2 && dot < 80) return cleaned.slice(0, dot).trim()
-  if (cleaned.length <= 90) return cleaned
+  const dot = work.search(/\.\s/)
+  if (dot > 2 && dot < 80) return work.slice(0, dot).trim()
+  if (work.length <= 90)   return work
 
-  return cleaned.slice(0, 88).trim() + '…'
+  return work.slice(0, 88).trim() + '…'
 }
 
 /**
@@ -695,12 +704,19 @@ function expandQualPhrase(phrase: string): string[] {
     }
   }
 
+  // Hiring target groups (WOTC, etc.) describe who to hire, not what the
+  // business IS. Never append the entity noun (e.g. "LLC") to these segments.
+  const HIRING_TARGET_PAT = /\b(snap|food\s+stamp|felon|ex.?felon|recipient|long.?term\s+unemployed|parolee|veteran\s+hire|new\s+employee|target\s+group|wotc|work\s+opportunity)\b/i
+
   for (const seg of rawSegments) {
     if (results.length >= 3) break
     const segNoun = findBusinessNoun(seg)
 
     if (segNoun) {
       processWithNoun(seg, segNoun)
+    } else if (HIRING_TARGET_PAT.test(seg)) {
+      // Hiring target group — add as-is, never pollute with entity noun
+      addBullet(seg)
     } else {
       // Attach shared noun or "business" for ownership-signal words
       const attached = sharedNoun
@@ -843,11 +859,11 @@ function cleanNextStep(rawNext: string): string {
   // Cut secondary actions joined by "then" / "and then"
   s = s.replace(/[,]?\s+(?:and\s+)?then\b.*/i, '')
 
-  // Discard "Search for…" / "Look up…" instructions entirely — cannot be salvaged
-  if (/^\s*(?:search(?:\s+for)?|look\s+up)\b/i.test(s)) return ''
+  // Discard unusable instructions entirely
+  if (/^\s*(?:search(?:\s+for)?|look\s+up|copy\s+(?:and\s+paste|this|the\s+(?:text|link|url|following))|paste\s+the\s+following)\b/i.test(s)) return ''
 
-  // Strip mid-sentence search instructions
-  s = s.replace(/[,;—]\s*(?:search(?:\s+for)?|look\s+up)\b.*/i, '')
+  // Strip mid-sentence search/copy-paste instructions
+  s = s.replace(/[,;—]\s*(?:search(?:\s+for)?|look\s+up|copy\s+and\s+paste)\b.*/i, '')
 
   // Collapse whitespace
   s = s.replace(/\s{2,}/g, ' ').trim()
@@ -954,7 +970,10 @@ function parseOpportunities(sectionText: string, category: SectionCategory): Par
     const dl          = deadlineClean.toLowerCase()
     const isRolling   = dl.includes('rolling') || dl.includes('anytime') || dl.includes('open enrollment')
     const isHighValue = valueNum >= 10_000
-    const isUrgent    = !!deadlineClean && !isRolling && !dl.includes('verify') && !dl.includes('typically') && deadlineClean !== ''
+    // isUrgent only when a specific date can actually be parsed — not for vague
+    // annual/filing deadlines like "Claimed at tax filing" which aren't time-sensitive
+    const deadlineDateForUrgency = parseDeadlineDate(deadlineClean)
+    const isUrgent    = !!deadlineDateForUrgency && !isRolling
 
     const badges       = deriveBadges(name, value, deadlineClean, block, category)
     const src          = extractSource(nextStep)

@@ -406,7 +406,8 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
                       <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                         Next Step
                       </div>
-                      <p className="text-[12px] text-gray-700 leading-relaxed">{opp.nextStepClean}</p>
+                      <p className="text-[12px] text-gray-700 leading-relaxed"
+                         dangerouslySetInnerHTML={{ __html: renderInline(opp.nextStepClean) }} />
                     </div>
                   )}
 
@@ -643,9 +644,9 @@ function OpportunityCard({
               <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">
                 Next Step
               </div>
-              <p className="text-[13px] text-gray-700 leading-relaxed break-words" style={{overflowWrap:'break-word'}}>
-                {opp.nextStepClean}
-              </p>
+              <p className="text-[13px] text-gray-700 leading-relaxed break-words"
+                 style={{overflowWrap:'break-word'}}
+                 dangerouslySetInnerHTML={{ __html: renderInline(opp.nextStepClean) }} />
             </div>
           )}
         </div>
