@@ -71,16 +71,16 @@ export interface ParsedReport {
 export const SECTION_META: Record<SectionCategory, {
   icon: string; color: string; badgeLabel: string; badgeVariant: BadgeVariant
 }> = {
-  federal:       { icon: '🏛️', color: '#3B82F6', badgeLabel: 'Federal Program',    badgeVariant: 'blue'   },
-  state:         { icon: '⭐', color: '#F97316', badgeLabel: 'TX State Program',    badgeVariant: 'amber'  },
-  local:         { icon: '📍', color: '#8B5CF6', badgeLabel: 'Local Program',       badgeVariant: 'purple' },
-  tax:           { icon: '🧾', color: '#10B981', badgeLabel: 'Tax Credit',          badgeVariant: 'green'  },
-  certification: { icon: '📜', color: '#14B8A6', badgeLabel: 'Certification',       badgeVariant: 'teal'   },
-  contracting:   { icon: '🤝', color: '#1E40AF', badgeLabel: "Gov't Contracting",  badgeVariant: 'blue'   },
-  industry:      { icon: '🏗️', color: '#F59E0B', badgeLabel: 'Industry Program',   badgeVariant: 'amber'  },
-  veteran:       { icon: '🎖️', color: '#EF4444', badgeLabel: 'Veteran Program',    badgeVariant: 'red'    },
-  'action-plan': { icon: '✅', color: '#059669', badgeLabel: 'Action Plan',         badgeVariant: 'green'  },
-  other:         { icon: '📋', color: '#6B7280', badgeLabel: 'Program',             badgeVariant: 'gray'   },
+  federal:       { icon: 'Building2',    color: '#3B82F6', badgeLabel: 'Federal Program',    badgeVariant: 'blue'   },
+  state:         { icon: 'Star',         color: '#F97316', badgeLabel: 'TX State Program',    badgeVariant: 'amber'  },
+  local:         { icon: 'MapPin',       color: '#8B5CF6', badgeLabel: 'Local Program',       badgeVariant: 'purple' },
+  tax:           { icon: 'Receipt',      color: '#10B981', badgeLabel: 'Tax Credit',          badgeVariant: 'green'  },
+  certification: { icon: 'Award',        color: '#14B8A6', badgeLabel: 'Certification',       badgeVariant: 'teal'   },
+  contracting:   { icon: 'Handshake',    color: '#1E40AF', badgeLabel: "Gov't Contracting",  badgeVariant: 'blue'   },
+  industry:      { icon: 'HardHat',      color: '#F59E0B', badgeLabel: 'Industry Program',   badgeVariant: 'amber'  },
+  veteran:       { icon: 'Shield',       color: '#EF4444', badgeLabel: 'Veteran Program',    badgeVariant: 'red'    },
+  'action-plan': { icon: 'CheckSquare',  color: '#059669', badgeLabel: 'Action Plan',         badgeVariant: 'green'  },
+  other:         { icon: 'FileText',     color: '#6B7280', badgeLabel: 'Program',             badgeVariant: 'gray'   },
 }
 
 // ─── JSON opportunity schema (what the LLM returns) ───────────────────────────
