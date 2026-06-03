@@ -25,13 +25,13 @@ function FloatInput({ label, type, value, onChange, autoComplete }: {
           width:'100%',
           padding:'15px 14px',
           borderRadius:'8px',
-          border:`1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
+          border:`1.5px solid ${focused ? '#C9A96E' : '#E5E0D8'}`,
           fontSize:'15px',
           outline:'none',
           boxSizing:'border-box' as const,
-          background:'white',
-          color:'#111827',
-          WebkitTextFillColor:'#111827',
+          background:'#FFFFFF',
+          color:'#1C1C1A',
+          WebkitTextFillColor:'#1C1C1A',
           WebkitAppearance:'none',
           appearance:'none' as const,
           transition:'border-color 0.15s ease',
@@ -67,13 +67,13 @@ function PasswordFloatInput({ label, value, onChange, autoComplete }: {
           width: '100%',
           padding: '15px 46px 15px 14px',
           borderRadius: '8px',
-          border: `1.5px solid ${focused ? '#1D9E75' : '#D1D5DB'}`,
+          border: `1.5px solid ${focused ? '#C9A96E' : '#E5E0D8'}`,
           fontSize: '15px',
           outline: 'none',
           boxSizing: 'border-box' as const,
-          background: 'white',
-          color: '#111827',
-          WebkitTextFillColor: '#111827',
+          background: '#FFFFFF',
+          color: '#1C1C1A',
+          WebkitTextFillColor: '#1C1C1A',
           WebkitAppearance: 'none',
           appearance: 'none' as const,
           transition: 'border-color 0.15s ease',
@@ -98,18 +98,18 @@ function PasswordFloatInput({ label, value, onChange, autoComplete }: {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#9CA3AF',
+          color: '#6B6560',
           transition: 'color 0.15s ease, opacity 0.15s ease',
           borderRadius: '4px',
           WebkitTapHighlightColor: 'transparent',
           flexShrink: 0,
         }}
         onMouseEnter={e => {
-          e.currentTarget.style.color = '#1D9E75'
+          e.currentTarget.style.color = '#C9A96E'
           e.currentTarget.style.opacity = '0.85'
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.color = '#9CA3AF'
+          e.currentTarget.style.color = '#6B6560'
           e.currentTarget.style.opacity = '1'
         }}
       >
@@ -262,13 +262,13 @@ export default function Home() {
   const pwStrength = passwordStrength(password)
 
   if (showAuth) return (
-    <div style={{minHeight:'100vh',background:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
+    <div style={{minHeight:'100vh',background:'#F7F4EF',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
       <div style={{width:'100%',maxWidth:'400px'}}>
         <div style={{textAlign:'center',marginBottom:'28px'}}>
-          <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'8px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
-          <div style={{fontSize:'14px',color:'#6B7280'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
+          <div style={{fontSize:'24px',fontWeight:'600',color:'#1C1C1A',marginBottom:'8px'}}>Honest<span style={{color:'#C9A96E'}}>Hand</span></div>
+          <div style={{fontSize:'14px',color:'#6B6560'}}>{isLogin ? 'Welcome back' : 'Find out what your business is missing'}</div>
         </div>
-        <div style={{background:'#ffffff',borderRadius:'16px',padding:'24px',border:'1px solid #E5E7EB'}}>
+        <div style={{background:'#FFFFFF',borderRadius:'16px',padding:'24px',border:'1px solid #E5E0D8'}}>
           {/* Email */}
           <FloatInput
             label="Email address"
@@ -288,24 +288,24 @@ export default function Home() {
 
           {/* Password strength indicator — signup only */}
           {!isLogin && (showPwRules || password.length > 0) && (
-            <div style={{marginTop:'-8px',marginBottom:'16px',padding:'12px',background:'#F9FAFB',borderRadius:'8px',border:'1px solid #F3F4F6'}}>
-              <div style={{fontSize:'11px',fontWeight:'600',color:'#9CA3AF',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>
+            <div style={{marginTop:'-8px',marginBottom:'16px',padding:'12px',background:'#F7F4EF',borderRadius:'8px',border:'1px solid #E5E0D8'}}>
+              <div style={{fontSize:'11px',fontWeight:'600',color:'#6B6560',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'8px'}}>
                 Password requirements
               </div>
               {/* Strength bar */}
               <div style={{display:'flex',gap:'3px',marginBottom:'10px'}}>
                 {[1,2,3,4,5].map(i => (
-                  <div key={i} style={{flex:1,height:'3px',borderRadius:'2px',background: i <= pwStrength ? (pwStrength <= 2 ? '#EF4444' : pwStrength <= 3 ? '#F59E0B' : '#1D9E75') : '#E5E7EB',transition:'background 0.2s'}} />
+                  <div key={i} style={{flex:1,height:'3px',borderRadius:'2px',background: i <= pwStrength ? (pwStrength <= 2 ? '#EF4444' : pwStrength <= 3 ? '#F59E0B' : '#C9A96E') : '#E5E0D8',transition:'background 0.2s'}} />
                 ))}
               </div>
               {PASSWORD_RULES.map(rule => {
                 const met = rule.test(password)
                 return (
                   <div key={rule.label} style={{display:'flex',alignItems:'center',gap:'6px',marginBottom:'4px'}}>
-                    <span style={{fontSize:'11px',color: met ? '#1D9E75' : '#9CA3AF',fontWeight:'600',width:'12px',flexShrink:0}}>
+                    <span style={{fontSize:'11px',color: met ? '#C9A96E' : '#6B6560',fontWeight:'600',width:'12px',flexShrink:0}}>
                       {met ? '✓' : '○'}
                     </span>
-                    <span style={{fontSize:'12px',color: met ? '#2C2C2A' : '#9CA3AF'}}>{rule.label}</span>
+                    <span style={{fontSize:'12px',color: met ? '#1C1C1A' : '#6B6560'}}>{rule.label}</span>
                   </div>
                 )
               })}
@@ -321,11 +321,11 @@ export default function Home() {
                   await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase())
                   setResetSent(true)
                 }}
-                style={{fontSize:'13px',color:'#6B7280',cursor:'pointer',textDecoration:'underline'}}
+                style={{fontSize:'13px',color:'#6B6560',cursor:'pointer',textDecoration:'underline'}}
               >
                 Forgot password?
               </span>
-              {resetSent && <div style={{fontSize:'13px',color:'#1D9E75',marginTop:'6px'}}>Password reset email sent! Check your inbox.</div>}
+              {resetSent && <div style={{fontSize:'13px',color:'#C9A96E',marginTop:'6px'}}>Password reset email sent! Check your inbox.</div>}
             </div>
           )}
 
@@ -338,16 +338,16 @@ export default function Home() {
           <button
             onClick={handleAuth}
             disabled={loading}
-            style={{width:'100%',padding:'14px',background:'#1D9E75',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:loading?'not-allowed':'pointer',marginBottom:'12px',marginTop:'4px',opacity:loading?0.7:1}}
+            style={{width:'100%',padding:'14px',background:'#1C2B3A',color:'white',border:'none',borderRadius:'8px',fontSize:'15px',fontWeight:'600',cursor:loading?'not-allowed':'pointer',marginBottom:'12px',marginTop:'4px',opacity:loading?0.7:1}}
           >
             {loading ? 'Please wait…' : isLogin ? 'Sign In' : 'Create Free Account'}
           </button>
 
-          <div style={{textAlign:'center',fontSize:'13px',color:'#6B7280',marginBottom:'12px'}}>
+          <div style={{textAlign:'center',fontSize:'13px',color:'#6B6560',marginBottom:'12px'}}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <span
               onClick={() => { setIsLogin(!isLogin); setError(''); setShowPwRules(false) }}
-              style={{color:'#1D9E75',cursor:'pointer',fontWeight:'500'}}
+              style={{color:'#C9A96E',cursor:'pointer',fontWeight:'500'}}
             >
               {isLogin ? 'Sign up free' : 'Sign in'}
             </span>
@@ -355,8 +355,8 @@ export default function Home() {
 
           {/* Trust copy — signup only */}
           {!isLogin && (
-            <div style={{borderTop:'1px solid #F3F4F6',paddingTop:'12px',marginTop:'4px'}}>
-              <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.6',textAlign:'center'}}>
+            <div style={{borderTop:'1px solid #E5E0D8',paddingTop:'12px',marginTop:'4px'}}>
+              <div style={{fontSize:'11px',color:'#6B6560',lineHeight:'1.6',textAlign:'center'}}>
                 🔒 Honest Hand uses your business information only to match relevant funding opportunities and improve your report accuracy.
               </div>
               <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.6',textAlign:'center',marginTop:'4px'}}>
@@ -370,39 +370,39 @@ export default function Home() {
   )
 
   return (
-    <div style={{fontFamily:'system-ui',background:'#fff',minHeight:'100vh'}}>
-      <div style={{padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #F3F4F6'}}>
-        <div style={{fontSize:'20px',fontWeight:'600',color:'#2C2C2A'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
+    <div style={{fontFamily:'system-ui',background:'#F7F4EF',minHeight:'100vh'}}>
+      <div style={{padding:'16px 24px',display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid #E5E0D8'}}>
+        <div style={{fontSize:'20px',fontWeight:'600',color:'#1C1C1A'}}>Honest<span style={{color:'#C9A96E'}}>Hand</span></div>
         <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
-          <a href="/pricing" style={{fontSize:'13px',color:'#6B7280',textDecoration:'none',fontWeight:'500'}}>Pricing</a>
-          <button onClick={()=>{setShowAuth(true);setIsLogin(true)}} style={{padding:'8px 16px',background:'transparent',border:'1px solid #1D9E75',borderRadius:'20px',color:'#1D9E75',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Sign In</button>
+          <a href="/pricing" style={{fontSize:'13px',color:'#6B6560',textDecoration:'none',fontWeight:'500'}}>Pricing</a>
+          <button onClick={()=>{setShowAuth(true);setIsLogin(true)}} style={{padding:'8px 16px',background:'transparent',border:'1px solid #1C2B3A',borderRadius:'20px',color:'#1C2B3A',fontSize:'13px',fontWeight:'500',cursor:'pointer'}}>Sign In</button>
         </div>
       </div>
       <div style={{padding:'64px 24px 48px',textAlign:'center',maxWidth:'560px',margin:'0 auto'}}>
-        <div style={{fontSize:'34px',fontWeight:'700',color:'#2C2C2A',lineHeight:'1.2',marginBottom:'12px',letterSpacing:'-0.5px'}}>Stop searching dozens of websites for funding your business already qualifies for.</div>
-        <div style={{fontSize:'26px',fontWeight:'700',color:'#1D9E75',marginBottom:'20px'}}>HonestHand organizes it for you.</div>
-        <div style={{fontSize:'15px',color:'#6B7280',lineHeight:'1.7',marginBottom:'28px'}}>Grants, tax credits, and incentives are scattered across dozens of federal, state, and local websites. HonestHand organizes verified opportunities into one clear monthly report — updated as programs and deadlines change.</div>
-        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'16px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
+        <div style={{fontSize:'34px',fontWeight:'700',color:'#1C1C1A',lineHeight:'1.2',marginBottom:'12px',letterSpacing:'-0.5px'}}>Stop searching dozens of websites for funding your business already qualifies for.</div>
+        <div style={{fontSize:'26px',fontWeight:'700',color:'#C9A96E',marginBottom:'20px'}}>HonestHand organizes it for you.</div>
+        <div style={{fontSize:'15px',color:'#6B6560',lineHeight:'1.7',marginBottom:'28px'}}>Grants, tax credits, and incentives are scattered across dozens of federal, state, and local websites. HonestHand organizes verified opportunities into one clear monthly report — updated as programs and deadlines change.</div>
+        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1C2B3A',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',marginBottom:'16px',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
         <div style={{display:'flex',flexWrap:'wrap' as const,justifyContent:'center',gap:'14px',marginBottom:'14px'}}>
           {['Verified government sources only','Trusted by Texas business owners'].map((t,i)=>(
-            <span key={i} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'12px',color:'#6B7280'}}>
-              <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'13px'}}>✔</span>{t}
+            <span key={i} style={{display:'flex',alignItems:'center',gap:'5px',fontSize:'12px',color:'#6B6560'}}>
+              <span style={{color:'#C9A96E',fontWeight:'700',fontSize:'13px'}}>✔</span>{t}
             </span>
           ))}
         </div>
-        <div style={{fontSize:'12px',color:'#1D9E75'}}>Free report · No credit card · Results in 24 hours</div>
+        <div style={{fontSize:'12px',color:'#C9A96E'}}>Free report · No credit card · Results in 24 hours</div>
       </div>
-      <div style={{borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'32px 24px'}}>
+      <div style={{borderTop:'1px solid #E5E0D8',borderBottom:'1px solid #E5E0D8',padding:'32px 24px'}}>
         {[{num:'$31,000',label:'Estimated annual incentives many Texas businesses never claim'},{num:'2 min',label:'To complete your free intake form'},{num:'$49/mo',label:'Monthly monitoring, updated reports, and deadline tracking'}].map((stat,i)=>(
           <div key={i} style={{textAlign:'center',marginBottom:i<2?'24px':'0'}}>
-            <div style={{fontSize:'28px',fontWeight:'700',color:'#1D9E75'}}>{stat.num}</div>
-            <div style={{fontSize:'13px',color:'#6B7280',marginTop:'4px'}}>{stat.label}</div>
+            <div style={{fontSize:'28px',fontWeight:'700',color:'#C9A96E'}}>{stat.num}</div>
+            <div style={{fontSize:'13px',color:'#6B6560',marginTop:'4px'}}>{stat.label}</div>
           </div>
         ))}
       </div>
       <div style={{padding:'40px 24px',maxWidth:'520px',margin:'0 auto'}}>
-        <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',marginBottom:'6px',textAlign:'center'}}>Why businesses stay subscribed</div>
-        <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>Funding intelligence isn't a one-time search. It's ongoing.</div>
+        <div style={{fontSize:'19px',fontWeight:'700',color:'#1C1C1A',marginBottom:'6px',textAlign:'center'}}>Why businesses stay subscribed</div>
+        <div style={{fontSize:'13px',color:'#6B6560',textAlign:'center',marginBottom:'24px'}}>Funding intelligence isn't a one-time search. It's ongoing.</div>
         <div style={{display:'flex',flexDirection:'column' as const,gap:'12px'}}>
           {[
             'Programs open and close every month',
@@ -412,62 +412,62 @@ export default function Home() {
             'Reports refresh on the 1st of every month',
           ].map((text, i) => (
             <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'10px'}}>
-              <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'14px',flexShrink:0,marginTop:'2px'}}>✓</span>
-              <span style={{fontSize:'14px',color:'#374151',lineHeight:'1.5'}}>{text}</span>
+              <span style={{color:'#C9A96E',fontWeight:'700',fontSize:'14px',flexShrink:0,marginTop:'2px'}}>✓</span>
+              <span style={{fontSize:'14px',color:'#1C1C1A',lineHeight:'1.5'}}>{text}</span>
             </div>
           ))}
         </div>
       </div>
-      <div style={{background:'#F9FAFB',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6',padding:'40px 24px'}}>
+      <div style={{background:'#F7F4EF',borderTop:'1px solid #E5E0D8',borderBottom:'1px solid #E5E0D8',padding:'40px 24px'}}>
         <div style={{maxWidth:'520px',margin:'0 auto'}}>
-          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',marginBottom:'6px',textAlign:'center'}}>Most business owners don't have time for this</div>
-          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>And that's exactly why opportunities get missed.</div>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#1C1C1A',marginBottom:'6px',textAlign:'center'}}>Most business owners don't have time for this</div>
+          <div style={{fontSize:'13px',color:'#6B6560',textAlign:'center',marginBottom:'24px'}}>And that's exactly why opportunities get missed.</div>
           <div style={{display:'flex',flexDirection:'column' as const,gap:'12px',marginBottom:'28px'}}>
             {[
               {title:'Endless searching',body:'Funding opportunities are scattered across government websites, PDFs, grant portals, lender programs, and outdated directories.'},
               {title:'Missed deadlines',body:'Programs open and close constantly — many without clear announcements or reminders.'},
               {title:'Information overload',body:"Most owners don't know which incentives actually apply to their business and which ones waste their time."},
             ].map((card, i) => (
-              <div key={i} style={{background:'white',border:'1px solid #E5E7EB',borderRadius:'12px',padding:'16px 18px'}}>
-                <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',marginBottom:'5px'}}>{card.title}</div>
-                <div style={{fontSize:'13px',color:'#6B7280',lineHeight:'1.6'}}>{card.body}</div>
+              <div key={i} style={{background:'#FFFFFF',border:'1px solid #E5E0D8',borderRadius:'12px',padding:'16px 18px'}}>
+                <div style={{fontSize:'14px',fontWeight:'600',color:'#1C1C1A',marginBottom:'5px'}}>{card.title}</div>
+                <div style={{fontSize:'13px',color:'#6B6560',lineHeight:'1.6'}}>{card.body}</div>
               </div>
             ))}
           </div>
-          <div style={{textAlign:'center',fontSize:'15px',fontWeight:'600',color:'#1D9E75'}}>HonestHand organizes and monitors it for you.</div>
+          <div style={{textAlign:'center',fontSize:'15px',fontWeight:'600',color:'#C9A96E'}}>HonestHand organizes and monitors it for you.</div>
         </div>
       </div>
-      <div style={{padding:'24px',background:'#F9FAFB',borderBottom:'1px solid #F3F4F6'}}>
+      <div style={{padding:'24px',background:'#F7F4EF',borderBottom:'1px solid #E5E0D8'}}>
         {[
           {icon:'🏛️',label:'Official .gov sources only',sub:'Every opportunity links to a verified government agency'},
           {icon:'🔍',label:'Verified before every report',sub:'We check current program status so you\'re not reading outdated information'},
           {icon:'📅',label:'Current deadlines & funding amounts',sub:'Real numbers and real dates — not cached data from last year'},
         ].map((t,i)=>(
           <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'12px',marginBottom:i<2?'16px':'0',maxWidth:'480px',margin:i<2?'0 auto 16px':'0 auto'}}>
-            <div style={{width:'36px',height:'36px',background:'white',borderRadius:'50%',border:'1px solid #E5E7EB',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',flexShrink:0}}>{t.icon}</div>
+            <div style={{width:'36px',height:'36px',background:'#FFFFFF',borderRadius:'50%',border:'1px solid #E5E0D8',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',flexShrink:0}}>{t.icon}</div>
             <div>
-              <div style={{fontSize:'13px',fontWeight:'600',color:'#2C2C2A'}}>{t.label}</div>
-              <div style={{fontSize:'12px',color:'#6B7280',marginTop:'2px',lineHeight:'1.5'}}>{t.sub}</div>
+              <div style={{fontSize:'13px',fontWeight:'600',color:'#1C1C1A'}}>{t.label}</div>
+              <div style={{fontSize:'12px',color:'#6B6560',marginTop:'2px',lineHeight:'1.5'}}>{t.sub}</div>
             </div>
           </div>
         ))}
       </div>
       <div style={{padding:'48px 24px',maxWidth:'600px',margin:'0 auto'}}>
-        <div style={{fontSize:'22px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'32px'}}>How It Works</div>
+        <div style={{fontSize:'22px',fontWeight:'700',color:'#1C1C1A',textAlign:'center',marginBottom:'32px'}}>How It Works</div>
         {[{num:'1',title:'Tell us about your business',desc:"A short intake form — industry, location, entity type, revenue range. Two minutes. That's all we need."},{num:'2',title:'We match your business to verified opportunities',desc:'HonestHand searches federal, state, and local programs and organizes every relevant grant, tax credit, loan, and incentive into one clear report.'},{num:'3',title:'Get a clear report, updated every month',desc:"You receive a structured report with each opportunity's value, deadline, eligibility match, and next step. It refreshes on the 1st of every month as programs change."}].map((step,i)=>(
           <div key={i} style={{display:'flex',gap:'16px',marginBottom:'28px'}}>
-            <div style={{width:'36px',height:'36px',background:'#E1F5EE',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',color:'#1D9E75',flexShrink:0}}>{step.num}</div>
+            <div style={{width:'36px',height:'36px',background:'#F7F4EF',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'14px',fontWeight:'700',color:'#C9A96E',flexShrink:0}}>{step.num}</div>
             <div>
-              <div style={{fontSize:'15px',fontWeight:'600',color:'#2C2C2A',marginBottom:'4px'}}>{step.title}</div>
-              <div style={{fontSize:'13px',color:'#6B7280',lineHeight:'1.6'}}>{step.desc}</div>
+              <div style={{fontSize:'15px',fontWeight:'600',color:'#1C1C1A',marginBottom:'4px'}}>{step.title}</div>
+              <div style={{fontSize:'13px',color:'#6B6560',lineHeight:'1.6'}}>{step.desc}</div>
             </div>
           </div>
         ))}
       </div>
-      <div style={{background:'#F9FAFB',padding:'40px 24px',borderTop:'1px solid #F3F4F6',borderBottom:'1px solid #F3F4F6'}}>
+      <div style={{background:'#F7F4EF',padding:'40px 24px',borderTop:'1px solid #E5E0D8',borderBottom:'1px solid #E5E0D8'}}>
         <div style={{maxWidth:'520px',margin:'0 auto'}}>
-          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'6px'}}>What's included in your report</div>
-          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>One organized report covering every relevant category.</div>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#1C1C1A',textAlign:'center',marginBottom:'6px'}}>What's included in your report</div>
+          <div style={{fontSize:'13px',color:'#6B6560',textAlign:'center',marginBottom:'24px'}}>One organized report covering every relevant category.</div>
           <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px'}}>
             {[
               'Verified grants and funding programs',
@@ -479,18 +479,18 @@ export default function Home() {
               'Federal, Texas, county, and city programs',
               'Monthly updated monitoring',
             ].map((item, i) => (
-              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'white',border:'1px solid #E5E7EB',borderRadius:'10px',padding:'12px 14px'}}>
-                <span style={{color:'#1D9E75',fontWeight:'700',fontSize:'13px',flexShrink:0,marginTop:'1px'}}>✓</span>
-                <span style={{fontSize:'13px',color:'#374151',lineHeight:'1.4'}}>{item}</span>
+              <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'8px',background:'#FFFFFF',border:'1px solid #E5E0D8',borderRadius:'10px',padding:'12px 14px'}}>
+                <span style={{color:'#C9A96E',fontWeight:'700',fontSize:'13px',flexShrink:0,marginTop:'1px'}}>✓</span>
+                <span style={{fontSize:'13px',color:'#1C1C1A',lineHeight:'1.4'}}>{item}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
-      <div style={{background:'white',padding:'48px 24px',borderTop:'1px solid #F3F4F6'}}>
+      <div style={{background:'#FFFFFF',padding:'48px 24px',borderTop:'1px solid #E5E0D8'}}>
         <div style={{maxWidth:'520px',margin:'0 auto'}}>
-          <div style={{fontSize:'19px',fontWeight:'700',color:'#2C2C2A',textAlign:'center',marginBottom:'6px'}}>Examples of monitored opportunities</div>
-          <div style={{fontSize:'13px',color:'#9CA3AF',textAlign:'center',marginBottom:'24px'}}>A sample of programs HonestHand tracks for Texas businesses</div>
+          <div style={{fontSize:'19px',fontWeight:'700',color:'#1C1C1A',textAlign:'center',marginBottom:'6px'}}>Examples of monitored opportunities</div>
+          <div style={{fontSize:'13px',color:'#6B6560',textAlign:'center',marginBottom:'24px'}}>A sample of programs HonestHand tracks for Texas businesses</div>
           {[
             {program:'SBA 7(a) Loan Program',category:'Federal · SBA',desc:'Working capital and equipment financing for small businesses up to $5 million.'},
             {program:'USDA Rural Development Business Programs',category:'Federal · USDA',desc:'Loans and grants for businesses in rural Texas communities.'},
@@ -498,12 +498,12 @@ export default function Home() {
             {program:'Work Opportunity Tax Credit (WOTC)',category:'Federal · IRS',desc:'Tax credits for hiring from targeted groups including veterans and long-term unemployed.'},
             {program:'Texas Capital Access Program',category:'Texas State · Governor\'s Office',desc:'Loan support for businesses that face barriers to conventional lending.'},
           ].map((item, i) => (
-            <div key={i} style={{borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', padding:'16px 0'}}>
+            <div key={i} style={{borderBottom: i < 4 ? '1px solid #E5E0D8' : 'none', padding:'16px 0'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:'8px',marginBottom:'4px'}}>
-                <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',flex:1}}>{item.program}</div>
+                <div style={{fontSize:'14px',fontWeight:'600',color:'#1C1C1A',flex:1}}>{item.program}</div>
               </div>
-              <div style={{fontSize:'11px',fontWeight:'600',color:'#1D9E75',textTransform:'uppercase' as const,letterSpacing:'0.05em',marginBottom:'4px'}}>{item.category}</div>
-              <div style={{fontSize:'13px',color:'#6B7280',lineHeight:'1.5'}}>{item.desc}</div>
+              <div style={{fontSize:'11px',fontWeight:'600',color:'#C9A96E',textTransform:'uppercase' as const,letterSpacing:'0.05em',marginBottom:'4px'}}>{item.category}</div>
+              <div style={{fontSize:'13px',color:'#6B6560',lineHeight:'1.5'}}>{item.desc}</div>
             </div>
           ))}
           <div style={{marginTop:'16px',textAlign:'center',fontSize:'13px',color:'#9CA3AF'}}>
@@ -512,14 +512,14 @@ export default function Home() {
         </div>
       </div>
       <div style={{padding:'48px 24px',textAlign:'center'}}>
-        <div style={{fontSize:'24px',fontWeight:'700',color:'#2C2C2A',marginBottom:'8px'}}>Get your funding report in under 24 hours.</div>
-        <div style={{fontSize:'14px',color:'#6B7280',marginBottom:'24px',lineHeight:'1.6'}}>Built for Texas business owners across every industry — restaurants, ranches, contractors, retail, veteran-owned, minority-owned, and everyone in between. Free to start. No credit card.</div>
-        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1D9E75',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
+        <div style={{fontSize:'24px',fontWeight:'700',color:'#1C1C1A',marginBottom:'8px'}}>Get your funding report in under 24 hours.</div>
+        <div style={{fontSize:'14px',color:'#6B6560',marginBottom:'24px',lineHeight:'1.6'}}>Built for Texas business owners across every industry — restaurants, ranches, contractors, retail, veteran-owned, minority-owned, and everyone in between. Free to start. No credit card.</div>
+        <button onClick={()=>{setShowAuth(true);setIsLogin(false)}} style={{padding:'14px 32px',background:'#1C2B3A',color:'white',border:'none',borderRadius:'30px',fontSize:'16px',fontWeight:'600',cursor:'pointer',width:'100%',maxWidth:'320px'}}>Get My Free Report</button>
       </div>
-      <div style={{borderTop:'1px solid #F3F4F6',padding:'24px',textAlign:'center'}}>
-        <div style={{fontSize:'14px',fontWeight:'600',color:'#2C2C2A',marginBottom:'4px'}}>Honest<span style={{color:'#1D9E75'}}>Hand</span></div>
-        <div style={{fontSize:'12px',color:'#6B7280',marginBottom:'12px'}}>The financial partner that earns its keep · yourhonesthand.com · Texas · Est. 2026</div>
-        <div style={{fontSize:'11px',color:'#9CA3AF',lineHeight:'1.7',maxWidth:'480px',margin:'0 auto'}}>
+      <div style={{borderTop:'1px solid #E5E0D8',padding:'24px',textAlign:'center'}}>
+        <div style={{fontSize:'14px',fontWeight:'600',color:'#1C1C1A',marginBottom:'4px'}}>Honest<span style={{color:'#C9A96E'}}>Hand</span></div>
+        <div style={{fontSize:'12px',color:'#6B6560',marginBottom:'12px'}}>The financial partner that earns its keep · yourhonesthand.com · Texas · Est. 2026</div>
+        <div style={{fontSize:'11px',color:'#6B6560',lineHeight:'1.7',maxWidth:'480px',margin:'0 auto'}}>
           For informational purposes only. Not financial, legal, or tax advice. Program availability and eligibility not guaranteed. Always verify directly with the administering agency before applying.
         </div>
       </div>
