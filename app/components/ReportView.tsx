@@ -167,7 +167,7 @@ function SummaryBar({
   ]
 
   return (
-    <div className="bg-[#E1F5EE] border border-[#C9A96E]/20 rounded-xl px-5 py-4 mb-5">
+    <div className="bg-[#F7F4EF] border border-[#C9A96E]/20 rounded-xl px-5 py-4 mb-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-5">
           {stats.map(s => (
@@ -763,7 +763,7 @@ function ActionPlanView({ steps, rawText }: { steps: ActionPlanStep[]; rawText: 
           <div
             key={step.num}
             className={`border rounded-xl overflow-hidden transition-all duration-150 ${
-              done ? 'border-[#C9A96E]/30 bg-[#F0FDF8]' : 'border-[#E5E0D8] bg-white'
+              done ? 'border-[#C9A96E]/30 bg-[#F7F4EF]' : 'border-[#E5E0D8] bg-white'
             }`}
           >
             <div className="flex items-start gap-3 px-4 py-3">
@@ -1161,7 +1161,7 @@ export default function ReportView({
   }
 
   return (
-    <div>
+    <div className="bg-[#F7F4EF]">
       {/* Business / nonprofit profile context — NOT an opportunity */}
       {profile && <BusinessProfileCard p={profile} />}
 
