@@ -1,5 +1,17 @@
 'use client'
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import {
+  DollarSign, Calendar, Building, Building2, CheckCircle, CheckSquare,
+  MapPin, Zap, Sparkles, Star, Receipt, Award, Handshake,
+  HardHat, Shield, FileText,
+} from 'lucide-react'
+
+// ─── Section icon lookup ──────────────────────────────────────────────────────
+// Maps the string names stored in SECTION_META.icon to Lucide components.
+const SECTION_ICON_MAP: Record<string, React.ElementType> = {
+  Building2, Star, MapPin, Receipt, Award, Handshake,
+  HardHat, Shield, CheckSquare, FileText,
+}
 import {
   parseReport,
   filterReportForProfile,
@@ -58,7 +70,7 @@ function BusinessProfileCard({ p }: { p: ProfileSummary }) {
   if (isNonprofit  && p.annualBudget) metaItems.push({ icon: '💵', label: p.annualBudget })
 
   return (
-    <div className="mb-5 px-4 py-3.5 bg-white border border-gray-100 rounded-xl">
+    <div className="mb-5 px-4 py-3.5 bg-white border border-[#E5E0D8] rounded-xl">
       {/* Label */}
       <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2.5">
         {isNonprofit ? 'Organization Profile' : 'Your Business Profile'}
@@ -66,7 +78,7 @@ function BusinessProfileCard({ p }: { p: ProfileSummary }) {
 
       {/* Name + description */}
       <div className="mb-2">
-        <div className="text-[15px] font-semibold text-[#2C2C2A] leading-snug">{p.businessName}</div>
+        <div className="text-[15px] font-semibold text-[#1C1C1A] leading-snug">{p.businessName}</div>
         {p.description && (
           <div className="text-[13px] text-gray-500 mt-0.5 leading-snug">{p.description}</div>
         )}
@@ -145,7 +157,7 @@ function SummaryBar({
     : null
 
   const stats = [
-    { value: report.totalOpportunities, label: 'opportunities found', color: 'text-[#1D9E75]' },
+    { value: report.totalOpportunities, label: 'opportunities found', color: 'text-[#C9A96E]' },
     { value: report.rollingCount,        label: 'quick apply',         color: 'text-emerald-600' },
     { value: report.highValueCount,      label: 'high value',          color: 'text-amber-600'   },
     ...(savedCount && savedCount > 0
@@ -155,7 +167,7 @@ function SummaryBar({
   ]
 
   return (
-    <div className="bg-[#E1F5EE] border border-[#1D9E75]/20 rounded-xl px-5 py-4 mb-5">
+    <div className="bg-[#F7F4EF] border border-[#C9A96E]/20 rounded-xl px-5 py-4 mb-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-5">
           {stats.map(s => (
@@ -167,7 +179,7 @@ function SummaryBar({
         </div>
         {dateLabel && (
           <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-            <span>✓</span>
+            <CheckCircle className="w-3 h-3" />
             <span>Report current as of {dateLabel}</span>
           </div>
         )}
@@ -201,7 +213,8 @@ function CategoryTabs({
       .filter(s => !s.isActionPlan)
       .map(s => ({
         key: s.category as CategoryFilter,
-        label: SECTION_META[s.category].icon + ' ' + shortTitle(s.title),
+        iconName: SECTION_META[s.category].icon,
+        label: shortTitle(s.title),
         count: s.isParsed ? s.opportunities.length : 0,
       }))
       .filter(t => t.count > 0),
@@ -221,12 +234,15 @@ function CategoryTabs({
             active === tab.key
               ? tab.key === 'saved'
                 ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
-                : 'bg-[#1D9E75] text-white border-[#1D9E75] shadow-sm'
+                : 'bg-[#C9A96E] text-white border-[#C9A96E] shadow-sm'
               : tab.key === 'saved'
                 ? 'bg-white text-amber-600 border-amber-200 hover:border-amber-400'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-[#1D9E75]/40 hover:text-[#1D9E75]'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-[#C9A96E]/40 hover:text-[#C9A96E]'
           }`}
         >
+          {(tab as {iconName?: string}).iconName
+            ? React.createElement(SECTION_ICON_MAP[(tab as unknown as {iconName: string}).iconName] || FileText, { className: 'w-3 h-3' })
+            : null}
           {tab.label}
           <span
             className={`text-[10px] font-bold rounded-full px-1.5 py-0.5 ${
@@ -261,14 +277,14 @@ function TrustRibbon({ reportDate, isNew }: { reportDate: string | null; isNew?:
 
   return (
     <div className="mb-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-gray-100 rounded-xl px-4 py-3 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-white border border-[#E5E0D8] rounded-xl px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-[#1D9E75]">
+          <span className="flex items-center gap-1.5 text-xs font-semibold text-[#C9A96E]">
             <span>🔍</span> Live search verified
           </span>
           <span className="text-gray-200 hidden sm:inline">|</span>
           <span className="flex items-center gap-1.5 text-xs text-gray-500">
-            <span>🏛️</span> Official .gov sources only
+            <Building className="w-3.5 h-3.5" /> Official .gov sources only
           </span>
           {dateLabel && (
             <>
@@ -286,7 +302,7 @@ function TrustRibbon({ reportDate, isNew }: { reportDate: string | null; isNew?:
         </div>
         <button
           onClick={() => setShowDetail(v => !v)}
-          className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-[#1D9E75] transition-colors flex-shrink-0"
+          className="flex items-center gap-1 text-[11px] text-gray-400 hover:text-[#C9A96E] transition-colors flex-shrink-0"
         >
           ℹ️ How we verify
           <span className={`text-[9px] transition-transform duration-200 ${showDetail ? 'rotate-180' : ''}`}>▼</span>
@@ -386,13 +402,13 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
                   {/* Why you qualify */}
                   {opp.whyFragments.length > 0 && (
                     <div>
-                      <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1">
+                      <div className="text-[10px] font-semibold text-[#C9A96E] uppercase tracking-widest mb-1">
                         Why You Qualify
                       </div>
                       <ul className="space-y-0.5">
                         {opp.whyFragments.map((f, i) => (
                           <li key={i} className="flex items-start gap-1.5 text-[12px] text-gray-600 leading-snug">
-                            <span className="flex-shrink-0 text-[#1D9E75] font-bold leading-none mt-0.5">✓</span>
+                            <CheckCircle className="w-3 h-3 flex-shrink-0 text-[#C9A96E] mt-0.5" />
                             <span>{f}</span>
                           </li>
                         ))}
@@ -414,13 +430,13 @@ function UpcomingDeadlines({ sections }: { sections: ParsedSection[] }) {
                   {/* Official source link */}
                   {opp.sourceAgency && (
                     <div className="flex items-center gap-1.5 pt-0.5">
-                      <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+                      <CheckCircle className="w-2.5 h-2.5 text-[#C9A96E]" />
                       {opp.sourceUrl ? (
                         <a
                           href={opp.sourceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] text-[#1D9E75] font-medium hover:underline flex items-center gap-0.5"
+                          className="text-[11px] text-[#C9A96E] font-medium hover:underline flex items-center gap-0.5"
                         >
                           {opp.sourceAgency}
                           <span className="text-[10px]">↗</span>
@@ -500,9 +516,9 @@ function OpportunityCard({
   const isEmptyShell = !hasValue && !hasDeadline && opp.whyFragments.length === 0 && !opp.nextStepClean
   if (isEmptyShell && opp.rawText) {
     return (
-      <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0 px-4 pt-4 pb-3" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
+      <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-sm mb-2.5 last:mb-0 px-4 pt-4 pb-3" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
         <div className="flex items-start justify-between gap-2 mb-2">
-          <h3 className="text-[15px] font-semibold text-[#2C2C2A] leading-snug flex-1">{opp.name}</h3>
+          <h3 className="text-[15px] font-semibold text-[#1C1C1A] leading-snug flex-1">{opp.name}</h3>
           {onToggleSave && (
             <button onClick={e => { e.stopPropagation(); onToggleSave(opp.id) }}
               className={`flex-shrink-0 text-xl -m-1 p-2 rounded-lg transition-all duration-150 active:scale-95 ${isSaved ? 'text-amber-400' : 'text-gray-200 hover:text-amber-300'}`}
@@ -519,9 +535,9 @@ function OpportunityCard({
         </p>
         {opp.sourceAgency && (
           <div className="mt-3 pt-2 border-t border-gray-50 flex items-center gap-2">
-            <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+            <CheckCircle className="w-2.5 h-2.5 text-[#C9A96E]" />
             {opp.sourceUrl
-              ? <a href={opp.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#1D9E75] font-medium hover:underline">{opp.sourceAgency} ↗</a>
+              ? <a href={opp.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#C9A96E] font-medium hover:underline">{opp.sourceAgency} ↗</a>
               : <span className="text-[11px] text-gray-500">{opp.sourceAgency}</span>
             }
           </div>
@@ -531,14 +547,14 @@ function OpportunityCard({
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl shadow-sm mb-2.5 last:mb-0" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
+    <div className="bg-white border border-[#E5E0D8] rounded-xl shadow-sm mb-2.5 last:mb-0" style={{wordBreak:'break-word',overflowWrap:'break-word'}}>
 
       {/* ── Header ── */}
       <div className="px-4 pt-4 pb-3.5">
         <div className="flex items-start justify-between gap-2 mb-2.5">
-          <h3 className="text-[15px] font-semibold text-[#2C2C2A] leading-snug flex-1">
+          <h3 className="text-[15px] font-semibold text-[#1C1C1A] leading-snug flex-1">
             {isFirst && (
-              <span className="inline-flex items-center mr-2 px-2 py-0.5 rounded text-[10px] font-bold bg-[#1D9E75] text-white tracking-wide uppercase">
+              <span className="inline-flex items-center mr-2 px-2 py-0.5 rounded text-[10px] font-bold bg-[#C9A96E] text-white tracking-wide uppercase">
                 Recommended First
               </span>
             )}
@@ -574,30 +590,30 @@ function OpportunityCard({
                 All rows come from classified parser fields — zero raw prose.
                 Max 4 rows, only non-null rows render. */}
             {hasValue && (
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-[#F7F4EF] rounded-xl p-4">
                 <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
                   Funding Snapshot
                 </div>
                 <div className="space-y-2">
                   {/* Row 1: Dollar amount */}
                   <div className="flex items-start gap-2.5">
-                    <span className="flex-shrink-0 leading-none mt-0.5">💰</span>
-                    <span className="text-[14px] font-bold text-[#2C2C2A] leading-snug break-words" style={{overflowWrap:'break-word'}}>
+                    <DollarSign className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <span className="text-[14px] font-bold text-[#1C1C1A] leading-snug break-words" style={{overflowWrap:'break-word'}}>
                       {opp.amountDisplay}
                     </span>
                   </div>
                   {/* Row 2: Instrument type */}
                   {opp.fundingType && (
                     <div className="flex items-start gap-2.5">
-                      <span className="flex-shrink-0 leading-none mt-0.5">🏛</span>
+                      <Building className="w-4 h-4 flex-shrink-0 mt-0.5" />
                       <span className="text-[13px] text-gray-600 leading-snug">{opp.fundingType}</span>
                     </div>
                   )}
                   {/* Row 3: Funding structure detail (non-repayable, matching, etc.) */}
                   {opp.fundingStyle && (
                     <div className="flex items-start gap-2.5">
-                      <span className="flex-shrink-0 leading-none mt-0.5 text-[#1D9E75] font-bold text-[11px]">✦</span>
-                      <span className="text-[12px] text-[#1D9E75] font-medium leading-snug">{opp.fundingStyle}</span>
+                      <Sparkles className="w-3 h-3 flex-shrink-0 mt-0.5 text-[#C9A96E]" />
+                      <span className="text-[12px] text-[#C9A96E] font-medium leading-snug">{opp.fundingStyle}</span>
                     </div>
                   )}
                 </div>
@@ -608,14 +624,14 @@ function OpportunityCard({
                 deadlineDisplay = clean label only ("Rolling", "March 31, 2025")
                 deadlineContext = one-line context ("Apply anytime", "Opens quarterly") */}
             {hasDeadline && (
-              <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-gray-50'}`}>
+              <div className={`rounded-xl p-4 ${opp.isUrgent && !opp.isRolling ? 'bg-amber-50' : 'bg-[#F7F4EF]'}`}>
                 <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">
-                  <span>{opp.isRolling ? '🟢' : '🗓️'}</span>
+                  {opp.isRolling ? <span className="text-emerald-500 text-base leading-none">●</span> : <Calendar className="w-3.5 h-3.5" />}
                   <span>Deadline</span>
                 </div>
                 <div className="space-y-1.5">
                   <div className={`text-[18px] font-bold leading-tight ${
-                    opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#2C2C2A]'
+                    opp.isUrgent && !opp.isRolling ? 'text-amber-700' : 'text-[#1C1C1A]'
                   }`}>
                     {opp.deadlineDisplay}
                   </div>
@@ -625,7 +641,7 @@ function OpportunityCard({
                     </div>
                   )}
                   {opp.isUrgent && !opp.isRolling && (
-                    <div className="text-[11px] text-amber-600 font-semibold mt-1">⚡ Act soon</div>
+                    <div className="flex items-center gap-1 text-[11px] text-amber-600 font-semibold mt-1"><Zap className="w-3 h-3" /> Act soon</div>
                   )}
                 </div>
               </div>
@@ -639,13 +655,13 @@ function OpportunityCard({
         <div className="px-4 pt-1 pb-3 space-y-2.5">
           {opp.whyFragments.length > 0 && (
             <div>
-              <div className="text-[10px] font-semibold text-[#1D9E75] uppercase tracking-widest mb-1.5">
+              <div className="text-[10px] font-semibold text-[#C9A96E] uppercase tracking-widest mb-1.5">
                 Why You Qualify
               </div>
               <ul className="space-y-1">
                 {opp.whyFragments.map((frag, i) => (
                   <li key={i} className="flex items-start gap-1.5 text-[13px] text-gray-600 leading-snug">
-                    <span className="flex-shrink-0 text-[#1D9E75] font-bold leading-none mt-[2px]">✓</span>
+                    <CheckCircle className="w-3 h-3 flex-shrink-0 text-[#C9A96E] mt-[2px]" />
                     <span>{frag}</span>
                   </li>
                 ))}
@@ -671,7 +687,7 @@ function OpportunityCard({
         <div className="px-4 pb-3">
           <button
             onClick={() => setShowGuidance(v => !v)}
-            className="flex items-center gap-1.5 text-[12px] font-medium text-[#1D9E75] hover:underline transition-colors"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-[#C9A96E] hover:underline transition-colors"
           >
             <span className={`text-[9px] transition-transform duration-150 ${showGuidance ? 'rotate-180' : ''}`}>▼</span>
             {showGuidance ? 'Hide' : 'More steps'}
@@ -691,13 +707,13 @@ function OpportunityCard({
       {/* ── Official source footer ── */}
       {opp.sourceAgency && (
         <div className="px-4 pb-3 pt-1 flex items-center gap-2 border-t border-gray-50">
-          <span className="text-[10px] font-bold text-[#1D9E75]">✓</span>
+          <CheckCircle className="w-2.5 h-2.5 text-[#C9A96E]" />
           {opp.sourceUrl ? (
             <a
               href={opp.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] text-[#1D9E75] font-medium hover:underline flex items-center gap-0.5"
+              className="text-[11px] text-[#C9A96E] font-medium hover:underline flex items-center gap-0.5"
             >
               {opp.sourceAgency}
               <span className="text-[10px]">↗</span>
@@ -747,7 +763,7 @@ function ActionPlanView({ steps, rawText }: { steps: ActionPlanStep[]; rawText: 
           <div
             key={step.num}
             className={`border rounded-xl overflow-hidden transition-all duration-150 ${
-              done ? 'border-[#1D9E75]/30 bg-[#F0FDF8]' : 'border-gray-100 bg-white'
+              done ? 'border-[#C9A96E]/30 bg-[#F7F4EF]' : 'border-[#E5E0D8] bg-white'
             }`}
           >
             <div className="flex items-start gap-3 px-4 py-3">
@@ -756,13 +772,13 @@ function ActionPlanView({ steps, rawText }: { steps: ActionPlanStep[]; rawText: 
                 onClick={() => toggleCheck(step.num)}
                 className={`flex-shrink-0 w-7 h-7 rounded-full border-2 flex items-center justify-center mt-0.5 transition-all duration-150 ${
                   done
-                    ? 'bg-[#1D9E75] border-[#1D9E75] text-white'
-                    : 'border-gray-300 text-gray-500 hover:border-[#1D9E75]'
+                    ? 'bg-[#C9A96E] border-[#C9A96E] text-white'
+                    : 'border-gray-300 text-gray-500 hover:border-[#C9A96E]'
                 }`}
                 aria-label={done ? 'Mark incomplete' : 'Mark complete'}
               >
                 {done ? (
-                  <span className="text-xs font-bold">✓</span>
+                  <CheckCircle className="w-3 h-3" />
                 ) : (
                   <span className="text-xs font-semibold">{step.num}</span>
                 )}
@@ -772,7 +788,7 @@ function ActionPlanView({ steps, rawText }: { steps: ActionPlanStep[]; rawText: 
               <div className="flex-1 min-w-0">
                 <div
                   className={`text-[14px] font-semibold leading-snug transition-colors ${
-                    done ? 'text-[#1D9E75] line-through decoration-[#1D9E75]/40' : 'text-[#2C2C2A]'
+                    done ? 'text-[#C9A96E] line-through decoration-[#C9A96E]/40' : 'text-[#1C1C1A]'
                   }`}
                 >
                   {step.title}
@@ -781,7 +797,7 @@ function ActionPlanView({ steps, rawText }: { steps: ActionPlanStep[]; rawText: 
                 {step.detail && (
                   <button
                     onClick={() => setExpandedStep(open ? null : step.num)}
-                    className="text-[12px] text-gray-400 hover:text-[#1D9E75] mt-0.5 py-1 text-left transition-colors"
+                    className="text-[12px] text-gray-400 hover:text-[#C9A96E] mt-0.5 py-1 text-left transition-colors"
                   >
                     {open ? '▲ hide detail' : '▼ show detail'}
                   </button>
@@ -827,13 +843,13 @@ function SectionCard({
       {/* Section header */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow transition-shadow duration-150 group"
+        className="w-full flex items-center justify-between px-5 py-4 bg-white border border-[#E5E0D8] rounded-xl shadow-sm hover:shadow transition-shadow duration-150 group"
         style={{ borderLeft: `4px solid ${section.color}` }}
       >
         <div className="flex items-center gap-3">
-          <span className="text-xl">{section.icon}</span>
+          {React.createElement(SECTION_ICON_MAP[section.icon] || FileText, { className: 'w-5 h-5 flex-shrink-0' })}
           <div className="text-left">
-            <div className="text-[15px] font-semibold text-[#2C2C2A] group-hover:text-[#1D9E75] transition-colors">
+            <div className="text-[15px] font-semibold text-[#1C1C1A] group-hover:text-[#C9A96E] transition-colors">
               {section.title}
             </div>
             <div className="text-[11px] text-gray-400 mt-0.5">
@@ -869,7 +885,7 @@ function SectionCard({
             </div>
           ) : (
             /* Fallback: raw markdown for sections that didn't parse cleanly */
-            <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
+            <div className="bg-white border border-[#E5E0D8] rounded-xl p-5 shadow-sm">
               <div
                 className="text-sm text-gray-700 leading-relaxed"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(section.rawText) }}
@@ -893,13 +909,13 @@ function UpgradeWall({
   upgrading: boolean
   upgradeError: string
 }) {
-  const lockedSections = [
-    { icon: '📍', title: 'Local / City / County Programs',     count: '3–5 programs' },
-    { icon: '🧾', title: 'Tax Credits & Deductions',           count: '4–5 programs' },
-    { icon: '📜', title: 'Certification Pathways',             count: '3–4 programs' },
-    { icon: '🤝', title: "Gov't Contracting Opportunities",    count: '2–3 programs' },
-    { icon: '🏗️', title: 'Industry-Specific Programs',         count: '3–4 programs' },
-    { icon: '✅', title: '30-Day Action Plan',                  count: '8 action steps' },
+  const lockedSections: { Icon: React.ElementType; title: string; count: string }[] = [
+    { Icon: MapPin,       title: 'Local / City / County Programs',  count: '3–5 programs'  },
+    { Icon: Receipt,      title: 'Tax Credits & Deductions',        count: '4–5 programs'  },
+    { Icon: Award,        title: 'Certification Pathways',          count: '3–4 programs'  },
+    { Icon: Handshake,    title: "Gov't Contracting Opportunities", count: '2–3 programs'  },
+    { Icon: HardHat,      title: 'Industry-Specific Programs',      count: '3–4 programs'  },
+    { Icon: CheckSquare,  title: '30-Day Action Plan',              count: '8 action steps' },
   ]
 
   return (
@@ -913,11 +929,11 @@ function UpgradeWall({
           {lockedSections.map(s => (
             <div
               key={s.title}
-              className="flex items-center justify-between bg-white border border-gray-100 rounded-xl px-5 py-3.5 shadow-sm"
+              className="flex items-center justify-between bg-white border border-[#E5E0D8] rounded-xl px-5 py-3.5 shadow-sm"
               style={{ borderLeft: '4px solid #D1D5DB' }}
             >
               <div className="flex items-center gap-3">
-                <span className="text-xl grayscale">{s.icon}</span>
+                <s.Icon className="w-5 h-5 text-gray-400" />
                 <div>
                   <div className="text-[14px] font-semibold text-gray-400">{s.title}</div>
                   <div className="text-[11px] text-gray-300 mt-0.5">{s.count}</div>
@@ -932,7 +948,7 @@ function UpgradeWall({
       {/* Upgrade CTA */}
       <div
         className="rounded-2xl p-7 text-white text-center"
-        style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1C2B3A 0%, #2a3f52 100%)' }}
       >
         <div className="text-[22px] font-bold mb-2">Your full report is ready</div>
         <div className="text-sm opacity-90 mb-6 leading-relaxed max-w-sm mx-auto">
@@ -941,12 +957,12 @@ function UpgradeWall({
 
         <div className="grid grid-cols-2 gap-3 mb-7 max-w-lg mx-auto">
           {[
-            { icon: '📋', title: 'Full Report',       desc: 'Every program you qualify for — not just 3' },
-            { icon: '⏰', title: 'Deadline Alerts',   desc: 'Never miss a grant window'                  },
-            { icon: '🔄', title: 'Monthly Updates',   desc: 'Report refreshes every month'               },
-            { icon: '🎖️', title: 'Veteran & Minority', desc: 'Exclusive set-aside programs'              },
-            { icon: '💰', title: 'Tax Credit Finder', desc: 'What your accountant missed'                },
-            { icon: '📍', title: 'Local Intelligence', desc: 'City and county programs'                  },
+            { icon: '📋',                    title: 'Full Report',        desc: 'Every program you qualify for — not just 3' },
+            { icon: '⏰',                    title: 'Deadline Alerts',    desc: 'Never miss a grant window'                  },
+            { icon: '🔄',                    title: 'Monthly Updates',    desc: 'Report refreshes every month'               },
+            { icon: '🎖️',                   title: 'Veteran & Minority', desc: 'Exclusive set-aside programs'               },
+            { icon: <DollarSign className="w-5 h-5" />, title: 'Tax Credit Finder', desc: 'What your accountant missed' },
+            { icon: <MapPin className="w-5 h-5" />,     title: 'Local Intelligence', desc: 'City and county programs'   },
           ].map(({ icon, title, desc }) => (
             <div key={title} className="bg-white/10 rounded-xl p-3 text-left">
               <div className="text-lg mb-1">{icon}</div>
@@ -959,7 +975,7 @@ function UpgradeWall({
         <button
           onClick={onUpgrade}
           disabled={upgrading}
-          className="bg-white text-[#1D9E75] font-bold text-[17px] rounded-xl py-4 w-full max-w-xs mx-auto block transition-opacity"
+          className="bg-white text-[#C9A96E] font-bold text-[17px] rounded-xl py-4 w-full max-w-xs mx-auto block transition-opacity"
           style={{ opacity: upgrading ? 0.8 : 1 }}
         >
           {upgrading ? 'Redirecting to checkout…' : 'Unlock Full Report — $49/mo'}
@@ -1145,7 +1161,7 @@ export default function ReportView({
   }
 
   return (
-    <div>
+    <div className="bg-[#F7F4EF]">
       {/* Business / nonprofit profile context — NOT an opportunity */}
       {profile && <BusinessProfileCard p={profile} />}
 
@@ -1181,7 +1197,7 @@ export default function ReportView({
             {openSections.size} of {parsed.sections.length} sections open
           </span>
           <div className="flex gap-3">
-            <button onClick={expandAll}   className="text-xs text-[#1D9E75] hover:underline">Expand all</button>
+            <button onClick={expandAll}   className="text-xs text-[#C9A96E] hover:underline">Expand all</button>
             <button onClick={collapseAll} className="text-xs text-gray-400 hover:underline">Collapse all</button>
           </div>
         </div>

@@ -68,10 +68,10 @@ function LoadingState({ searching, isNonprofit = false }: { searching: boolean; 
   return (
     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ fontSize: '36px', marginBottom: '16px' }}>{msg.icon}</div>
-      <div style={{ fontSize: '15px', fontWeight: '600', color: '#2C2C2A', marginBottom: '6px' }}>
+      <div style={{ fontSize: '15px', fontWeight: '600', color: '#1C1C1A', marginBottom: '6px' }}>
         {msg.primary}
       </div>
-      <div style={{ fontSize: '13px', color: '#6B7280', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto' }}>
+      <div style={{ fontSize: '13px', color: '#6B6560', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto' }}>
         {msg.sub}
       </div>
       <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '6px' }}>
@@ -82,7 +82,7 @@ function LoadingState({ searching, isNonprofit = false }: { searching: boolean; 
               width: '6px',
               height: '6px',
               borderRadius: '50%',
-              background: i === msgIndex % 3 ? '#1D9E75' : '#E5E7EB',
+              background: i === msgIndex % 3 ? '#C9A96E' : '#E5E0D8',
               transition: 'background 0.3s ease',
             }}
           />
@@ -381,29 +381,29 @@ export default function Dashboard() {
   const isNonprofit = profile?.user_type === 'nonprofit'
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F9FAFB', fontFamily: 'system-ui' }}>
+    <div style={{ minHeight: '100vh', background: '#F7F4EF', fontFamily: 'system-ui' }}>
 
       {/* ── Nav ── */}
-      <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ background: '#FFFFFF', borderBottom: '1px solid #E5E0D8', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="hh-nav-links" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <div style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A' }}>
-            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+          <div style={{ fontSize: '18px', fontWeight: '600', color: '#1C1C1A' }}>
+            Honest<span style={{ color: '#C9A96E' }}>Hand</span>
           </div>
           {isPro && (
-            <a href="/community" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+            <a href="/community" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B6560', textDecoration: 'none', fontWeight: '500' }}>
               Community
             </a>
           )}
-          <a href="/profile" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+          <a href="/profile" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B6560', textDecoration: 'none', fontWeight: '500' }}>
             Profile
           </a>
-          <a href="/contact" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
+          <a href="/contact" className="hh-nav-link" style={{ fontSize: '13px', color: '#6B6560', textDecoration: 'none', fontWeight: '500' }}>
             Contact Us
           </a>
         </div>
         <button
           onClick={signOut}
-          style={{ fontSize: '12px', padding: '6px 12px', border: '1px solid #E5E7EB', borderRadius: '20px', background: 'none', cursor: 'pointer', color: '#6B7280' }}
+          style={{ fontSize: '12px', padding: '6px 12px', border: '1px solid #E5E0D8', borderRadius: '20px', background: 'none', cursor: 'pointer', color: '#6B6560' }}
         >
           Sign out
         </button>
@@ -449,10 +449,10 @@ export default function Dashboard() {
         {/* Header row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: '#2C2C2A' }}>
+            <div style={{ fontSize: '22px', fontWeight: '700', color: '#1C1C1A' }}>
               Welcome, {profile?.business_name} 👋
             </div>
-            <div style={{ fontSize: '14px', color: '#6B7280', marginTop: '4px' }}>
+            <div style={{ fontSize: '14px', color: '#6B6560', marginTop: '4px' }}>
               {isNonprofit
                 ? `${profile?.mission_area || 'Nonprofit'} · ${profile?.city}, TX${profile?.annual_budget ? ` · ${profile.annual_budget}` : ''}`
                 : `${profile?.industry} · ${profile?.city}, TX · ${profile?.revenue_range}`
@@ -474,10 +474,10 @@ export default function Dashboard() {
               return (
                 <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '11px', color: '#F59E0B' }}>⚡</span>
-                  <span style={{ fontSize: '12px', color: '#9CA3AF' }}>
+                  <span style={{ fontSize: '12px', color: '#6B6560' }}>
                     Add {missing.map(k => labels[k]).join(' and ')} for better-matched results
                   </span>
-                  <a href="/profile" style={{ fontSize: '12px', color: '#1D9E75', fontWeight: '500', textDecoration: 'none' }}>
+                  <a href="/profile" style={{ fontSize: '12px', color: '#C9A96E', fontWeight: '500', textDecoration: 'none' }}>
                     Edit Profile →
                   </a>
                 </div>
@@ -492,12 +492,12 @@ export default function Dashboard() {
                 onClick={handleRefreshRequest}
                 style={{
                   padding: '8px 16px',
-                  background: refreshConfirm ? '#FEF3C7' : 'white',
-                  border: `1.5px solid ${refreshConfirm ? '#F59E0B' : '#E5E7EB'}`,
+                  background: refreshConfirm ? '#FEF3C7' : '#FFFFFF',
+                  border: `1.5px solid ${refreshConfirm ? '#F59E0B' : '#E5E0D8'}`,
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: '500',
-                  color: refreshConfirm ? '#92400E' : '#6B7280',
+                  color: refreshConfirm ? '#92400E' : '#6B6560',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   whiteSpace: 'nowrap',
@@ -506,7 +506,7 @@ export default function Dashboard() {
                 {refreshConfirm ? '⚠️ Confirm refresh?' : '↻ Refresh Report'}
               </button>
               {refreshConfirm && (
-                <div style={{ fontSize: '11px', color: '#9CA3AF', textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: '#6B6560', textAlign: 'right' }}>
                   This will regenerate your full report.
                 </div>
               )}
@@ -515,8 +515,8 @@ export default function Dashboard() {
         </div>
 
         {/* Report card */}
-        <div className="hh-card" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #E5E7EB', marginBottom: '24px' }}>
-          <div style={{ fontSize: '16px', fontWeight: '600', color: '#2C2C2A', marginBottom: '16px' }}>
+        <div className="hh-card" style={{ background: '#FFFFFF', borderRadius: '16px', padding: '24px', border: '1px solid #E5E0D8', marginBottom: '24px' }}>
+          <div style={{ fontSize: '16px', fontWeight: '600', color: '#1C1C1A', marginBottom: '16px' }}>
             {isNonprofit ? 'Nonprofit Funding Opportunities' : 'Your Opportunity Report'}
           </div>
 
@@ -568,9 +568,9 @@ export default function Dashboard() {
             if (reportPhase === 'retrying') {
               return (
                 <>
-                  <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ marginBottom: '16px', padding: '10px 14px', background: '#F7F4EF', border: '1px solid #E5E0D8', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>🔄</span>
-                    <span style={{ fontSize: '13px', color: '#065F46' }}>{phaseMessage}</span>
+                    <span style={{ fontSize: '13px', color: '#6B6560' }}>{phaseMessage}</span>
                   </div>
                   {reportView}
                 </>
@@ -581,9 +581,9 @@ export default function Dashboard() {
             if (reportPhase === 'in_progress') {
               return (
                 <>
-                  <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#F7F4EF', border: '1px solid #E5E0D8', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>🔄</span>
-                    <span style={{ fontSize: '13px', color: '#065F46' }}>{phaseMessage || "We're checking for the latest funding opportunities now."}</span>
+                    <span style={{ fontSize: '13px', color: '#6B6560' }}>{phaseMessage || "We're checking for the latest funding opportunities now."}</span>
                   </div>
                   {reportView}
                 </>
@@ -597,14 +597,14 @@ export default function Dashboard() {
                   <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                     <span style={{ fontSize: '14px', flexShrink: 0 }}>⏳</span>
                     <div>
-                      <div style={{ fontSize: '13px', color: '#374151' }}>{phaseMessage}</div>
-                      {report && <div style={{ fontSize: '12px', color: '#9CA3AF', marginTop: '3px' }}>Showing your most recent report below.</div>}
+                      <div style={{ fontSize: '13px', color: '#1C1C1A' }}>{phaseMessage}</div>
+                      {report && <div style={{ fontSize: '12px', color: '#6B6560', marginTop: '3px' }}>Showing your most recent report below.</div>}
                     </div>
                   </div>
                   {reportView || (
                     <div style={{ textAlign: 'center', padding: '32px 0' }}>
                       <button onClick={() => profile && generateReport(profile)}
-                        style={{ padding: '8px 18px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                        style={{ padding: '8px 18px', background: '#1C2B3A', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                         Try Again
                       </button>
                     </div>
@@ -620,9 +620,9 @@ export default function Dashboard() {
             return (
               <div style={{ textAlign: 'center', padding: '40px 0' }}>
                 <div style={{ fontSize: '32px', marginBottom: '12px' }}>📋</div>
-                <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '16px' }}>Your report is being prepared.</div>
+                <div style={{ fontSize: '14px', color: '#6B6560', marginBottom: '16px' }}>Your report is being prepared.</div>
                 <button onClick={() => profile && generateReport(profile)}
-                  style={{ padding: '8px 16px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                  style={{ padding: '8px 16px', background: '#1C2B3A', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', cursor: 'pointer' }}>
                   Generate Report
                 </button>
               </div>
