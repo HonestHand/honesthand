@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
@@ -73,13 +73,13 @@ export default function Contact() {
       <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <a href="/" style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A', textDecoration: 'none' }}>
-            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+            Honest<span style={{ color: '#C9A96E' }}>Hand</span>
           </a>
           {isLoggedIn && (
             <>
               <a href="/dashboard" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>My Report</a>
               <a href="/community" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>Community</a>
-              <span style={{ fontSize: '13px', color: '#1D9E75', fontWeight: '600' }}>Contact Us</span>
+              <span style={{ fontSize: '13px', color: '#C9A96E', fontWeight: '600' }}>Contact Us</span>
             </>
           )}
         </div>
@@ -100,11 +100,11 @@ export default function Contact() {
         </div>
 
         {sent ? (
-          <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
+          <div style={{ background: '#F7F4EF', border: '1px solid #E5E0D8', borderRadius: '12px', padding: '32px', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '12px' }}>✅</div>
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#166534', marginBottom: '6px' }}>Message received</div>
             <div style={{ fontSize: '13px', color: '#15803D', marginBottom: '20px' }}>We'll get back to you at <strong>{email}</strong> within 1 business day.</div>
-            <a href="/dashboard" style={{ display: 'inline-block', padding: '10px 24px', background: '#1D9E75', color: 'white', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
+            <a href="/dashboard" style={{ display: 'inline-block', padding: '10px 24px', background: '#1C2B3A', color: 'white', borderRadius: '8px', fontSize: '14px', fontWeight: '600', textDecoration: 'none' }}>
               Back to my report
             </a>
           </div>
@@ -114,8 +114,8 @@ export default function Contact() {
               <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>What's this about?</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {CATEGORIES.map(cat => (
-                  <label key={cat.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '8px', border: '1.5px solid', borderColor: category === cat.value ? '#1D9E75' : '#E5E7EB', background: category === cat.value ? '#F0FDF8' : 'white', cursor: 'pointer', fontSize: '14px', color: '#2C2C2A' }}>
-                    <input type="radio" name="category" value={cat.value} checked={category === cat.value} onChange={() => setCategory(cat.value)} style={{ accentColor: '#1D9E75' }} />
+                  <label key={cat.value} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '8px', border: '1.5px solid', borderColor: category === cat.value ? '#C9A96E' : '#E5E7EB', background: category === cat.value ? '#F7F4EF' : 'white', cursor: 'pointer', fontSize: '14px', color: '#2C2C2A' }}>
+                    <input type="radio" name="category" value={cat.value} checked={category === cat.value} onChange={() => setCategory(cat.value)} style={{ accentColor: '#C9A96E' }} />
                     {cat.label}
                   </label>
                 ))}
@@ -162,13 +162,13 @@ export default function Contact() {
             <button
               onClick={handleSubmit}
               disabled={submitting || !message.trim() || !email.trim()}
-              style={{ width: '100%', padding: '13px', background: '#1D9E75', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: submitting || !message.trim() || !email.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !message.trim() || !email.trim() ? 0.5 : 1 }}
+              style={{ width: '100%', padding: '13px', background: '#1C2B3A', color: 'white', border: 'none', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: submitting || !message.trim() || !email.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !message.trim() || !email.trim() ? 0.5 : 1 }}
             >
               {submitting ? 'Sending...' : 'Send Message'}
             </button>
 
             <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#9CA3AF' }}>
-              Or email us directly at <a href="mailto:support@yourhonesthand.com" style={{ color: '#1D9E75' }}>support@yourhonesthand.com</a>
+              Or email us directly at <a href="mailto:support@yourhonesthand.com" style={{ color: '#C9A96E' }}>support@yourhonesthand.com</a>
             </div>
           </div>
         )}

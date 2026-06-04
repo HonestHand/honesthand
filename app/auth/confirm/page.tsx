@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 /**
  * Email verification callback handler.
  *
@@ -98,7 +98,7 @@ export default function AuthConfirmPage() {
     <div style={{minHeight:'100vh',background:'#F9FAFB',display:'flex',alignItems:'center',justifyContent:'center',padding:'24px',fontFamily:'system-ui'}}>
       <div style={{textAlign:'center',maxWidth:'360px'}}>
         <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A',marginBottom:'24px'}}>
-          Honest<span style={{color:'#1D9E75'}}>Hand</span>
+          Honest<span style={{color:'#C9A96E'}}>Hand</span>
         </div>
 
         {status === 'verifying' && (
@@ -125,7 +125,7 @@ export default function AuthConfirmPage() {
             <div style={{display:'flex',flexDirection:'column',gap:'10px'}}>
               <a
                 href="/verify-email"
-                style={{padding:'12px',background:'#1D9E75',color:'white',borderRadius:'10px',textDecoration:'none',fontSize:'14px',fontWeight:'600'}}
+                style={{padding:'12px',background:'#1C2B3A',color:'white',borderRadius:'10px',textDecoration:'none',fontSize:'14px',fontWeight:'600'}}
               >
                 Request a new link
               </a>

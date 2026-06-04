@@ -7,7 +7,7 @@
  *
  * REQUIRED ENV VARS:
  *   RESEND_API_KEY       — Resend secret key (server-only, never NEXT_PUBLIC_)
- *   RESEND_FROM_EMAIL    — Verified sender address, e.g. "HonestHand <noreply@yourhonesthand.com>"
+ *   RESEND_FROM_EMAIL    — Verified sender address, e.g. "HonestHand <hello@yourhonesthand.com>"
  *                          Falls back to shared sandbox "onboarding@resend.dev" if not set,
  *                          but the shared domain has poor deliverability — set this in production.
  *
@@ -146,7 +146,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendResult> {
 
   // ── Resolve FROM address ─────────────────────────────────────────────────
   // Set RESEND_FROM_EMAIL in Vercel to a verified sender, e.g.:
-  //   HonestHand <noreply@yourhonesthand.com>
+  //   HonestHand <hello@yourhonesthand.com>
   // Without a verified domain, deliverability will be poor in production.
   const fromAddress = process.env.RESEND_FROM_EMAIL || 'HonestHand <onboarding@resend.dev>'
 
@@ -162,6 +162,7 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendResult> {
     const { data, error: resendError } = await resend.emails.send({
       from:    fromAddress,
       to,
+      replyTo: 'honesthand.tx@gmail.com',
       subject,
       html,
     })

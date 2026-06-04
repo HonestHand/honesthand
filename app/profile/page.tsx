@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
@@ -196,10 +196,10 @@ export default function ProfilePage() {
   // ── Completeness ──────────────────────────────────────────────────────────
   const profileForScore: Record<string, unknown> = { ...form, industry: effectiveIndustry }
   const { score, missing } = calcCompleteness(profileForScore)
-  const meterColor = score >= 86 ? '#1D9E75' : score >= 57 ? '#F59E0B' : '#EF4444'
+  const meterColor = score >= 86 ? '#C9A96E' : score >= 57 ? '#F59E0B' : '#EF4444'
 
   // ── Styles ────────────────────────────────────────────────────────────────
-  const inputCls  = 'w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-[#2C2C2A] bg-white outline-none focus:border-[#1D9E75] transition-colors'
+  const inputCls  = 'w-full px-4 py-3 border border-gray-200 rounded-lg text-sm text-[#2C2C2A] bg-white outline-none focus:border-[#C9A96E] transition-colors'
   const selectCls = `${inputCls} cursor-pointer`
   const labelCls  = 'block text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5'
 
@@ -218,7 +218,7 @@ export default function ProfilePage() {
       <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <div style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A' }}>
-            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+            Honest<span style={{ color: '#C9A96E' }}>Hand</span>
           </div>
           <a href="/dashboard" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>
             ← Dashboard
@@ -266,7 +266,7 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs font-medium text-[#1D9E75]">
+            <p className="text-xs font-medium text-[#C9A96E]">
               ✓ Complete — you're getting the most precisely matched report possible
             </p>
           )}
@@ -303,7 +303,7 @@ export default function ProfilePage() {
               {form.industry === 'Other' && (
                 <input
                   className={`${inputCls} mt-2`}
-                  style={{ borderColor: '#1D9E75' }}
+                  style={{ borderColor: '#C9A96E' }}
                   placeholder="Describe your industry (e.g. Auto Repair, Daycare, Landscaping)"
                   value={industryOther}
                   onChange={e => setIndustryOther(e.target.value)}
@@ -407,7 +407,7 @@ export default function ProfilePage() {
                 ).map(({ key, label, sub }) => (
                   <div
                     key={key}
-                    className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-[#F0FDF8] transition-colors"
+                    className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-[#F7F4EF] transition-colors"
                     onClick={() => setForm({ ...form, [key]: !form[key] })}
                   >
                     <div>
@@ -417,8 +417,8 @@ export default function ProfilePage() {
                     <div
                       className="w-5 h-5 rounded flex items-center justify-center border-2 transition-all flex-shrink-0 ml-4"
                       style={{
-                        background:   form[key] ? '#1D9E75' : 'white',
-                        borderColor:  form[key] ? '#1D9E75' : '#D1D5DB',
+                        background:   form[key] ? '#1C2B3A' : 'white',
+                        borderColor:  form[key] ? '#C9A96E' : '#D1D5DB',
                         color: 'white',
                       }}
                     >
@@ -442,19 +442,19 @@ export default function ProfilePage() {
             onClick={handleSave}
             disabled={saving}
             className="mt-6 w-full py-3 rounded-lg text-sm font-semibold text-white transition-opacity"
-            style={{ background: '#1D9E75', opacity: saving ? 0.7 : 1 }}
+            style={{ background: '#1C2B3A', opacity: saving ? 0.7 : 1 }}
           >
             {saving ? 'Saving…' : 'Save Changes'}
           </button>
 
           {/* Success */}
           {saved && (
-            <div className="mt-4 px-4 py-3.5 bg-[#E1F5EE] border border-[#1D9E75]/20 rounded-lg text-sm text-[#085041] leading-relaxed">
+            <div className="mt-4 px-4 py-3.5 bg-[#F7F4EF] border border-[#C9A96E]/20 rounded-lg text-sm text-[#6B6560] leading-relaxed">
               ✓ Profile saved.
               {isPro && (
                 <span>
                   {' '}Your dashboard report still shows your previous results —{' '}
-                  <a href="/dashboard" className="font-semibold underline text-[#1D9E75]">
+                  <a href="/dashboard" className="font-semibold underline text-[#C9A96E]">
                     go to dashboard
                   </a>
                   {' '}and use{' '}
@@ -510,7 +510,7 @@ export default function ProfilePage() {
             ).map(({ key, label, sub }) => (
               <div
                 key={key}
-                className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-[#F0FDF8] transition-colors"
+                className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-[#F7F4EF] transition-colors"
                 onClick={() => setEmailPrefs(prev => ({ ...prev, [key]: !prev[key] }))}
               >
                 <div>
@@ -520,7 +520,7 @@ export default function ProfilePage() {
                 {/* Toggle pill */}
                 <div
                   className="flex-shrink-0 ml-4 w-10 h-5 rounded-full relative transition-colors"
-                  style={{ background: emailPrefs[key] ? '#1D9E75' : '#D1D5DB' }}
+                  style={{ background: emailPrefs[key] ? '#1C2B3A' : '#D1D5DB' }}
                 >
                   <div
                     className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-200"
@@ -541,13 +541,13 @@ export default function ProfilePage() {
             onClick={handleSavePrefs}
             disabled={savingPrefs}
             className="mt-5 w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity"
-            style={{ background: '#1D9E75', opacity: savingPrefs ? 0.7 : 1 }}
+            style={{ background: '#1C2B3A', opacity: savingPrefs ? 0.7 : 1 }}
           >
             {savingPrefs ? 'Saving…' : 'Save Email Preferences'}
           </button>
 
           {savedPrefs && (
-            <div className="mt-3 px-4 py-2.5 bg-[#E1F5EE] border border-[#1D9E75]/20 rounded-lg text-xs text-[#065F46]">
+            <div className="mt-3 px-4 py-2.5 bg-[#F7F4EF] border border-[#C9A96E]/20 rounded-lg text-xs text-[#6B6560]">
               ✓ Email preferences saved.
             </div>
           )}
@@ -557,7 +557,7 @@ export default function ProfilePage() {
         <div className="mt-5 text-center">
           <a
             href="/dashboard"
-            className="text-sm text-gray-400 hover:text-[#1D9E75] transition-colors"
+            className="text-sm text-gray-400 hover:text-[#C9A96E] transition-colors"
           >
             ← Back to dashboard
           </a>

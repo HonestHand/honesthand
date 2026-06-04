@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     email: normalizedEmail,
     options: {
       emailRedirectTo:
-        `${process.env.NEXT_PUBLIC_SITE_URL || 'https://yourhonesthand.com'}/auth/confirm`,
+        `${process.env.NEXT_PUBLIC_SITE_URL || 'https://www.yourhonesthand.com'}/auth/confirm`,
     },
   })
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '../../supabase'
 
@@ -38,7 +38,7 @@ export default function Welcome() {
 
         <div style={{ textAlign: 'center', marginBottom: '8px' }}>
           <div style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A' }}>
-            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+            Honest<span style={{ color: '#C9A96E' }}>Hand</span>
           </div>
         </div>
 
@@ -69,14 +69,14 @@ export default function Welcome() {
           </div>
         </div>
 
-        <div style={{ background: 'linear-gradient(135deg, #1D9E75 0%, #157a5a 100%)', borderRadius: '16px', padding: '32px', textAlign: 'center', color: 'white', marginBottom: '20px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #1C2B3A 0%, #2a3f52 100%)', borderRadius: '16px', padding: '32px', textAlign: 'center', color: 'white', marginBottom: '20px' }}>
           <div style={{ fontSize: '20px', fontWeight: '700', marginBottom: '8px' }}>Your full report is ready</div>
           <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '24px', lineHeight: '1.6' }}>
             We've already analyzed your business. Click below to see every opportunity you qualify for.
           </div>
           <button
             onClick={() => { window.location.href = '/dashboard' }}
-            style={{ background: 'white', color: '#1D9E75', border: 'none', borderRadius: '10px', padding: '15px 40px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', width: '100%', maxWidth: '320px' }}
+            style={{ background: 'white', color: '#C9A96E', border: 'none', borderRadius: '10px', padding: '15px 40px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', width: '100%', maxWidth: '320px' }}
           >
             View My Full Report
           </button>

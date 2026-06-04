@@ -1,4 +1,4 @@
-// ─── Types ────────────────────────────────────────────────────────────────────
+﻿// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type SectionCategory =
   | 'federal' | 'state' | 'local' | 'tax'
@@ -79,7 +79,7 @@ export const SECTION_META: Record<SectionCategory, {
   contracting:   { icon: 'Handshake',    color: '#1E40AF', badgeLabel: "Gov't Contracting",  badgeVariant: 'blue'   },
   industry:      { icon: 'HardHat',      color: '#F59E0B', badgeLabel: 'Industry Program',   badgeVariant: 'amber'  },
   veteran:       { icon: 'Shield',       color: '#EF4444', badgeLabel: 'Veteran Program',    badgeVariant: 'red'    },
-  'action-plan': { icon: 'CheckSquare',  color: '#059669', badgeLabel: 'Action Plan',         badgeVariant: 'green'  },
+  'action-plan': { icon: 'CheckSquare',  color: '#C9A96E', badgeLabel: 'Action Plan',         badgeVariant: 'green'  },
   other:         { icon: 'FileText',     color: '#6B7280', badgeLabel: 'Program',             badgeVariant: 'gray'   },
 }
 

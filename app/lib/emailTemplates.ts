@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ─── Email HTML templates ────────────────────────────────────────────────────
  *
  * All templates share the same header / footer shell.
@@ -6,7 +6,7 @@
  * Max content width: 560px.
  */
 
-const BASE_URL = 'https://yourhonesthand.com'
+const BASE_URL = 'https://www.yourhonesthand.com'
 
 // ─── Shared shell ─────────────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ function shell(body: string, footerNote: string): string {
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#FFFFFF;border-radius:16px;border:1px solid #E5E7EB;overflow:hidden;">
 
         <!-- Header -->
-        <tr><td style="background:#1D9E75;padding:24px 32px;text-align:center;">
+        <tr><td style="background:#1C2B3A;padding:24px 32px;text-align:center;">
           <span style="font-size:22px;font-weight:700;color:#FFFFFF;letter-spacing:-0.3px;">
             Honest<span style="opacity:0.75;">Hand</span>
           </span>
@@ -57,7 +57,7 @@ function ctaButton(label: string, href: string): string {
   return `<table cellpadding="0" cellspacing="0" style="margin:24px 0 0;">
     <tr><td>
       <a href="${href}"
-         style="display:inline-block;background:#1D9E75;color:#FFFFFF;font-size:15px;font-weight:600;padding:13px 28px;border-radius:10px;text-decoration:none;">
+         style="display:inline-block;background:#1C2B3A;color:#FFFFFF;font-size:15px;font-weight:600;padding:13px 28px;border-radius:10px;text-decoration:none;">
         ${label} →
       </a>
     </td></tr>
@@ -85,7 +85,7 @@ export function welcomeEmail(params: { email: string }): { subject: string; html
     </ul>
     ${p("Once your profile is complete, we'll run a live search against current programs and build your report.")}
     ${ctaButton("Complete My Profile", `${BASE_URL}/onboarding`)}
-    ${p('<br>Questions? Reply to this email or visit <a href="${BASE_URL}/contact" style="color:#1D9E75;">our contact page</a>.')}
+    ${p(`<br>Questions? Reply to this email or visit <a href="${BASE_URL}/contact" style="color:#C9A96E;">our contact page</a>.`)}
   `
   return { subject, html: shell(body, `You're receiving this because you created a HonestHand account with ${params.email}.`) }
 }
@@ -185,7 +185,7 @@ export function proConfirmedEmail(params: {
     </ul>
     ${p("We're generating your first full nonprofit funding report now. You'll receive another email when it's ready.")}
     ${ctaButton("Go to My Dashboard", `${BASE_URL}/dashboard`)}
-    ${p("<br>Questions about your subscription? Visit <a href=\"${BASE_URL}/contact\" style=\"color:#1D9E75;\">our contact page</a> or reply to this email.")}
+    ${p(`<br>Questions about your subscription? Visit <a href="${BASE_URL}/contact" style="color:#C9A96E;">our contact page</a> or reply to this email.`)}
   ` : `
     ${h1("Pro is active. Here's what you just unlocked.")}
     ${p(`<strong>${businessName}</strong> now has full access to HonestHand Pro.`)}
@@ -198,7 +198,7 @@ export function proConfirmedEmail(params: {
     </ul>
     ${p("We're generating your first full report now. You'll receive another email when it's ready.")}
     ${ctaButton("Go to My Dashboard", `${BASE_URL}/dashboard`)}
-    ${p("<br>Questions about your subscription? Visit <a href=\"${BASE_URL}/contact\" style=\"color:#1D9E75;\">our contact page</a> or reply to this email.")}
+    ${p(`<br>Questions about your subscription? Visit <a href="${BASE_URL}/contact" style="color:#C9A96E;">our contact page</a> or reply to this email.`)}
   `
   return {
     subject,

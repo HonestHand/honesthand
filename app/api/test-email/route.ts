@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ─── Test email endpoint ──────────────────────────────────────────────────────
  *
  * Sends a real email through the full production pipeline (Resend + email_logs)
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     html: `
       <div style="font-family:system-ui;max-width:480px;margin:0 auto;padding:32px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;">
         <div style="font-size:20px;font-weight:700;color:#2C2C2A;margin-bottom:8px;">
-          Honest<span style="color:#1D9E75;">Hand</span> — Email Test
+          Honest<span style="color:#C9A96E;">Hand</span> — Email Test
         </div>
         <p style="color:#4B5563;font-size:14px;line-height:1.7;">
           This is a production pipeline test email. If you received this, Resend is
@@ -113,7 +113,7 @@ function diagnose(errorMessage: string): string {
     return 'RESEND_API_KEY may be invalid, expired, or have whitespace. Re-add it via: npx vercel env rm RESEND_API_KEY production --yes && npx vercel env add RESEND_API_KEY production'
   }
   if (m.includes('from') || m.includes('domain') || m.includes('sender') || m.includes('not allowed')) {
-    return 'The FROM address is not verified in your Resend account. Add a verified domain at resend.com/domains, then set RESEND_FROM_EMAIL=noreply@yourdomain.com in Vercel.'
+    return 'The FROM address is not verified in your Resend account. Add a verified domain at resend.com/domains, then set RESEND_FROM_EMAIL=hello@yourdomain.com in Vercel.'
   }
   if (m.includes('rate') || m.includes('limit')) {
     return 'Resend rate limit hit. Wait a moment and retry.'

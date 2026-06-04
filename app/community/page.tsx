@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 export const dynamic = 'force-dynamic'
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
@@ -18,7 +18,7 @@ type Post = {
 }
 
 const TYPE_META: Record<PostType, { label: string; bg: string; color: string }> = {
-  win:      { label: '🏆 Win',      bg: '#D1FAE5', color: '#065F46' },
+  win:      { label: '🏆 Win',      bg: '#D1FAE5', color: '#6B6560' },
   question: { label: '❓ Question', bg: '#DBEAFE', color: '#1E40AF' },
   update:   { label: '📢 Update',   bg: '#F3F4F6', color: '#374151' },
 }
@@ -125,10 +125,10 @@ export default function Community() {
       <div style={{ background: 'white', borderBottom: '1px solid #E5E7EB', padding: '14px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           <div style={{ fontSize: '18px', fontWeight: '600', color: '#2C2C2A' }}>
-            Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+            Honest<span style={{ color: '#C9A96E' }}>Hand</span>
           </div>
           <a href="/dashboard" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>My Report</a>
-          <span style={{ fontSize: '13px', color: '#1D9E75', fontWeight: '600' }}>Community</span>
+          <span style={{ fontSize: '13px', color: '#C9A96E', fontWeight: '600' }}>Community</span>
           <a href="/contact" style={{ fontSize: '13px', color: '#6B7280', textDecoration: 'none', fontWeight: '500' }}>Contact Us</a>
         </div>
         <button
@@ -147,7 +147,7 @@ export default function Community() {
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            style={{ background: '#1D9E75', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
+            style={{ background: '#1C2B3A', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 18px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', whiteSpace: 'nowrap' }}
           >
             + Share a Win
           </button>
@@ -167,7 +167,7 @@ export default function Community() {
                 <button
                   key={type}
                   onClick={() => setFormType(type)}
-                  style={{ padding: '6px 14px', borderRadius: '20px', border: '1.5px solid', borderColor: formType === type ? '#1D9E75' : '#E5E7EB', background: formType === type ? '#E1F5EE' : 'white', color: formType === type ? '#1D9E75' : '#6B7280', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
+                  style={{ padding: '6px 14px', borderRadius: '20px', border: '1.5px solid', borderColor: formType === type ? '#C9A96E' : '#E5E7EB', background: formType === type ? '#F7F4EF' : 'white', color: formType === type ? '#C9A96E' : '#6B7280', fontSize: '13px', fontWeight: '500', cursor: 'pointer' }}
                 >
                   {TYPE_META[type].label}
                 </button>
@@ -196,7 +196,7 @@ export default function Community() {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || !formContent.trim()}
-                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#1D9E75', color: 'white', fontSize: '13px', fontWeight: '600', cursor: submitting || !formContent.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !formContent.trim() ? 0.6 : 1 }}
+                style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', background: '#1C2B3A', color: 'white', fontSize: '13px', fontWeight: '600', cursor: submitting || !formContent.trim() ? 'not-allowed' : 'pointer', opacity: submitting || !formContent.trim() ? 0.6 : 1 }}
               >
                 {submitting ? 'Posting...' : 'Post'}
               </button>
@@ -231,7 +231,7 @@ export default function Community() {
                 </div>
                 <button
                   onClick={() => handleLike(post.id)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid', borderColor: likedPosts.has(post.id) ? '#1D9E75' : '#E5E7EB', borderRadius: '20px', padding: '5px 12px', fontSize: '13px', color: likedPosts.has(post.id) ? '#1D9E75' : '#6B7280', cursor: likedPosts.has(post.id) ? 'default' : 'pointer', fontWeight: likedPosts.has(post.id) ? '600' : '400' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'none', border: '1px solid', borderColor: likedPosts.has(post.id) ? '#C9A96E' : '#E5E7EB', borderRadius: '20px', padding: '5px 12px', fontSize: '13px', color: likedPosts.has(post.id) ? '#C9A96E' : '#6B7280', cursor: likedPosts.has(post.id) ? 'default' : 'pointer', fontWeight: likedPosts.has(post.id) ? '600' : '400' }}
                 >
                   👍 {post.likes || 0}
                 </button>

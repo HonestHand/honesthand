@@ -1,4 +1,4 @@
-// ─── Safe domain allowlist ────────────────────────────────────────────────────
+﻿// ─── Safe domain allowlist ────────────────────────────────────────────────────
 const SAFE_DOMAINS = [
   'sba.gov', 'grants.gov', 'sam.gov', 'irs.gov', 'twc.texas.gov',
   'gov.texas.gov', 'tvc.texas.gov', 'rd.usda.gov', 'texaswideopenforbusiness.com',
@@ -35,7 +35,7 @@ function parseMarkdownTable(block: string): string {
       ).join('') + '</tr></thead><tbody>'
     } else {
       const isTotal = cells.some(c => c.toLowerCase().includes('total'))
-      const rowStyle = isTotal ? 'background:#F0FDF8;font-weight:700' : 'background:white'
+      const rowStyle = isTotal ? 'background:#F7F4EF;font-weight:700' : 'background:white'
       html += '<tr>' + cells.map(c =>
         `<td style="padding:8px 12px;border:1px solid #E5E7EB;${rowStyle};color:#374151">${c}</td>`
       ).join('') + '</tr>'
@@ -58,12 +58,12 @@ export function renderMarkdown(text: string): string {
 
   return result
     .replace(/^[ \t]*# (.+?)[ \t]*$/gm, '<h1 style="font-size:16px;font-weight:700;color:#2C2C2A;margin:0 0 4px">$1</h1>')
-    .replace(/^[ \t]*## (.+?)[ \t]*$/gm, '<h2 style="font-size:15px;font-weight:700;color:#1D9E75;margin:16px 0 6px;border-bottom:2px solid rgba(29,158,117,0.15);padding-bottom:4px">$1</h2>')
+    .replace(/^[ \t]*## (.+?)[ \t]*$/gm, '<h2 style="font-size:15px;font-weight:700;color:#C9A96E;margin:16px 0 6px;border-bottom:2px solid rgba(201,169,110,0.15);padding-bottom:4px">$1</h2>')
     .replace(/^[ \t]*### (.+?)[ \t]*$/gm, '<h3 style="font-size:14px;font-weight:600;margin:12px 0 4px">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
       isSafeUrl(url)
-        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;text-decoration:underline">${label}</a>`
+        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#C9A96E;text-decoration:underline">${label}</a>`
         : `${label} (${url})`
     )
     .replace(/^[ \t]*(\d+)\. (.+)$/gm, '<li style="margin-bottom:6px">$2</li>')
@@ -81,7 +81,7 @@ export function renderInline(text: string): string {
     // Markdown links [label](url) — safe URLs become clickable
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, (_, label, url) =>
       isSafeUrl(url)
-        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;font-weight:500;text-decoration:underline">${label}</a>`
+        ? `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color:#C9A96E;font-weight:500;text-decoration:underline">${label}</a>`
         : `${label} (${url})`
     )
     // Plain-text .gov domain names → clickable links
@@ -90,7 +90,7 @@ export function renderInline(text: string): string {
     .replace(/\b((?:[\w-]+\.)*[\w-]+\.gov(?:\/[\w./?=#%-]*)?)\b/g, (domain) => {
       const rootUrl = `https://${domain.split('/')[0]}`
       return isSafeUrl(rootUrl)
-        ? `<a href="https://${domain}" target="_blank" rel="noopener noreferrer" style="color:#1D9E75;font-weight:500;text-decoration:underline">${domain}</a>`
+        ? `<a href="https://${domain}" target="_blank" rel="noopener noreferrer" style="color:#C9A96E;font-weight:500;text-decoration:underline">${domain}</a>`
         : domain
     })
 }

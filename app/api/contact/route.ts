@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
 
@@ -39,12 +39,13 @@ export async function POST(request: NextRequest) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY)
       const result = await resend.emails.send({
-        from: 'HonestHand <onboarding@resend.dev>',
-        to: 'honesthand.tx@gmail.com',
+        from:    process.env.RESEND_FROM_EMAIL || 'HonestHand <hello@yourhonesthand.com>',
+        to:      'honesthand.tx@gmail.com',
+        replyTo: email.trim(),
         subject: `New message: ${CATEGORY_LABELS[category] || category}`,
         html: `
           <div style="font-family:system-ui;max-width:560px;margin:0 auto;padding:24px">
-            <h2 style="color:#1D9E75;margin:0 0 16px">New HonestHand Contact Message</h2>
+            <h2 style="color:#C9A96E;margin:0 0 16px">New HonestHand Contact Message</h2>
             <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
               <tr><td style="padding:8px 12px;background:#F3F4F6;font-weight:600;width:120px">From</td><td style="padding:8px 12px;border:1px solid #E5E7EB">${name || 'Not provided'}</td></tr>
               <tr><td style="padding:8px 12px;background:#F3F4F6;font-weight:600">Email</td><td style="padding:8px 12px;border:1px solid #E5E7EB"><a href="mailto:${email}">${email}</a></td></tr>

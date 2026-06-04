@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState } from 'react'
 
 // ─── Elite waitlist modal ─────────────────────────────────────────────────────
@@ -64,14 +64,14 @@ function EliteWaitlistModal({ onClose }: { onClose: () => void }) {
             <button
               onClick={onClose}
               className="mt-7 px-8 py-3 rounded-xl font-bold text-[15px] text-white"
-              style={{ background: '#1D9E75' }}
+              style={{ background: '#1C2B3A' }}
             >
               Close
             </button>
           </div>
         ) : (
           <>
-            <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: '#1D9E75' }}>
+            <div className="text-[11px] font-bold uppercase tracking-widest mb-2" style={{ color: '#C9A96E' }}>
               Honest Hand Elite
             </div>
             <h2 className="text-[22px] font-bold mb-1.5" style={{ color: '#2C2C2A' }}>
@@ -93,7 +93,7 @@ function EliteWaitlistModal({ onClose }: { onClose: () => void }) {
                   borderColor: '#E5E7EB',
                   color: '#111827',
                 }}
-                onFocus={e  => (e.target.style.borderColor = '#1D9E75')}
+                onFocus={e  => (e.target.style.borderColor = '#C9A96E')}
                 onBlur={e   => (e.target.style.borderColor = '#E5E7EB')}
               />
               <input
@@ -108,7 +108,7 @@ function EliteWaitlistModal({ onClose }: { onClose: () => void }) {
                   borderColor: '#E5E7EB',
                   color: '#111827',
                 }}
-                onFocus={e  => (e.target.style.borderColor = '#1D9E75')}
+                onFocus={e  => (e.target.style.borderColor = '#C9A96E')}
                 onBlur={e   => (e.target.style.borderColor = '#E5E7EB')}
               />
               <input
@@ -122,7 +122,7 @@ function EliteWaitlistModal({ onClose }: { onClose: () => void }) {
                   borderColor: '#E5E7EB',
                   color: '#111827',
                 }}
-                onFocus={e  => (e.target.style.borderColor = '#1D9E75')}
+                onFocus={e  => (e.target.style.borderColor = '#C9A96E')}
                 onBlur={e   => (e.target.style.borderColor = '#E5E7EB')}
               />
               {error && (
@@ -162,7 +162,7 @@ function Feature({
     <li className="flex items-start gap-2.5">
       <span
         className="flex-shrink-0 mt-0.5 font-bold text-[13px]"
-        style={{ color: muted ? '#D1D5DB' : '#1D9E75' }}
+        style={{ color: muted ? '#D1D5DB' : '#C9A96E' }}
       >
         {muted ? '○' : '✓'}
       </span>
@@ -190,7 +190,7 @@ export default function PricingPage() {
         style={{ borderBottom: '1px solid #F3F4F6' }}
       >
         <a href="/" className="no-underline" style={{ fontSize: '20px', fontWeight: 600, color: '#2C2C2A' }}>
-          Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+          Honest<span style={{ color: '#C9A96E' }}>Hand</span>
         </a>
         <div className="flex items-center gap-4">
           <a
@@ -213,9 +213,9 @@ export default function PricingPage() {
             style={{
               fontSize: '13px',
               padding: '7px 16px',
-              border: '1px solid #1D9E75',
+              border: '1px solid #C9A96E',
               borderRadius: '20px',
-              color: '#1D9E75',
+              color: '#C9A96E',
               fontWeight: 500,
             }}
           >
@@ -228,7 +228,7 @@ export default function PricingPage() {
       <div className="text-center px-6 pt-14 pb-10 max-w-lg mx-auto">
         <div
           className="text-[11px] font-bold uppercase tracking-widest mb-3"
-          style={{ color: '#1D9E75' }}
+          style={{ color: '#C9A96E' }}
         >
           Simple, Transparent Pricing
         </div>
@@ -289,11 +289,11 @@ export default function PricingPage() {
               className="block w-full text-center rounded-xl font-semibold text-[15px] no-underline transition-colors"
               style={{
                 padding: '13px',
-                border: '2px solid #1D9E75',
-                color: '#1D9E75',
+                border: '2px solid #C9A96E',
+                color: '#C9A96E',
                 background: 'white',
               }}
-              onMouseOver={e  => (e.currentTarget.style.background = '#E1F5EE')}
+              onMouseOver={e  => (e.currentTarget.style.background = '#F7F4EF')}
               onMouseOut={e   => (e.currentTarget.style.background = 'white')}
             >
               Preview Honest Hand
@@ -304,16 +304,16 @@ export default function PricingPage() {
           <div
             className="bg-white rounded-2xl relative"
             style={{
-              border: '2px solid #1D9E75',
+              border: '2px solid #C9A96E',
               padding: '28px 24px',
-              boxShadow: '0 8px 32px rgba(29,158,117,0.13)',
+              boxShadow: '0 8px 32px rgba(201,169,110,0.13)',
             }}
           >
             {/* Most Popular pill */}
             <div className="absolute left-1/2 -translate-x-1/2" style={{ top: '-14px' }}>
               <span
                 className="text-white text-[11px] font-bold uppercase tracking-wide rounded-full whitespace-nowrap"
-                style={{ background: '#1D9E75', padding: '4px 16px' }}
+                style={{ background: '#1C2B3A', padding: '4px 16px' }}
               >
                 Most Popular
               </span>
@@ -322,7 +322,7 @@ export default function PricingPage() {
             <div className="mb-5">
               <div
                 className="text-[11px] font-bold uppercase tracking-widest mb-2"
-                style={{ color: '#1D9E75' }}
+                style={{ color: '#C9A96E' }}
               >
                 Honest Hand Pro
               </div>
@@ -358,7 +358,7 @@ export default function PricingPage() {
             <a
               href="/?signup=true"
               className="block w-full text-center rounded-xl font-bold text-[15px] text-white no-underline transition-opacity"
-              style={{ padding: '14px', background: '#1D9E75' }}
+              style={{ padding: '14px', background: '#1C2B3A' }}
               onMouseOver={e  => (e.currentTarget.style.opacity = '0.9')}
               onMouseOut={e   => (e.currentTarget.style.opacity = '1')}
             >
@@ -512,7 +512,7 @@ export default function PricingPage() {
         style={{ borderTop: '1px solid #F3F4F6' }}
       >
         <div className="text-[14px] font-semibold mb-1.5" style={{ color: '#2C2C2A' }}>
-          Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+          Honest<span style={{ color: '#C9A96E' }}>Hand</span>
         </div>
         <div className="text-[12px] mb-4" style={{ color: '#9CA3AF' }}>
           yourhonesthand.com · Texas · Est. 2026

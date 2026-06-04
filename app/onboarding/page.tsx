@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Onboarding — supports both Small Business and Nonprofit flows.
  *
  * REQUIRED SQL MIGRATIONS (run once in Supabase → SQL Editor):
@@ -298,7 +298,7 @@ export default function Onboarding() {
         <div style={{ fontSize: '14px', fontWeight: '500', color: '#2C2C2A' }}>{label}</div>
         <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '2px' }}>{sub}</div>
       </div>
-      <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: '2px solid', borderColor: form[key] ? '#1D9E75' : '#E5E7EB', background: form[key] ? '#1D9E75' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px', flexShrink: 0 }}>
+      <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: '2px solid', borderColor: form[key] ? '#C9A96E' : '#E5E7EB', background: form[key] ? '#1C2B3A' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '14px', flexShrink: 0 }}>
         {form[key] ? '✓' : ''}
       </div>
     </div>
@@ -315,9 +315,9 @@ export default function Onboarding() {
       onClick={onClick}
       style={{
         padding: '6px 12px', borderRadius: '20px',
-        border: `1.5px solid ${selected ? '#1D9E75' : '#E5E7EB'}`,
-        background: selected ? '#E1F5EE' : 'white',
-        color: selected ? '#065F46' : '#6B7280',
+        border: `1.5px solid ${selected ? '#C9A96E' : '#E5E7EB'}`,
+        background: selected ? '#F7F4EF' : 'white',
+        color: selected ? '#6B6560' : '#6B7280',
         fontSize: '12px', fontWeight: '500', cursor: 'pointer',
         display: 'flex', alignItems: 'center', gap: '4px',
       }}
@@ -330,7 +330,7 @@ export default function Onboarding() {
   const logo = (
     <div style={{ textAlign: 'center', marginBottom: '32px', paddingTop: '24px' }}>
       <div style={{ fontSize: '22px', fontWeight: '600', color: '#2C2C2A' }}>
-        Honest<span style={{ color: '#1D9E75' }}>Hand</span>
+        Honest<span style={{ color: '#C9A96E' }}>Hand</span>
       </div>
     </div>
   )
@@ -361,7 +361,7 @@ export default function Onboarding() {
             <button
               onClick={() => handleSelectType('business')}
               style={{ padding: '24px', background: 'white', border: '2px solid #E5E7EB', borderRadius: '16px', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#1D9E75'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29,158,117,0.12)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A96E'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(201,169,110,0.12)' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none' }}
             >
               <div style={{ fontSize: '28px', marginBottom: '8px' }}>🏢</div>
@@ -375,7 +375,7 @@ export default function Onboarding() {
             <button
               onClick={() => handleSelectType('nonprofit')}
               style={{ padding: '24px', background: 'white', border: '2px solid #E5E7EB', borderRadius: '16px', textAlign: 'left', cursor: 'pointer', width: '100%' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = '#1D9E75'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(29,158,117,0.12)' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A96E'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(201,169,110,0.12)' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#E5E7EB'; e.currentTarget.style.boxShadow = 'none' }}
             >
               <div style={{ fontSize: '28px', marginBottom: '8px' }}>🤝</div>
@@ -410,7 +410,7 @@ export default function Onboarding() {
         {/* Progress bar */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
           {[1, 2, 3].map(s => (
-            <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: s <= step ? '#1D9E75' : '#E5E7EB' }} />
+            <div key={s} style={{ flex: 1, height: '4px', borderRadius: '2px', background: s <= step ? '#C9A96E' : '#E5E7EB' }} />
           ))}
         </div>
 
@@ -426,7 +426,7 @@ export default function Onboarding() {
                 {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
               {form.industry === 'Other' && (
-                <input style={{ ...inputStyle, borderColor: '#1D9E75' }} placeholder="Describe your industry (e.g. Auto Repair, Daycare, Landscaping)" value={industryOther} onChange={e => setIndustryOther(e.target.value)} autoFocus />
+                <input style={{ ...inputStyle, borderColor: '#C9A96E' }} placeholder="Describe your industry (e.g. Auto Repair, Daycare, Landscaping)" value={industryOther} onChange={e => setIndustryOther(e.target.value)} autoFocus />
               )}
               {/* Business description — shows once an industry is selected */}
               {form.industry && (
@@ -489,10 +489,10 @@ export default function Onboarding() {
               {checkboxRow('Veteran-owned business?', 'Unlocks exclusive veteran programs', 'is_veteran')}
               {checkboxRow('Minority-owned business?', 'Unlocks minority business grants', 'is_minority')}
               {checkboxRow('Woman-owned business?', 'Unlocks women entrepreneur programs', 'is_woman')}
-              <div style={{ padding: '16px', background: '#E1F5EE', borderRadius: '12px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '500', color: '#085041', marginBottom: '4px' }}>Your report is almost ready</div>
-                <div style={{ fontSize: '12px', color: '#1D9E75', lineHeight: '1.6' }}>We'll match your business against 50+ Texas programs and show you exactly what you qualify for.</div>
-                <div style={{ fontSize: '11px', color: '#6B9E8A', lineHeight: '1.6', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(29,158,117,0.2)' }}>
+              <div style={{ padding: '16px', background: '#F7F4EF', borderRadius: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', color: '#6B6560', marginBottom: '4px' }}>Your report is almost ready</div>
+                <div style={{ fontSize: '12px', color: '#C9A96E', lineHeight: '1.6' }}>We'll match your business against 50+ Texas programs and show you exactly what you qualify for.</div>
+                <div style={{ fontSize: '11px', color: '#6B9E8A', lineHeight: '1.6', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(201,169,110,0.2)' }}>
                   Results are for informational purposes only and do not constitute financial, legal, or tax advice. Always verify program eligibility directly with the administering agency.
                 </div>
               </div>
@@ -509,7 +509,7 @@ export default function Onboarding() {
                 {MISSION_AREAS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
               {form.mission_area === 'Other' && (
-                <input style={{ ...inputStyle, borderColor: '#1D9E75' }} placeholder="Describe your mission area" value={missionOther} onChange={e => setMissionOther(e.target.value)} autoFocus />
+                <input style={{ ...inputStyle, borderColor: '#C9A96E' }} placeholder="Describe your mission area" value={missionOther} onChange={e => setMissionOther(e.target.value)} autoFocus />
               )}
               {checkboxRow('501(c)(3) status confirmed?', 'Unlocks foundation and government grant eligibility', 'is_501c3')}
               <input style={{ ...inputStyle, marginTop: '4px' }} placeholder="EIN (optional, e.g. 12-3456789)" value={form.ein} onChange={e => setForm({ ...form, ein: e.target.value })} />
@@ -583,12 +583,12 @@ export default function Onboarding() {
                 </div>
               </div>
 
-              <div style={{ padding: '16px', background: '#E1F5EE', borderRadius: '12px', marginBottom: '16px' }}>
-                <div style={{ fontSize: '13px', fontWeight: '500', color: '#085041', marginBottom: '4px' }}>Your funding report is almost ready</div>
-                <div style={{ fontSize: '12px', color: '#1D9E75', lineHeight: '1.6' }}>
+              <div style={{ padding: '16px', background: '#F7F4EF', borderRadius: '12px', marginBottom: '16px' }}>
+                <div style={{ fontSize: '13px', fontWeight: '500', color: '#6B6560', marginBottom: '4px' }}>Your funding report is almost ready</div>
+                <div style={{ fontSize: '12px', color: '#C9A96E', lineHeight: '1.6' }}>
                   We'll match your organization against foundation grants, government funding, corporate sponsorships, and local programs across Texas.
                 </div>
-                <div style={{ fontSize: '11px', color: '#6B9E8A', lineHeight: '1.6', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(29,158,117,0.2)' }}>
+                <div style={{ fontSize: '11px', color: '#6B9E8A', lineHeight: '1.6', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(201,169,110,0.2)' }}>
                   Results are for informational purposes only. Always verify grant eligibility directly with the funding organization.
                 </div>
               </div>
@@ -611,7 +611,7 @@ export default function Onboarding() {
             <button
               onClick={() => step < totalSteps ? handleNext() : handleSubmit()}
               disabled={loading}
-              style={{ flex: 1, padding: '12px', background: '#1D9E75', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
+              style={{ flex: 1, padding: '12px', background: '#1C2B3A', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', color: 'white', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}
             >
               {loading ? 'Setting up…' : step < totalSteps ? 'Continue' : 'Generate My Report →'}
             </button>

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
@@ -64,7 +64,7 @@ export default function VerifyEmailPage() {
         <div style={{textAlign:'center',marginBottom:'32px'}}>
           <a href="/" style={{textDecoration:'none'}}>
             <div style={{fontSize:'24px',fontWeight:'600',color:'#2C2C2A'}}>
-              Honest<span style={{color:'#1D9E75'}}>Hand</span>
+              Honest<span style={{color:'#C9A96E'}}>Hand</span>
             </div>
           </a>
         </div>
@@ -101,7 +101,7 @@ export default function VerifyEmailPage() {
 
           {/* Resent confirmation */}
           {resent && (
-            <div style={{background:'#E1F5EE',border:'1px solid #1D9E75',borderRadius:'10px',padding:'12px 16px',marginBottom:'16px',fontSize:'13px',color:'#065F46',lineHeight:'1.6'}}>
+            <div style={{background:'#F7F4EF',border:'1px solid #C9A96E',borderRadius:'10px',padding:'12px 16px',marginBottom:'16px',fontSize:'13px',color:'#6B6560',lineHeight:'1.6'}}>
               ✓ Verification email resent. Check your inbox (and spam/junk folder).
             </div>
           )}
@@ -116,7 +116,7 @@ export default function VerifyEmailPage() {
           <button
             onClick={handleResend}
             disabled={resending || !email}
-            style={{width:'100%',padding:'13px',background:'#1D9E75',color:'white',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:resending||!email?'not-allowed':'pointer',opacity:resending||!email?0.6:1,marginBottom:'12px'}}
+            style={{width:'100%',padding:'13px',background:'#1C2B3A',color:'white',border:'none',borderRadius:'10px',fontSize:'15px',fontWeight:'600',cursor:resending||!email?'not-allowed':'pointer',opacity:resending||!email?0.6:1,marginBottom:'12px'}}
           >
             {resending ? 'Resending…' : 'Resend Verification Email'}
           </button>
@@ -138,7 +138,7 @@ export default function VerifyEmailPage() {
             </div>
             <div style={{fontSize:'12px',color:'#9CA3AF',lineHeight:'1.7',textAlign:'center',marginTop:'8px'}}>
               Still having trouble?{' '}
-              <a href="/contact" style={{color:'#1D9E75',textDecoration:'underline'}}>Contact support</a>
+              <a href="/contact" style={{color:'#C9A96E',textDecoration:'underline'}}>Contact support</a>
             </div>
           </div>
         </div>
