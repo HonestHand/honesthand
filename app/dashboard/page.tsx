@@ -92,10 +92,6 @@ function LoadingState({ searching, isNonprofit = false }: { searching: boolean; 
   )
 }
 
-// ─── Minimum section count to identify a Pro report ──────────────────────────
-// Free reports have 3 sections; Pro reports have 8+. We use 5 as the threshold
-// so that upgrading users automatically get a fresh Pro report generated.
-const MIN_PRO_SECTION_COUNT = 5
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
@@ -185,16 +181,32 @@ export default function Dashboard() {
       .single()
 
     if (storedReport?.report_text) {
-      const sectionCount = (storedReport.report_text.match(/^## /gm) || []).length
-      const isProReport  = sectionCount >= MIN_PRO_SECTION_COUNT
+      // Detect format: attempt to parse first 500 chars to confirm JSON array
+      let isJsonReport = false
+      try {
+        const sample = JSON.parse(storedReport.report_text.slice(0, 500))
+        if (Array.isArray(sample)) isJsonReport = true
+      } catch { /* not JSON — old markdown format */ }
 
-      if (proStatus && !isProReport) {
-        // User upgraded but stored report is the old free preview — regenerate
+      if (!isJsonReport) {
+        // Old markdown format — discard and regenerate as JSON
         generateReport(profileData, session.user.id)
       } else {
-        // Show cached report immediately — no API call
-        setReport(storedReport.report_text)
-        setReportDate(storedReport.created_at ?? null)
+        // JSON format — parse full text to get real opportunity count for pro check
+        let fullLength = 0
+        try {
+          const full = JSON.parse(storedReport.report_text)
+          if (Array.isArray(full)) fullLength = full.length
+        } catch { /* malformed — will regenerate below */ }
+
+        if (proStatus && fullLength < 8) {
+          // Too few opportunities for a pro report — regenerate
+          generateReport(profileData, session.user.id)
+        } else {
+          // Valid cached JSON report — show immediately
+          setReport(storedReport.report_text)
+          setReportDate(storedReport.created_at ?? null)
+        }
       }
     } else {
       // No stored report — generate for the first time
