@@ -74,6 +74,9 @@ function LoadingState({ searching, isNonprofit = false }: { searching: boolean; 
       <div style={{ fontSize: '13px', color: '#6B6560', lineHeight: '1.6', maxWidth: '320px', margin: '0 auto' }}>
         {msg.sub}
       </div>
+      <div style={{ fontSize: '13px', color: '#6B6560', lineHeight: '1.6', maxWidth: '320px', margin: '12px auto 0' }}>
+        Pro reports are custom-built for your business and typically take 2–4 minutes. Thank you for your patience.
+      </div>
       <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'center', gap: '6px' }}>
         {[0, 1, 2].map(i => (
           <div
@@ -595,7 +598,7 @@ export default function Dashboard() {
                 <>
                   <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#F7F4EF', border: '1px solid #E5E0D8', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '14px' }}>🔄</span>
-                    <span style={{ fontSize: '13px', color: '#6B6560' }}>{phaseMessage || "We're checking for the latest funding opportunities now."}</span>
+                    <span style={{ fontSize: '13px', color: '#6B6560' }}>{phaseMessage || "Your report is still generating — this can take 2–4 minutes. Hang tight, we're pulling live funding data specific to your business."}</span>
                   </div>
                   {reportView}
                 </>
