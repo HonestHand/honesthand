@@ -301,7 +301,7 @@ You are a funding research engine. Return ONLY a valid JSON array. No prose, no 
   const MAX_ATTEMPTS = 3
   const RETRY_DELAYS = [0, 2000, 8000]  // ms: immediate, 2 s, 8 s
   const maxTokens    = isPro ? 32000 : 2048
-  const maxSearches  = isPro ? 8 : 3
+  const maxSearches  = isPro ? 4 : 2
 
   const stream = new ReadableStream({
     async start(controller) {
