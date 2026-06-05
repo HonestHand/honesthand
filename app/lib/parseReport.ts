@@ -159,7 +159,11 @@ export function parseDeadlineDate(deadline: string): Date | undefined {
 
 function categorizeSection(title: string): SectionCategory {
   const t = title.toLowerCase()
-  if (t.includes('action plan') || t.includes('30-day') || t.includes('30 day')) return 'action-plan'
+  if (
+    t.includes('action plan') || t.includes('30-day') || t.includes('30 day') ||
+    (t.includes('action') && t.includes('plan')) ||
+    t.includes('next steps') || t.includes('grant readiness') || t.includes('readiness action')
+  ) return 'action-plan'
   if (t.includes('veteran')) return 'veteran'
   if (t.includes('federal') || t.includes('sba') || t.includes('usda') || t.includes('sbir') || t.includes('sttr')) return 'federal'
   if (t.includes('texas state') || t.includes('state program') || t.includes('texas program')) return 'state'
@@ -394,7 +398,10 @@ export function parseReport(raw: string): ParsedReport {
   // Step 4: Group by category into ParsedSections
   const sectionMap = new Map<string, JsonOpportunity[]>()
   for (const opp of sanitized) {
-    const cat = opp.category || 'Other'
+    // If the title looks like a numbered step ("Step 1", "Step 2 —" etc.)
+    // route into the action plan bucket regardless of the category field
+    const titleLooksLikeStep = /^step\s+\d+/i.test((opp.title || '').trim())
+    const cat = titleLooksLikeStep ? '30-Day Action Plan' : (opp.category || 'Other')
     if (!sectionMap.has(cat)) sectionMap.set(cat, [])
     sectionMap.get(cat)!.push(opp)
   }

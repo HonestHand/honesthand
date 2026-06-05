@@ -202,8 +202,8 @@ export default function Dashboard() {
           if (Array.isArray(full)) fullLength = full.length
         } catch { /* malformed — will regenerate below */ }
 
-        if (proStatus && fullLength < 8) {
-          // Too few opportunities for a pro report — regenerate
+        if (proStatus && fullLength < 15) {
+          // Too few opportunities for a pro report (free ~6-8, pro 20+) — regenerate
           generateReport(profileData, session.user.id)
         } else {
           // Valid cached JSON report — show immediately
@@ -605,8 +605,8 @@ export default function Dashboard() {
               )
             }
 
-            // ── Phase: FAILED — terminal error ───────────────────────────────
-            if (reportPhase === 'failed') {
+            // ── Phase: FAILED — terminal error (only show when no cached report) ──
+            if (reportPhase === 'failed' && !report) {
               return (
                 <>
                   <div style={{ marginBottom: report ? '16px' : '0', padding: '10px 14px', background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '10px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
