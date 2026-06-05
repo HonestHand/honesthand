@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
       customer_email: email,
       line_items: [
         {
-          price: 'price_1TUZlhGkAuVF20utMpyir8Xd',
+          price: 'price_1TexPhGwFWSkDoKCxybQwhY0',
           quantity: 1,
         },
       ],
