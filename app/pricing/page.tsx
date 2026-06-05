@@ -327,8 +327,11 @@ export default function PricingPage() {
                 Honest Hand Pro
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-[32px] font-bold" style={{ color: '#2C2C2A' }}>$49</span>
-                <span className="text-[14px]" style={{ color: '#9CA3AF' }}>/month</span>
+                <span className="text-[32px] font-bold" style={{ color: '#1C2B3A' }}>$49</span>
+                <span className="text-[14px]" style={{ color: '#9CA3AF' }}>/mo</span>
+              </div>
+              <div className="text-[13px] mt-0.5" style={{ color: '#9CA3AF' }}>
+                Regular price $99/mo after first 10 customers
               </div>
               <div className="text-[13px] mt-1" style={{ color: '#9CA3AF' }}>
                 Cancel anytime
@@ -355,6 +358,9 @@ export default function PricingPage() {
               ].map(f => <Feature key={f} text={f} />)}
             </ul>
 
+            <p className="text-center text-[13px] font-bold mb-3" style={{ color: '#C9A96E' }}>
+              ⚡ Founder pricing — limited to first 10 customers
+            </p>
             <a
               href="/?signup=true"
               className="block w-full text-center rounded-xl font-bold text-[15px] text-white no-underline transition-opacity"
